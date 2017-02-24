@@ -9,6 +9,7 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines) :
     QLabel(parent), p_n_alines(n_alines)
 {
     is_fringe_mode = true;
+    is_focus_line = false;
     p_threshold =0.1;
     p_fringe_image = QImage(LINE_ARRAY_SIZE,p_n_alines,QImage::Format_Indexed8);
     p_image = QImage(LINE_ARRAY_SIZE/2,p_n_alines,QImage::Format_Indexed8);
@@ -116,6 +117,12 @@ void  ImageViewer::keyPressEvent(QKeyEvent *event)
         is_fringe_mode = !is_fringe_mode;
     }
         break;
+    case Qt::Key_L:
+    {
+        event->accept();
+        is_focus_line = !is_focus_line;
+
+    }
 
     default:
         event->ignore();
@@ -203,6 +210,13 @@ void ImageViewer::updateView()
         {
             p_image.bits()[i]=(unsigned char) ((p_dimage[i]-min)*255/(max-min));
         }
+        if( is_focus_line )
+        {
+            for(int i=0;i<p_n_alines;i++) p_image.bits()[i*LINE_ARRAY_SIZE/2+130] = 255;
+            for(int i=0;i<p_n_alines;i++) p_image.bits()[i*LINE_ARRAY_SIZE/2+65] = 255;
+
+        }
+
         QRect rect(0,0,512,p_n_alines);
         QImage tmp = p_image.copy(rect);
         pix = QPixmap::fromImage(tmp);
