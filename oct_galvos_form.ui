@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>714</width>
-    <height>837</height>
+    <width>760</width>
+    <height>916</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -142,232 +142,285 @@
       </layout>
      </item>
      <item>
-      <layout class="QFormLayout" name="formLayout">
-       <item row="0" column="0">
-        <widget class="QLabel" name="label_nx">
-         <property name="text">
-          <string>Nx</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QLineEdit" name="lineEdit_nx">
-         <property name="text">
-          <string>400</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="label_ny">
-         <property name="text">
-          <string>Ny</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QLineEdit" name="lineEdit_ny">
-         <property name="text">
-          <string>1</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="label_3">
-         <property name="text">
-          <string>Width (um)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
-        <widget class="QLineEdit" name="lineEdit_width">
-         <property name="text">
-          <string>400</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <widget class="QLabel" name="label_4">
-         <property name="text">
-          <string>Height (um)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="1">
-        <widget class="QLineEdit" name="lineEdit_height">
-         <property name="text">
-          <string>1</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="0">
-        <widget class="QLabel" name="label_6">
-         <property name="text">
-          <string>Extra Points</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="1">
-        <widget class="QLineEdit" name="lineEdit_extrapoints">
-         <property name="text">
-          <string>40</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0">
-        <widget class="QLabel" name="label_5">
-         <property name="text">
-          <string>Scan Type</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="1">
-        <widget class="QComboBox" name="comboBox_scantype">
+      <widget class="QTabWidget" name="tabWidget">
+       <property name="currentIndex">
+        <number>1</number>
+       </property>
+       <widget class="QWidget" name="tab">
+        <attribute name="title">
+         <string>Basic</string>
+        </attribute>
+        <layout class="QVBoxLayout" name="verticalLayout_3">
          <item>
-          <property name="text">
-           <string>SawTooth</string>
-          </property>
+          <layout class="QFormLayout" name="formLayout">
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_nx">
+             <property name="text">
+              <string>Nx</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLineEdit" name="lineEdit_nx">
+             <property name="text">
+              <string>400</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="label_ny">
+             <property name="text">
+              <string>Ny</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QLineEdit" name="lineEdit_ny">
+             <property name="text">
+              <string>1</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="label_3">
+             <property name="text">
+              <string>Width (um)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QLineEdit" name="lineEdit_width">
+             <property name="text">
+              <string>400</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="label_4">
+             <property name="text">
+              <string>Height (um)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QLineEdit" name="lineEdit_height">
+             <property name="text">
+              <string>1</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="0">
+            <widget class="QLabel" name="label_6">
+             <property name="text">
+              <string>Extra Points</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="1">
+            <widget class="QLineEdit" name="lineEdit_extrapoints">
+             <property name="text">
+              <string>40</string>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="0">
+            <widget class="QLabel" name="label_5">
+             <property name="text">
+              <string>Scan Type</string>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="1">
+            <widget class="QComboBox" name="comboBox_scantype">
+             <item>
+              <property name="text">
+               <string>SawTooth</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Triangular</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="7" column="0">
+            <widget class="QLabel" name="label_8">
+             <property name="text">
+              <string>Line Rate (Hz)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="1">
+            <widget class="QLineEdit" name="lineEdit_linerate">
+             <property name="text">
+              <string>20.00</string>
+             </property>
+            </widget>
+           </item>
+           <item row="8" column="0">
+            <widget class="QLabel" name="label_7">
+             <property name="text">
+              <string>Shift (usec)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="8" column="1">
+            <widget class="QLineEdit" name="lineEdit_shift">
+             <property name="text">
+              <string>100</string>
+             </property>
+            </widget>
+           </item>
+           <item row="9" column="0">
+            <widget class="QLabel" name="label_9">
+             <property name="text">
+              <string>Fast axis repeat</string>
+             </property>
+            </widget>
+           </item>
+           <item row="9" column="1">
+            <widget class="QLineEdit" name="lineEdit_fastaxisrepeat">
+             <property name="text">
+              <string>1</string>
+             </property>
+            </widget>
+           </item>
+           <item row="10" column="0">
+            <widget class="QLabel" name="label_2">
+             <property name="text">
+              <string>A-Line repeat</string>
+             </property>
+            </widget>
+           </item>
+           <item row="10" column="1">
+            <widget class="QLineEdit" name="lineEdit_aline_repeat">
+             <property name="text">
+              <string>1</string>
+             </property>
+            </widget>
+           </item>
+           <item row="11" column="0">
+            <widget class="QLabel" name="label">
+             <property name="text">
+              <string>Exposure Time (us)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="11" column="1">
+            <widget class="QLineEdit" name="lineEdit_exposure">
+             <property name="text">
+              <string>25</string>
+             </property>
+            </widget>
+           </item>
+           <item row="12" column="0">
+            <widget class="QComboBox" name="comboBox_opr">
+             <item>
+              <property name="text">
+               <string>OPR 2 - 9.6 to 79klps</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>OPR 1 - 73 to 125klps</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>OPR 0 - 115 to 147klps</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="12" column="1">
+            <widget class="QComboBox" name="comboBox_telescope">
+             <item>
+              <property name="text">
+               <string>Telescope: 50-100mm</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Telescope: 75-75mm</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="13" column="0">
+            <widget class="QComboBox" name="comboBox_sensitivity">
+             <property name="currentText">
+              <string>Low</string>
+             </property>
+             <property name="minimumContentsLength">
+              <number>0</number>
+             </property>
+             <item>
+              <property name="text">
+               <string>Low</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Medium Low</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Medium High</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>High</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+          </layout>
          </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="tab_2">
+        <attribute name="title">
+         <string>Doppler</string>
+        </attribute>
+        <layout class="QVBoxLayout" name="verticalLayout_4">
          <item>
-          <property name="text">
-           <string>Triangular</string>
-          </property>
+          <layout class="QFormLayout" name="formLayout_4">
+           <item row="0" column="0">
+            <widget class="QLabel" name="label_13">
+             <property name="text">
+              <string>HPF Time Constant (msec)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_14">
+             <property name="text">
+              <string>Spatial Kernel Size (um)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLineEdit" name="lineEdit_doppler_hpf">
+             <property name="text">
+              <string>10</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLineEdit" name="lineEdit_doppler_spatial_kernel">
+             <property name="text">
+              <string>10</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
-        </widget>
-       </item>
-       <item row="6" column="0">
-        <widget class="QLabel" name="label_8">
-         <property name="text">
-          <string>Line Rate (Hz)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="1">
-        <widget class="QLineEdit" name="lineEdit_linerate">
-         <property name="text">
-          <string>20.00</string>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="0">
-        <widget class="QLabel" name="label_7">
-         <property name="text">
-          <string>Shift (usec)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="0">
-        <widget class="QLabel" name="label_9">
-         <property name="text">
-          <string>Fast axis repeat</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="1">
-        <widget class="QLineEdit" name="lineEdit_fastaxisrepeat">
-         <property name="text">
-          <string>1</string>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="0">
-        <widget class="QLabel" name="label">
-         <property name="text">
-          <string>Exposure Time (us)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="1">
-        <widget class="QLineEdit" name="lineEdit_exposure">
-         <property name="text">
-          <string>25</string>
-         </property>
-        </widget>
-       </item>
-       <item row="11" column="0">
-        <widget class="QComboBox" name="comboBox_opr">
-         <item>
-          <property name="text">
-           <string>OPR 2 - 9.6 to 79klps</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>OPR 1 - 73 to 125klps</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>OPR 0 - 115 to 147klps</string>
-          </property>
-         </item>
-        </widget>
-       </item>
-       <item row="12" column="0">
-        <widget class="QComboBox" name="comboBox_sensitivity">
-         <property name="currentText">
-          <string>Low</string>
-         </property>
-         <property name="minimumContentsLength">
-          <number>0</number>
-         </property>
-         <item>
-          <property name="text">
-           <string>Low</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>Medium Low</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>Medium High</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>High</string>
-          </property>
-         </item>
-        </widget>
-       </item>
-       <item row="9" column="0">
-        <widget class="QLabel" name="label_2">
-         <property name="text">
-          <string>A-Line repeat</string>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="1">
-        <widget class="QLineEdit" name="lineEdit_aline_repeat">
-         <property name="text">
-          <string>1</string>
-         </property>
-        </widget>
-       </item>
-       <item row="11" column="1">
-        <widget class="QComboBox" name="comboBox_telescope">
-         <item>
-          <property name="text">
-           <string>Telescope: 50-100mm</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>Telescope: 75-75mm</string>
-          </property>
-         </item>
-        </widget>
-       </item>
-       <item row="7" column="1">
-        <widget class="QLineEdit" name="lineEdit_shift">
-         <property name="text">
-          <string>100</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
+        </layout>
+       </widget>
+      </widget>
      </item>
      <item>
       <layout class="QFormLayout" name="formLayout_2">
