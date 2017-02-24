@@ -11,6 +11,9 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines) :
     is_fringe_mode = true;
     is_focus_line = false;
     p_threshold =0.1;
+    f_fft.init(LINE_ARRAY_SIZE,n_alines);
+    f_fft.read_interp_matrix();
+
     p_fringe_image = QImage(LINE_ARRAY_SIZE,p_n_alines,QImage::Format_Indexed8);
     p_image = QImage(LINE_ARRAY_SIZE/2,p_n_alines,QImage::Format_Indexed8);
 
@@ -20,62 +23,14 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines) :
     p_data_buffer=new unsigned short[p_n_alines*LINE_ARRAY_SIZE];
     setFocusPolicy(Qt::StrongFocus);
     resize(200,400);
-    // Prepare fft plan
     real_fringe = new double[2048];
-    oct_image = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * 1025);
-    fft_plan = fftw_plan_dft_r2c_1d(2048,
-                                    real_fringe, oct_image,
-                                    FFTW_MEASURE);
-    p_interpolation_matrix = new double[2048*2048];
-    FILE* fp=fopen("C:\\Users\\Public\\Documents\\interpolation_matrix.dat","rb");
-    fread(p_interpolation_matrix,sizeof(double),2048*2048,fp);
-    fclose(fp);
-
-    // For interpolation acceleration
-    p_band_start = new int[2048];
-    p_band_stop = new int[2048];
-    for(int i=0;i<2048;i++)
-    {
-        bool found_start = false;
-        p_band_start[i]=0;
-        for( int j=0; j<2048;j++)
-        {
-            if(!found_start && p_interpolation_matrix[i+j*2048]<1e-8)
-            {
-                p_band_start[i]=p_band_start[i]+1;
-            }
-            else
-            {
-                if(!found_start)
-                {
-                    found_start = true;
-                    p_band_start[i]=j;
-                }
-                else if (p_interpolation_matrix[i+j*2048]<1e-8)
-                {
-                    p_band_stop[i]=j-1;
-                    break;
-                }
-                else if( j == 2047 )
-                {
-                    p_band_stop[i]=j;
-                }
-            }
-        }
-    }
-    p_band_stop[2047] = 2047;
 }
 
 ImageViewer::~ImageViewer()
 {
     delete [] p_dimage;
     delete [] p_data_buffer;
-    fftw_destroy_plan(fft_plan);
-    fftw_free(oct_image);
     delete [] real_fringe;
-    delete [] p_interpolation_matrix;
-    delete [] p_band_start;
-    delete [] p_band_stop;
 }
 
 void ImageViewer::updateThreshold(int new_value)
@@ -160,50 +115,25 @@ void ImageViewer::updateView()
     }
     else
     {
-        double avg_fringe[2048];
         p_mutex.lock();
-        // Compute avg fringe (could be done less frequently)
-        for (int i=0; i<2048; i++)
-        {
-           avg_fringe[i]=p_data_buffer[i];
-        }
-        for (int j=1 ; j<p_n_alines; j++)
-        {
-            for (int i=0; i<2048; i++)
-            {
-                avg_fringe[i]+=p_data_buffer[j*2048+i];
-            }
-        }
-//        std::cerr << "computed avg" << std::endl;
-        // Fill double data substract mean and interpolate
+        f_fft.interp_and_do_fft(p_data_buffer, oct_image);
+
+        // Take log for display
         double max=log(p_threshold);
         double min=1000000.0;
-
         for (int j=0; j<p_n_alines; j++)
         {
-            for (int i=0; i<2048; i++)
-            {
-                real_fringe[i]=0.0;
-                for(int ik=p_band_start[i]; ik<=p_band_stop[i]; ik++)
-                {
-                    real_fringe[i]+=p_interpolation_matrix[i+ik*2048]*(p_data_buffer[j*2048+ik]-avg_fringe[ik]/p_n_alines);
-                }
-            }
-            // Do FFT for that line
-            fftw_execute(fft_plan);
             for(int i=0;i<LINE_ARRAY_SIZE/2;i++)
             {
                 int imx=(LINE_ARRAY_SIZE/2)*j+i;
                 double tmp = 0.0;
-                if (i>10)
-                tmp=sqrt(oct_image[i][0]*oct_image[i][0]+oct_image[i][1]*oct_image[i][1]);
+                if (i>10) tmp=sqrt(oct_image[i][0]*oct_image[i][0]+oct_image[i][1]*oct_image[i][1]);
                 p_dimage[imx]=log(tmp+p_threshold);
                 if(p_dimage[imx]>max) max=p_dimage[imx];
                 if(p_dimage[imx]<min) min=p_dimage[imx];
             }
         }
         p_mutex.unlock();
-//        std::cerr << "computed int" << std::endl;
 
         // Convert to 8 bits
         for(int i=0;i<n_pts/2;i++)

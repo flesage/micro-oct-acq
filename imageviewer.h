@@ -4,7 +4,7 @@
 #include <QImage>
 #include <QLabel>
 #include <QKeyEvent>
-#include <fftw3.h>
+#include "FringeFFT.h"
 
 class QScrollBar;
 
@@ -28,12 +28,11 @@ protected:
     virtual void  keyPressEvent(QKeyEvent *event);
 
 private:
-
+    FringeFFT f_fft;
     double scaleFactor;
     int p_n_alines;
     QImage p_image;
     QImage p_fringe_image;
-
     double* p_dimage;
     double p_threshold;
     unsigned short int* p_data_buffer;
@@ -43,11 +42,6 @@ private:
     QPixmap pix;
     fftw_complex* oct_image;
     double* real_fringe;
-    fftw_plan fft_plan;
-    double* p_interpolation_matrix;
-    int* p_band_start;
-    int* p_band_stop;
-
 };
 
 #endif // ImageViewer_H

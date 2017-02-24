@@ -14,28 +14,21 @@ RC_FILE = oct.rc
 
 CUDA_SOURCES += fringe_norm.cu
 CUDA_SDK = "C:/ProgramData/NVIDIA Corporation/NVIDIA GPU Computing SDK 4.2/C"   # Path to cuda SDK install
-CUDA_DIR = "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v4.2"            # Path to cuda toolkit install
-SYSTEM_NAME = Win32         # Depending on your system either 'Win32', 'x64', or 'Win64'
-SYSTEM_TYPE = 32            # '32' or '64', depending on your system
+CUDA_DIR = "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\include"            # Path to cuda toolkit install
+SYSTEM_NAME = x64         # Depending on your system either 'Win32', 'x64', or 'Win64'
+SYSTEM_TYPE = 64            # '32' or '64', depending on your system
 CUDA_ARCH = sm_11           # Type of CUDA architecture, for example 'compute_10', 'compute_11', 'sm_10'
 NVCC_OPTIONS = --use_fast_math
 
-#INCLUDEPATH += "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\include"
 
 # Add the necessary libraries
-#LIBS += -L"/usr/local/cuda/lib" -lcudart_static -lcusparse_static -lcufft_static -lnppi_static
-
-#LIBS += -L"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\lib\x64" -lcudart_static -lcusparse_static -lcufft_static -lnppi_static
-
-# Test
-
+INCLUDEPATH += "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\include"
 INCLUDEPATH += "C:\Program Files (x86)\National Instruments\NI-DAQ\DAQmx ANSI C Dev\include"
 INCLUDEPATH += "C:\Program Files (x86)\National Instruments\NI-IMAQ\Include"
-INCLUDEPATH += "C:\Program Files (x86)\fftw-3.3.5"
 
+LIBS += -L"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\lib\x64" -lcudart_static -lcusparse_static -lcufft_static -lnppi_static
 LIBS += -L"C:\Program Files (x86)\National Instruments\Shared\ExternalCompilerSupport\C\lib64\msvc" -lNIDAQmx
 LIBS += -L"C:\Program Files (x86)\National Instruments\NI-IMAQ\Lib\MSVC" -limaq
-LIBS += -L"C:\Program Files (x86)\fftw-3.3.5" -llibfftw3-3
 
 SOURCES += main.cpp \
     galvocontroller.cpp \
@@ -46,7 +39,8 @@ SOURCES += main.cpp \
     fringeviewer.cpp \
     imageviewer.cpp \
     softwarecamera.cpp \
-    analoginput.cpp
+    analoginput.cpp \
+    FringeFFT.cpp
 
 HEADERS  += \
     galvocontroller.h \
@@ -62,7 +56,9 @@ HEADERS  += \
     softwarecamera.h \
     fringeviewer.h \
     analoginput.h \
-    float64datasaver.h
+    float64datasaver.h \
+    fringe_norm.h \
+    FringeFFT.h
 
 FORMS    += \
     oct_galvos_form.ui
