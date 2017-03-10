@@ -1,5 +1,5 @@
 #include "converter.h"
-
+#include <iostream>
 Converter::Converter()
 {
     p_x_um_per_volt = 100;
@@ -13,6 +13,12 @@ void Converter::setScale(double x_um_per_volt,double y_um_per_volt)
     return;
 }
 
+void Converter::show()
+{
+    std::cerr << p_x_um_per_volt << std::endl;
+    std::cerr << p_y_um_per_volt << std::endl;
+
+}
 QVector<double>  Converter::voltX(QVector<double>  um_vect)
 {
     QVector<double> val(um_vect.size(),0.0);

@@ -21,10 +21,10 @@ GalvoController::GalvoController() :
     p_image_view = 0;
     p_data_saver = 0;
 
-    double radians_per_volt = 2*3.14159265359/(360*0.8);
+    double radians_per_volt = 2*3.14159265359/(360*0.87);
     double f1=50.0;
     double f2=100.0;
-    double fobj=18.0;
+    double fobj=36.0;
     double scale_um_per_volt=(2*fobj*f1/f2*radians_per_volt)*1000.0;
     Converter unit_converter;
     unit_converter.setScale(scale_um_per_volt,scale_um_per_volt);
@@ -227,7 +227,7 @@ void GalvoController::startScan()
     int aline_repeat = ui->lineEdit_aline_repeat->text().toInt();
 
     int telescope = ui->comboBox_telescope->currentIndex();
-    double radians_per_volt = 2*3.14159265359/(360*0.8);
+    double radians_per_volt = 2*3.14159265359/(360*0.87);
     double f1=50.0;
     double f2=100.0;
     if(telescope == 1)
@@ -235,7 +235,24 @@ void GalvoController::startScan()
         f1=75.0;
         f2=75.0;
     }
-    double fobj=18.0;
+    int objective = ui->comboBox_objective->currentIndex();
+    double fobj=36.0;
+
+    switch(objective)
+    {
+    case 1:
+        fobj=18;
+        break;
+    case 2:
+        fobj=9;
+        break;
+    case 3:
+        fobj=7.2;
+        break;
+    default:
+        fobj=36.0;
+        break;
+    }
     double scale_um_per_volt=(2*fobj*f1/f2*radians_per_volt)*1000.0;
     Converter unit_converter;
     unit_converter.setScale(scale_um_per_volt,scale_um_per_volt);

@@ -12,13 +12,15 @@ TARGET = oct
 TEMPLATE = app
 RC_FILE = oct.rc
 
+DEFINES +=  _CRT_SECURE_NO_WARNINGS
+
 INCLUDEPATH += "C:\Program Files (x86)\National Instruments\NI-DAQ\DAQmx ANSI C Dev\include"
 INCLUDEPATH += "C:\Program Files (x86)\National Instruments\NI-IMAQ\Include"
-INCLUDEPATH += "C:\Program Files (x86)\fftw-3.3.5"
+INCLUDEPATH += "C:\Program Files (x86)\fftw-3.3.4"
 
 LIBS += -L"C:\Program Files (x86)\National Instruments\Shared\ExternalCompilerSupport\C\lib64\msvc" -lNIDAQmx
 LIBS += -L"C:\Program Files (x86)\National Instruments\NI-IMAQ\Lib\MSVC" -limaq
-LIBS += -L"C:\Program Files (x86)\fftw-3.3.5" -llibfftw3-3
+LIBS += -L"C:\Program Files (x86)\fftw-3.3.4" -llibfftw3-3
 
 SOURCES += main.cpp \
     galvocontroller.cpp \
