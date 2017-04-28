@@ -16,7 +16,7 @@
 #define PI ((float)3.1415926)
 
 FringeFFT::FringeFFT() : plan(0), d_fringe(0), d_interpfringe(0), d_signal(0), p_nz(0),
-    p_nx (0), handle(0), descr(0), dCsrValA(0), dCsrRowPtrA(0), dCsrColIndA(0), totalNnz(0)
+    p_nx (0), handle(0), sparse_handle(0), descr(0), dCsrValA(0), dCsrRowPtrA(0), dCsrColIndA(0), totalNnz(0)
 {
     // By default, we use device 0
     int devID = 0;
@@ -71,7 +71,7 @@ FringeFFT::~FringeFFT() {
         cudaFree(dCsrRowPtrA);
         cudaFree(dCsrColIndA);
         cusparseDestroyMatDescr(descr);
-        cusparseDestroy(handle);
+        cusparseDestroy(sparse_handle);
     }
     if(pXmap)
     {
@@ -95,7 +95,7 @@ void FringeFFT::init(int nz, int nx)
     // Allocate memory for hann/disp comp matrix
     // Default is real hann window
     cudaMalloc((void **)&d_hann_dispcomp, p_nz * sizeof(cuFloatComplex));
-    cudaMalloc((void **)&d_mean_fringe, p_nz * sizeof(cuFloatComplex));
+    cudaMalloc((void **)&d_mean_fringe, p_nz * sizeof(cufftReal));
     cudaMalloc((void **)&d_ones, p_nx * sizeof(float));
 
     cuFloatComplex* multiplier = new cuFloatComplex[p_nz];
@@ -103,7 +103,7 @@ void FringeFFT::init(int nz, int nx)
         multiplier[i].x = 0.5 * (1 - cos(2*PI*i/p_nz));
         multiplier[i].y = 0.0;
     }
-    cudaMemcpy(d_hann_dispcomp, (cuFloatComplex*) multiplier, p_nz *sizeof(cuFloatComplex), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_hann_dispcomp, (cufftReal*) multiplier, p_nz *sizeof(cuFloatComplex), cudaMemcpyHostToDevice);
     delete [] multiplier;
 
     // For mean fringe computation
@@ -112,13 +112,13 @@ void FringeFFT::init(int nz, int nx)
         norm[i]=1.0/p_nx;
     }
     cudaMemcpy(d_ones, (float*) norm, p_nx *sizeof(float), cudaMemcpyHostToDevice);
-    delete [] p_nx;
+    delete [] norm;
 
     // CUFFT plan
     cufftPlan1d(&plan, nz, CUFFT_R2C, nx);
 }
 
-void set_disp_comp_vect(float* disp_comp_vector)
+void FringeFFT::set_disp_comp_vect(float* disp_comp_vector)
 {
     // Combine hann window with dipersion compensation
     cuFloatComplex* multiplier = new cuFloatComplex[p_nz];
@@ -146,7 +146,7 @@ void FringeFFT::interp_and_do_fft(float* in_fringe, cufftComplex* out_signal)
     float alpha = 1.0;
     float beta = 0.0;
     // Do interpolation by sparse matrix multiplication
-    cusparseScsrmm(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, p_nz, p_nx, p_nz, totalNnz, &alpha, descr, dCsrValA, dCsrRowPtrA, dCsrColIndA, d_fringe, p_nz, &beta,d_interpfringe,p_nz);
+    cusparseScsrmm(sparse_handle, CUSPARSE_OPERATION_NON_TRANSPOSE, p_nz, p_nx, p_nz, totalNnz, &alpha, descr, dCsrValA, dCsrRowPtrA, dCsrColIndA, d_fringe, p_nz, &beta,d_interpfringe,p_nz);
     cudaDeviceSynchronize();
     // Compute reference
     cublasSgemv(CUBLAS_OP_N, p_nz, p_nx, 1.0, d_interpfringe, p_nz, d_ones, 1, 0.0, d_mean_fringe, 1);
@@ -166,7 +166,7 @@ void FringeFFT::compute_doppler(float line_period)
 {
     //    % FWHM = 2.35482 * sigma
     float sigma=0.2e-3/2.35482;
-    PutDopplerHPFilterOnGPU(sigma, lineperiod);
+//    PutDopplerHPFilterOnGPU(sigma, lineperiod);
 
     //NPP call current_frame_hpf = conv2(tmp,filter_kernel,'same');
     //Compute phase angle of adjacent lines following hpf
@@ -187,9 +187,9 @@ void FringeFFT::PutDopplerHPFilterOnGPU(float sigma, float lineperiod)
     float norm = 0.0;
     for(int i=0;i<2*npts+1;i++)
     {
-        t=(i-npts)*lineperiod;
-        filter[i]=-exp(-t*t/(2*sigma*sigma));
-        norm-=filter[i];
+//        t=(i-npts)*lineperiod;
+//        filter[i]=-exp(-t*t/(2*sigma*sigma));
+//        norm-=filter[i];
     }
     for(int i=0;i<2*npts+1;i++)
     {
@@ -214,7 +214,7 @@ void FringeFFT::read_interp_matrix()
     delete[] p_interpolation_matrix;
 
     // Transform interpolation matrix into a sparse matrix
-    cusparseStatus_t status = cusparseCreate(&handle);
+    cusparseStatus_t status = cusparseCreate(&sparse_handle);
 
     // Allocate device memory for the matrix A
     int* dNnzPerRow;
@@ -229,7 +229,7 @@ void FringeFFT::read_interp_matrix()
     // Transfer the dense matrix A to the device
     cudaMemcpy(dA, A, sizeof(float) * p_nz * p_nz, cudaMemcpyHostToDevice);
     // Compute the number of non-zero elements in A
-    cusparseSnnz(handle, CUSPARSE_DIRECTION_ROW, p_nz, p_nz, descr, dA, p_nz, dNnzPerRow, &totalNnz);
+    cusparseSnnz(sparse_handle, CUSPARSE_DIRECTION_ROW, p_nz, p_nz, descr, dA, p_nz, dNnzPerRow, &totalNnz);
 
     // Allocate device memory to store the sparse CSR representation of A
     cudaMalloc((void **)&dCsrValA, sizeof(float) * totalNnz);
@@ -237,7 +237,7 @@ void FringeFFT::read_interp_matrix()
     cudaMalloc((void **)&dCsrColIndA, sizeof(int) * totalNnz);
 
     // Convert A from a dense formatting to a CSR formatting, using the GPU
-    cusparseSdense2csr(handle, p_nz, p_nz, descr, dA, p_nz, dNnzPerRow, dCsrValA, dCsrRowPtrA, dCsrColIndA);
+    cusparseSdense2csr(sparse_handle, p_nz, p_nz, descr, dA, p_nz, dNnzPerRow, dCsrValA, dCsrRowPtrA, dCsrColIndA);
 
     // Cleaning done in destructor but do not need dA anymore
     delete [] A;

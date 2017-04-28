@@ -40,7 +40,7 @@ private:
     bool is_fringe_mode;
     bool is_focus_line;
     QPixmap pix;
-    fftw_complex* oct_image;
+    cufftComplex* oct_image;
     double* real_fringe;
 };
 

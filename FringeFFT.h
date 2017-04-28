@@ -36,15 +36,15 @@ private:
 	cufftReal* d_fringe;
     cufftReal* d_interpfringe;
 	cufftComplex* d_signal;
-    cuFloatComplex* d_hann_dispcomp;
-    cuFloatComplex* d_mean_fringe;
+    cufftReal* d_hann_dispcomp;
+    cufftReal* d_mean_fringe;
     float* d_ones;
     float* d_hp_filter;
 
 	int p_nz;
 	int p_nx;
 	// Below is for sparse interpolation in k space
-	cusparseHandle_t handle;
+    cusparseHandle_t sparse_handle;
 	cusparseMatDescr_t descr;
 	float *dCsrValA;
 	int *dCsrRowPtrA;

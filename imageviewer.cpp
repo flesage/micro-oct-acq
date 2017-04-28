@@ -127,7 +127,7 @@ void ImageViewer::updateView()
             {
                 int imx=(LINE_ARRAY_SIZE/2)*j+i;
                 double tmp = 0.0;
-                if (i>10) tmp=sqrt(oct_image[i][0]*oct_image[i][0]+oct_image[i][1]*oct_image[i][1]);
+                if (i>10) tmp=sqrt(oct_image[i].x*oct_image[i].x+oct_image[i].y*oct_image[i].y);
                 p_dimage[imx]=log(tmp+p_threshold);
                 if(p_dimage[imx]>max) max=p_dimage[imx];
                 if(p_dimage[imx]<min) min=p_dimage[imx];
