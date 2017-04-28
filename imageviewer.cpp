@@ -21,6 +21,8 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines) :
     setPixmap(pix);
     p_dimage = (double*) new double[p_n_alines*LINE_ARRAY_SIZE];
     p_data_buffer=new unsigned short[p_n_alines*LINE_ARRAY_SIZE];
+    p_f_data_buffer=new float[p_n_alines*LINE_ARRAY_SIZE];
+
     setFocusPolicy(Qt::StrongFocus);
     resize(200,400);
     real_fringe = new double[2048];
@@ -31,6 +33,7 @@ ImageViewer::~ImageViewer()
     delete [] p_dimage;
     delete [] p_data_buffer;
     delete [] real_fringe;
+    delete [] p_f_data_buffer;
 }
 
 void ImageViewer::updateThreshold(int new_value)
@@ -116,7 +119,10 @@ void ImageViewer::updateView()
     else
     {
         p_mutex.lock();
-        f_fft.interp_and_do_fft(p_data_buffer, oct_image);
+        for( int i =0; i< n_pts;i++) p_f_data_buffer[i]=p_data_buffer[i];
+        p_mutex.unlock();
+
+        f_fft.interp_and_do_fft(p_f_data_buffer, oct_image);
 
         // Take log for display
         double max=log(p_threshold);

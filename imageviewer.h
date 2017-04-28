@@ -42,6 +42,7 @@ private:
     QPixmap pix;
     cufftComplex* oct_image;
     double* real_fringe;
+    float* p_f_data_buffer;
 };
 
 #endif // ImageViewer_H

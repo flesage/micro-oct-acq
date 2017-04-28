@@ -4,7 +4,7 @@
 
 extern "C"
 
-__global__ void fringeNormCUDA(const float* fringe, const float* avg_fringe, const float* hann_window, int nx, int nz)
+__global__ void fringeNormCUDA(float* fringe, const float* avg_fringe, const float* hann_window, int nx, int nz)
 {
     int column  = threadIdx.x + blockDim.x * blockIdx.x;
     int row     = threadIdx.y + blockDim.y * blockIdx.y;
@@ -16,7 +16,7 @@ __global__ void fringeNormCUDA(const float* fringe, const float* avg_fringe, con
     }
 }
 
-void fringeNorm(const float* fringe, const float* avg_fringe, const float* hann_window, int nx, int nz)
+void fringeNorm(float* fringe, const float* avg_fringe, const float* hann_window, int nx, int nz)
 {
     dim3 threadsPerBlock (512, 512);
     dim3 blocksPerGrid (1,1);
