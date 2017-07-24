@@ -12,7 +12,7 @@ public:
     QVector<double>  voltY(QVector<double> um_vect);
     double  voltX(double um_val);
     double  voltY(double um_val);
-
+    void show();
 private:
     double p_x_um_per_volt;
     double p_y_um_per_volt;

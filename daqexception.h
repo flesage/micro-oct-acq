@@ -20,7 +20,7 @@ public:
             DAQmxGetExtendedErrorInfo(errBuff,2048);
         }
 
-        return errBuff;
+        return 0;
     }
     void show();
 

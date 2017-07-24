@@ -106,17 +106,21 @@ void FringeFFT::init(int nz, int nx)
     cudaMalloc((void **)&d_mean_fringe, p_nz * sizeof(cufftReal));
     cudaMalloc((void **)&d_ones, p_nx * sizeof(float));
 
+    double* tmp=new double[p_nz];
+    FILE* fp=fopen("C:\\Users\\Public\\Documents\\filter.dat","rb");
+    if(fp == 0)
+    {
+        std::cerr << "Check if filter file exists" << std::endl;
+        exit(-1);
+    }
+    fread(tmp,sizeof(double),p_nz,fp);
+    fclose(fp);
     cufftReal* multiplier = new cufftReal[p_nz];
-    for (int i = 0; i < p_nz; i++) {
-        multiplier[i] =(float) 0;
-    }
-    int start = 500;
-    int stop = 2040;
-    for (int i = 0; i < (stop-start+1); i++) {
-        multiplier[i] =(float) (0.5 * (1 - cos(2*PI*i/(stop-start+1))));
-    }
+    for(int i=0;i<p_nz;i++) multiplier[i]=(float) tmp[i];
+
     cudaMemcpy(d_hann_dispcomp, multiplier, p_nz *sizeof(cufftReal), cudaMemcpyHostToDevice);
     delete [] multiplier;
+    delete [] tmp;
 
     // For mean fringe computation
     float* norm=new float[p_nx];

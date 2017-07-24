@@ -230,16 +230,36 @@ void GalvoController::startScan()
     double radians_per_volt = 2*3.14159265359/(360*0.8);
     double f1=50.0;
     double f2=100.0;
-    if(telescope == 1)
+    if(telescope == 1 || telescope == 2)
     {
         f1=75.0;
         f2=75.0;
     }
+
+    int objective = ui->comboBox_objective->currentIndex();
     double fobj=18.0;
+    switch(objective)
+    {
+    case 0:
+        break;
+    case 1:
+        fobj=36.0;
+        break;
+    case 2:
+        fobj=20.0;
+        break;
+    case 3:
+        fobj=9.0;
+        break;
+    default:
+        break;
+    }
+
     double scale_um_per_volt=(2*fobj*f1/f2*radians_per_volt)*1000.0;
     Converter unit_converter;
     unit_converter.setScale(scale_um_per_volt,scale_um_per_volt);
     p_galvos.setUnitConverter(unit_converter);
+
     if (ui->checkBox_fringe->isChecked() || ui->checkBox_view_image->isChecked())
     {
         view_timer = new QTimer();

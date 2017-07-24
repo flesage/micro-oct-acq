@@ -36,6 +36,8 @@ private:
     QString p_file_prefix;
     int p_save_block_size;
     int p_frame_size;
+    int p_size_x;
+    int p_size_y;
     int p_buffer_size;
     float64* p_data_buffer;
     unsigned int p_current_pos;
@@ -50,6 +52,8 @@ inline Float64DataSaver::Float64DataSaver(int size_x, int size_y, int save_block
     p_used_spots(0), p_current_pos(0), p_file_prefix(prefix)
 {
     p_frame_size = size_x*size_y;
+    p_size_x = size_x;
+    p_size_y = size_y;
     p_buffer_size = 2*p_save_block_size;
 
     p_data_buffer = new float64[p_frame_size*p_buffer_size];
@@ -135,6 +139,12 @@ inline void Float64DataSaver::run()
             tmp.sprintf("%s_%05d.bin",p_file_prefix.toUtf8().constData(),file_num);
             tmp=parent_dir.absolutePath()+ QDir::separator()+tmp;
             fp = fopen(tmp.toUtf8().constData(), "wb");
+            // Write header
+            int version=1;
+            fwrite(&version, sizeof(int), 1, fp);
+            fwrite(&p_size_x, sizeof(int), 1, fp);
+            fwrite(&p_size_y, sizeof(int), 1, fp);
+            fwrite(&p_save_block_size, sizeof(int), 1, fp);
             emit filenumber(file_num);
             file_num++;
 

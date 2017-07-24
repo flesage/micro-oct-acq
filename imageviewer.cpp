@@ -10,7 +10,7 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines) :
 {
     is_fringe_mode = true;
     is_focus_line = false;
-    p_threshold =0.1;
+    p_threshold =0.001;
     f_fft.init(LINE_ARRAY_SIZE,p_n_alines);
 
     p_fringe_image = QImage(LINE_ARRAY_SIZE,p_n_alines,QImage::Format_Indexed8);
@@ -39,7 +39,7 @@ ImageViewer::~ImageViewer()
 
 void ImageViewer::updateThreshold(int new_value)
 {
-    p_threshold = (new_value+1)*10.0;
+    p_threshold = (new_value+1)*0.00001;
 }
 
 int ImageViewer::heightForWidth( int width ) const
@@ -142,9 +142,9 @@ void ImageViewer::updateView()
             for(int i=0;i<p_n_alines;i++) p_image.bits()[i*(LINE_ARRAY_SIZE/2)+65] = 255;
         }
 
-        //QRect rect(0,0,1025,p_n_alines);
-        //QImage tmp = p_image.copy(rect);
-        pix = QPixmap::fromImage(p_image);
+        QRect rect(0,0,512,p_n_alines);
+        QImage tmp = p_image.copy(rect);
+        pix = QPixmap::fromImage(tmp);
 
     }
 
