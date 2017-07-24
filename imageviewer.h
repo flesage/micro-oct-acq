@@ -12,7 +12,7 @@ class ImageViewer : public QLabel
 {
     Q_OBJECT
 public:
-    explicit ImageViewer(QWidget *parent = 0, int n_alines = 100);
+    explicit ImageViewer(QWidget *parent = 0, int n_alines = 100, float fwhm=0.0002, float line_period=0.01);
     virtual ~ImageViewer();
     virtual int heightForWidth( int width ) const;
     virtual QSize sizeHint() const;
@@ -43,6 +43,7 @@ private:
     float* oct_image;
     double* real_fringe;
     float* p_f_data_buffer;
+    float* p_doppler_signal;
 };
 
 #endif // ImageViewer_H

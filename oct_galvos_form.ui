@@ -432,7 +432,7 @@
            <item row="0" column="1">
             <widget class="QLineEdit" name="lineEdit_doppler_hpf">
              <property name="text">
-              <string>10</string>
+              <string>0.2</string>
              </property>
             </widget>
            </item>

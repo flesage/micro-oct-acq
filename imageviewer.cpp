@@ -5,14 +5,14 @@
 #include <iostream>
 #include <cmath>
 
-ImageViewer::ImageViewer(QWidget *parent, int n_alines) :
+ImageViewer::ImageViewer(QWidget *parent, int n_alines, float fwhm, float line_period) :
     QLabel(parent), p_n_alines(n_alines)
 {
     is_fringe_mode = true;
     is_focus_line = false;
     p_threshold =0.001;
     f_fft.init(LINE_ARRAY_SIZE,p_n_alines);
-
+    f_fft.init_doppler(fwhm,line_period);
     p_fringe_image = QImage(LINE_ARRAY_SIZE,p_n_alines,QImage::Format_Indexed8);
     p_image = QImage(LINE_ARRAY_SIZE/2,p_n_alines,QImage::Format_Indexed8);
 
@@ -21,10 +21,19 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines) :
     p_dimage = (double*) new double[p_n_alines*LINE_ARRAY_SIZE];
     p_data_buffer=new unsigned short[p_n_alines*LINE_ARRAY_SIZE];
     p_f_data_buffer=new float[p_n_alines*LINE_ARRAY_SIZE];
+    p_doppler_signal=new float[p_n_alines*LINE_ARRAY_SIZE];
+
     oct_image=new float[(LINE_ARRAY_SIZE/2+1)*p_n_alines];
     setFocusPolicy(Qt::StrongFocus);
     resize(200,400);
     real_fringe = new double[2048];
+
+//    QVector<QRgb> anat_color_table;
+//    for(int i = 0; i < 256; ++i)
+//    {
+//        anat_color_table.append(qRgb(i,0,255-i));
+//    }
+//    p_image.setColorTable(anat_color_table);
 }
 
 ImageViewer::~ImageViewer()
@@ -34,6 +43,7 @@ ImageViewer::~ImageViewer()
     delete [] real_fringe;
     delete [] p_f_data_buffer;
     delete [] oct_image;
+    delete [] p_doppler_signal;
 
 }
 
@@ -120,7 +130,7 @@ void ImageViewer::updateView()
         for( int i =0; i< n_pts;i++) p_f_data_buffer[i]=p_data_buffer[i];
         p_mutex.unlock();
         f_fft.interp_and_do_fft(p_f_data_buffer, oct_image);
-
+        f_fft.compute_doppler(p_doppler_signal);
         float min = (float) 1e12;
         float max = (float) -1e12;
         for( int i =0; i< n_img_pts;i++)
