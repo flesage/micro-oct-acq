@@ -10,7 +10,7 @@ extern "C"
 __global__ void magCUDA(cuComplex *data, float *mag, int dsz){
 	int idx = threadIdx.x + blockDim.x*blockIdx.x;
 	if (idx < dsz){
-		mag[idx]   = cuCabsf(data[idx]);
+        mag[idx]   = logf(cuCabsf(data[idx])+0.000001f);
 	}
 }
 
@@ -71,9 +71,7 @@ __global__ void fringeNormCUDA(float* fringe, const float* avg_fringe, const flo
 
 	if(column < nx && row < nz)
 	{
-		fringe[index] = ((fringe[index]/avg_fringe[row])-1.0)*hann_window[row];
-		//          fringe[index] = (fringe[index]-avg_fringe[row]);
-
+        fringe[index] = ((fringe[index]/(avg_fringe[row]+0.00001))-1.0)*hann_window[row];
 	}
 }
 
@@ -81,8 +79,8 @@ void fringeNorm(float* fringe, const float* avg_fringe, const float* hann_window
 {
 	dim3 threadsPerBlock (512,2,1);
 	dim3 blocksPerGrid (1,1,1);
-	blocksPerGrid.x=ceil(double(nz)/double(threadsPerBlock.x));
-	blocksPerGrid.y=ceil(double(nx)/double(threadsPerBlock.y));
+    blocksPerGrid.x=(unsigned int) ceil(double(nz)/double(threadsPerBlock.x));
+    blocksPerGrid.y=(unsigned int) ceil(double(nx)/double(threadsPerBlock.y));
 	fringeNormCUDA<<<blocksPerGrid, threadsPerBlock>>>(fringe, avg_fringe, hann_window, nx, nz);
 }
 
@@ -90,7 +88,7 @@ void mag(cuComplex* data, float* mag, int dsz)
 {
 	dim3 threadsPerBlock (1024,1,1);
 	dim3 blocksPerGrid (1,1,1);
-	blocksPerGrid.x=ceil(dsz/1024.0);
+    blocksPerGrid.x=(unsigned int) ceil(dsz/1024.0);
 	magCUDA<<<blocksPerGrid, threadsPerBlock>>>(data, mag, dsz);
 
 }
@@ -99,8 +97,8 @@ void complex_convolve(int nx, int nz, int p_hpf_npts, cuComplex* c_image, float*
 {
 	dim3 threadsPerBlock (1024,1,1);
 	dim3 blocksPerGrid (1,1,1);
-	blocksPerGrid.x=ceil(double(nz)/double(threadsPerBlock.x));
-	blocksPerGrid.y=ceil(double(nx)/double(threadsPerBlock.y));
+    blocksPerGrid.x=(unsigned int) ceil(double(nz)/double(threadsPerBlock.x));
+    blocksPerGrid.y=(unsigned int) ceil(double(nx)/double(threadsPerBlock.y));
 	complex_convolveCUDA<<<blocksPerGrid, threadsPerBlock>>>(nx,nz,p_hpf_npts, c_image, kernel, c_filt_image);
 }
 
@@ -108,7 +106,7 @@ void phase_adjacent(int nx, int nz, cuComplex* c_filt_image, float* phase)
 {
 	dim3 threadsPerBlock (1024,1,1);
 	dim3 blocksPerGrid (1,1,1);
-	blocksPerGrid.x=ceil(double(nz)/double(threadsPerBlock.x));
-	blocksPerGrid.y=ceil(double(nx)/double(threadsPerBlock.y));
+    blocksPerGrid.x=(unsigned int) ceil(double(nz)/double(threadsPerBlock.x));
+    blocksPerGrid.y=(unsigned int) ceil(double(nx)/double(threadsPerBlock.y));
 	phase_adjacentCUDA<<<blocksPerGrid, threadsPerBlock>>>(nx,nz, c_filt_image, phase);
 }

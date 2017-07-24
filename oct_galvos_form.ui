@@ -144,7 +144,7 @@
      <item>
       <widget class="QTabWidget" name="tabWidget">
        <property name="currentIndex">
-        <number>1</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="tab">
         <attribute name="title">
@@ -335,6 +335,9 @@
            </item>
            <item row="12" column="1">
             <widget class="QComboBox" name="comboBox_telescope">
+             <property name="currentIndex">
+              <number>1</number>
+             </property>
              <item>
               <property name="text">
                <string>Telescope: 50-100mm</string>

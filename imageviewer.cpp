@@ -3,7 +3,7 @@
 #include <QMatrix>
 #include <QTime>
 #include <iostream>
-#include <math.h>
+#include <cmath>
 
 ImageViewer::ImageViewer(QWidget *parent, int n_alines) :
     QLabel(parent), p_n_alines(n_alines)
@@ -11,8 +11,7 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines) :
     is_fringe_mode = true;
     is_focus_line = false;
     p_threshold =0.1;
-    f_fft.init(LINE_ARRAY_SIZE,n_alines);
-    f_fft.read_interp_matrix();
+    f_fft.init(LINE_ARRAY_SIZE,p_n_alines);
 
     p_fringe_image = QImage(LINE_ARRAY_SIZE,p_n_alines,QImage::Format_Indexed8);
     p_image = QImage(LINE_ARRAY_SIZE/2,p_n_alines,QImage::Format_Indexed8);
@@ -22,7 +21,7 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines) :
     p_dimage = (double*) new double[p_n_alines*LINE_ARRAY_SIZE];
     p_data_buffer=new unsigned short[p_n_alines*LINE_ARRAY_SIZE];
     p_f_data_buffer=new float[p_n_alines*LINE_ARRAY_SIZE];
-
+    oct_image=new float[(LINE_ARRAY_SIZE/2+1)*p_n_alines];
     setFocusPolicy(Qt::StrongFocus);
     resize(200,400);
     real_fringe = new double[2048];
@@ -34,6 +33,8 @@ ImageViewer::~ImageViewer()
     delete [] p_data_buffer;
     delete [] real_fringe;
     delete [] p_f_data_buffer;
+    delete [] oct_image;
+
 }
 
 void ImageViewer::updateThreshold(int new_value)
@@ -79,7 +80,6 @@ void  ImageViewer::keyPressEvent(QKeyEvent *event)
     {
         event->accept();
         is_focus_line = !is_focus_line;
-
     }
 
     default:
@@ -90,17 +90,15 @@ void  ImageViewer::keyPressEvent(QKeyEvent *event)
 
 void ImageViewer::updateView()
 {
-//    QTime t;
-//    t.start();
     // We receive a uint16 image that we need to transform to uint8 for display
     int n_pts = p_n_alines * LINE_ARRAY_SIZE;
-
+    int n_img_pts = p_n_alines * (LINE_ARRAY_SIZE/2+1);
     if(is_fringe_mode)
     {
         unsigned short min = 4096;
         unsigned short max = 0;
         p_mutex.lock();
-        for(int i=0;i<n_pts;i++)
+        for(int i=0;i<n_img_pts;i++)
         {
             if(p_data_buffer[i]>max) max=p_data_buffer[i];
             if(p_data_buffer[i]<min) min=p_data_buffer[i];
@@ -121,41 +119,32 @@ void ImageViewer::updateView()
         p_mutex.lock();
         for( int i =0; i< n_pts;i++) p_f_data_buffer[i]=p_data_buffer[i];
         p_mutex.unlock();
-
         f_fft.interp_and_do_fft(p_f_data_buffer, oct_image);
 
-        // Take log for display
-        double max=log(p_threshold);
-        double min=1000000.0;
-        for (int j=0; j<p_n_alines; j++)
+        float min = (float) 1e12;
+        float max = (float) -1e12;
+        for( int i =0; i< n_img_pts;i++)
         {
-            for(int i=0;i<LINE_ARRAY_SIZE/2;i++)
-            {
-                int imx=(LINE_ARRAY_SIZE/2)*j+i;
-                double tmp = 0.0;
-                if (i>10) tmp=sqrt(oct_image[i].x*oct_image[i].x+oct_image[i].y*oct_image[i].y);
-                p_dimage[imx]=log(tmp+p_threshold);
-                if(p_dimage[imx]>max) max=p_dimage[imx];
-                if(p_dimage[imx]<min) min=p_dimage[imx];
-            }
+            if(oct_image[i]>max) max=oct_image[i];
+            if(oct_image[i]<min) min=oct_image[i];
         }
-        p_mutex.unlock();
-
         // Convert to 8 bits
-        for(int i=0;i<n_pts/2;i++)
+        for(int j=0;j<p_n_alines;j++)
         {
-            p_image.bits()[i]=(unsigned char) ((p_dimage[i]-min)*255/(max-min));
+        for(int i=0;i<1024;i++)
+        {
+            p_image.bits()[i+j*(LINE_ARRAY_SIZE/2)]=(unsigned char) ((oct_image[i+j*(LINE_ARRAY_SIZE/2+1)]-min)*255/(max-min));
+        }
         }
         if( is_focus_line )
         {
-            for(int i=0;i<p_n_alines;i++) p_image.bits()[i*LINE_ARRAY_SIZE/2+130] = 255;
-            for(int i=0;i<p_n_alines;i++) p_image.bits()[i*LINE_ARRAY_SIZE/2+65] = 255;
-
+            for(int i=0;i<p_n_alines;i++) p_image.bits()[i*(LINE_ARRAY_SIZE/2)+130] = 255;
+            for(int i=0;i<p_n_alines;i++) p_image.bits()[i*(LINE_ARRAY_SIZE/2)+65] = 255;
         }
 
-        QRect rect(0,0,512,p_n_alines);
-        QImage tmp = p_image.copy(rect);
-        pix = QPixmap::fromImage(tmp);
+        //QRect rect(0,0,1025,p_n_alines);
+        //QImage tmp = p_image.copy(rect);
+        pix = QPixmap::fromImage(p_image);
 
     }
 
@@ -165,7 +154,7 @@ void ImageViewer::updateView()
     pix=pix.transformed(rm);
     QLabel::setPixmap(pix.scaled(this->size(),
                                  Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
-//    std::cerr << t.elapsed() << "ms" << std::endl;
+
 }
 
 void ImageViewer::put(unsigned short* data)

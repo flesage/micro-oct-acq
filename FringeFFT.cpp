@@ -110,8 +110,8 @@ void FringeFFT::init(int nz, int nx)
     for (int i = 0; i < p_nz; i++) {
         multiplier[i] =(float) 0;
     }
-    int start = 300;
-    int stop = 1550;
+    int start = 500;
+    int stop = 2040;
     for (int i = 0; i < (stop-start+1); i++) {
         multiplier[i] =(float) (0.5 * (1 - cos(2*PI*i/(stop-start+1))));
     }
@@ -135,8 +135,8 @@ void FringeFFT::set_disp_comp_vect(float* disp_comp_vector)
     // Combine hann window with dipersion compensation
     cuFloatComplex* multiplier = new cuFloatComplex[p_nz];
     for (int i = 0; i < p_nz; i++) {
-        multiplier[i].x = 0.5 * (1 - cos(2*PI*i/p_nz))*cos(disp_comp_vector[i]);
-        multiplier[i].y = 0.5 * (1 - cos(2*PI*i/p_nz))*sin(disp_comp_vector[i]);
+        multiplier[i].x = (float) (0.5 * (1 - cos(2*PI*i/p_nz))*cos(disp_comp_vector[i]));
+        multiplier[i].y = (float) ( 0.5 * (1 - cos(2*PI*i/p_nz))*sin(disp_comp_vector[i]));
     }
     cudaMemcpy(d_hann_dispcomp, (cuFloatComplex*) multiplier, p_nz *sizeof(cuFloatComplex), cudaMemcpyHostToDevice);
     delete [] multiplier;
@@ -173,7 +173,7 @@ void FringeFFT::interp_and_do_fft(float* in_fringe, float* out_signal)
     cufftExecR2C(plan, d_interpfringe, d_signal);
     cudaDeviceSynchronize();
 
-    // Here we have the complex signal available, compute its magnitude on GPU to go faster
+    // Here we have the complex signal available, compute its magnitude, take log on GPU to go faster
     // Transfer half as much data back to CPU
     mag(d_signal, d_mag_signal, (p_nz/2+1) * p_nx);
     cudaDeviceSynchronize();
@@ -184,7 +184,7 @@ void FringeFFT::interp_and_do_fft(float* in_fringe, float* out_signal)
 void FringeFFT::init_doppler(float fwhm, float line_period)
 {
     // FWHM = 2.35482 * sigma
-    float sigma= fwhm/2.35482;
+    float sigma= (float) (fwhm/2.35482);
     PutDopplerHPFilterOnGPU(sigma, line_period);
     if(d_filt_signal) cudaFree(d_filt_signal);
     cudaMalloc((void **)&d_filt_signal, (p_nz/2+1) * p_nx * sizeof(cufftComplex));
@@ -269,8 +269,8 @@ void FringeFFT::read_interp_matrix()
     // Read matrix and cast to float as a dense A matrix
     double* p_interpolation_matrix = new double[p_nz*p_nz];
     float* A=new float[p_nz*p_nz];
-    //FILE* fp=fopen("C:\\Users\\Public\\Documents\\interpolation_matrix.dat","rb");
-    FILE* fp=fopen("/Users/flesage/Desktop/interpolation_matrix.dat","rb");
+    FILE* fp=fopen("C:\\Users\\Public\\Documents\\interpolation_matrix.dat","rb");
+    //FILE* fp=fopen("/Users/flesage/Desktop/interpolation_matrix.dat","rb");
 
     if(fp == 0)
     {
