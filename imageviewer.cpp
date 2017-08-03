@@ -127,9 +127,9 @@ void ImageViewer::updateView()
     else
     {
         p_mutex.lock();
-        for( int i =0; i< n_pts;i++) p_f_data_buffer[i]=p_data_buffer[i];
+        f_fft.interp_and_do_fft(p_data_buffer, oct_image);
         p_mutex.unlock();
-        f_fft.interp_and_do_fft(p_f_data_buffer, oct_image);
+
         f_fft.compute_doppler(p_doppler_signal);
         float min = (float) 1e12;
         float max = (float) -1e12;
