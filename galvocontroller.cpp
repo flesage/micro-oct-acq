@@ -24,7 +24,7 @@ GalvoController::GalvoController() :
     double radians_per_volt = 2*3.14159265359/(360*0.87);
     double f1=50.0;
     double f2=100.0;
-    double fobj=36.0;
+    double fobj=20.0;
     double scale_um_per_volt=(2*fobj*f1/f2*radians_per_volt)*1000.0;
     Converter unit_converter;
     unit_converter.setScale(scale_um_per_volt,scale_um_per_volt);
@@ -241,7 +241,7 @@ void GalvoController::startScan()
     switch(objective)
     {
     case 1:
-        fobj=18;
+        fobj=20;
         break;
     case 2:
         fobj=9;
