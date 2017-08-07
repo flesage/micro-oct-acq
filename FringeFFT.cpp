@@ -112,7 +112,7 @@ void FringeFFT::compute_doppler( unsigned short* in_fringe, unsigned char* out_d
     p_filt_signal = p_signal;
     float speed_factor=1313*1e-6/(4*PI*p_line_period*1.33);
     p_phase=speed_factor*arg(p_filt_signal.cols(1,af::end)*conjg(p_filt_signal.cols(0,af::end-1)));
-    //p_phase = convolve(p_phase,af::gaussianKernel(1,11));
+    p_phase = convolve(p_phase,af::gaussianKernel(1,11));
     float l_max = af::max<float>(p_phase);
     float l_min = af::min<float>(p_phase);
     p_phase=255*(p_phase-l_min)/(l_max-l_min);

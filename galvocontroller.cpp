@@ -322,7 +322,7 @@ void GalvoController::startScan()
     {
         float hpf_time_constant = ui->lineEdit_doppler_hpf->text().toFloat()/1000.;
         float dop_kernel = ui->lineEdit_doppler_spatial_kernel->text().toFloat();
-        float line_period = 1.0f/(line_rate/(nx+n_extra));
+        float line_period = 1.0f/line_rate/(nx+n_extra);
         p_image_view = new ImageViewer(0,nx+n_extra,hpf_time_constant, line_period);
         connect(view_timer,SIGNAL(timeout()),p_image_view,SLOT(updateView()));
         connect(ui->horizontalSlider,SIGNAL(sliderMoved(int)),p_image_view,SLOT(updateThreshold(int)));
