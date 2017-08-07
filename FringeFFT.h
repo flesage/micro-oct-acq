@@ -22,8 +22,8 @@ public:
     void PutDopplerHPFilterOnGPU(float sigma, float lineperiod);
     void compute_doppler(float* doppler_signal);
 	void read_interp_matrix();
-//    void pre_compute_positions(int n_ang_pts, int n_radial_pts);
-//    void get_radial_img(Npp32f* fringe, Npp32f* interp_fringe);
+    void pre_compute_positions(int n_ang_pts, int n_radial_pts);
+    void get_radial_img(unsigned short* in_fringe, float* out_image);
 private:
     int p_nz;
     int p_nx;
@@ -35,8 +35,12 @@ private:
     af::array p_hann_dispcomp;
     af::array p_mean_fringe;
     af::array p_hp_filter;
-    int p_hpf_npts;
     af::array p_sparse_interp;
+    af::array p_pos0;
+    af::array p_pos1;
+    int p_hpf_npts;
+    float p_line_period;
+    int p_n_radial_pts;
 };
 
 #endif /* FRINGEFFT_H_ */
