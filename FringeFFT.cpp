@@ -57,7 +57,7 @@ void FringeFFT::set_disp_comp_vect(float* disp_comp_vector)
 
 }
 
-void FringeFFT::interp_and_do_fft(unsigned short* in_fringe, float* out_signal)
+void FringeFFT::interp_and_do_fft(unsigned short* in_fringe, unsigned char* out_signal)
 {
     // Interpolation by sparse matrix multiplication
     af::dim4 dims(2048,p_nx,1,1);
@@ -75,7 +75,11 @@ void FringeFFT::interp_and_do_fft(unsigned short* in_fringe, float* out_signal)
 
     // Here we have the complex signal available, compute its magnitude, take log on GPU to go faster
     // Transfer half as much data back to CPU
-    log(abs(p_signal)).host(out_signal);
+    af::array p_norm_signal = log(abs(p_signal));
+    float l_max = af::max<float>(p_norm_signal);
+    float l_min = af::min<float>(p_norm_signal);
+    p_norm_signal=255*(p_norm_signal-l_min)/(l_max-l_min);
+    p_norm_signal.as(u8).T().host(out_signal);
 }
 
 void FringeFFT::init_doppler(float fwhm, float line_period)
@@ -86,16 +90,33 @@ void FringeFFT::init_doppler(float fwhm, float line_period)
     p_line_period=line_period;
     p_phase=af::array(p_nz/2+1,p_nx-1,f32);
 }
-void FringeFFT::compute_doppler(float* doppler_signal)
+void FringeFFT::compute_doppler( unsigned short* in_fringe, unsigned char* out_doppler)
 {
+    // Interpolation by sparse matrix multiplication
+    af::dim4 dims(2048,p_nx,1,1);
+    af::array tmp(p_nz,p_nx,in_fringe,afHost);
+    p_interpfringe = matmul(p_sparse_interp,tmp.as(f32));
+    // Compute reference
+    p_mean_fringe = mean(p_interpfringe,1);
+
+    // Multiply by dispersion compensation vector and hann window, store back in d_interpfringe
+    gfor (af::seq i, p_nx)
+            p_interpfringe(af::span,i)=((p_interpfringe(af::span,i)-p_mean_fringe(af::span))/(p_mean_fringe(af::span)+1e-6))*p_hann_dispcomp;
+
+    // Do fft
+    p_signal = af::fftR2C<1>(p_interpfringe, dims);
+
     // We assume we already have a complex image on the GPU (p_signal) and start from there.
 	// thus this needs to always be called after interp_an_do_fft.
-    p_filt_signal=convolve(p_signal,p_hp_filter);
+    //p_filt_signal=convolve(p_signal,p_hp_filter);
+    p_filt_signal = p_signal;
     float speed_factor=1313*1e-6/(4*PI*p_line_period*1.33);
     p_phase=speed_factor*arg(p_filt_signal.cols(1,af::end)*conjg(p_filt_signal.cols(0,af::end-1)));
-
-    p_phase.host(doppler_signal);
-    convolve(p_phase,af::gaussianKernel(1,11)).host(doppler_signal);
+    //p_phase = convolve(p_phase,af::gaussianKernel(1,11));
+    float l_max = af::max<float>(p_phase);
+    float l_min = af::min<float>(p_phase);
+    p_phase=255*(p_phase-l_min)/(l_max-l_min);
+    p_phase.as(u8).T().host(out_doppler);
 }
 
 void FringeFFT::PutDopplerHPFilterOnGPU(float sigma, float lineperiod)

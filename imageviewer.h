@@ -33,17 +33,15 @@ private:
     int p_n_alines;
     QImage p_image;
     QImage p_fringe_image;
-    double* p_dimage;
+    QImage p_doppler_image;
     double p_threshold;
     unsigned short int* p_data_buffer;
     QMutex p_mutex;
     bool is_fringe_mode;
     bool is_focus_line;
+    bool is_doppler;
     QPixmap pix;
-    float* oct_image;
     double* real_fringe;
-    float* p_f_data_buffer;
-    float* p_doppler_signal;
 };
 
 #endif // ImageViewer_H

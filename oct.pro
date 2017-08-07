@@ -48,7 +48,6 @@ HEADERS  += \
     fringeviewer.h \
     analoginput.h \
     float64datasaver.h \
-    fringe_norm.h \
     FringeFFT.h
 
 FORMS    += \

@@ -17,10 +17,10 @@ public:
 	virtual ~FringeFFT();
 	void init( int nz, int nx);
     void set_disp_comp_vect(float* disp_comp_vector);
-    void interp_and_do_fft(unsigned short* in_fringe, float* out_data);
+    void interp_and_do_fft(unsigned short* in_fringe, unsigned char* out_data);
     void init_doppler(float fwhm, float line_period);
     void PutDopplerHPFilterOnGPU(float sigma, float lineperiod);
-    void compute_doppler(float* doppler_signal);
+    void compute_doppler(unsigned short* in_fringe, unsigned char *out_doppler);
 	void read_interp_matrix();
     void pre_compute_positions(int n_ang_pts, int n_radial_pts);
     void get_radial_img(unsigned short* in_fringe, float* out_image);

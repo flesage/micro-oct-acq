@@ -10,41 +10,32 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, float fwhm, float line_p
 {
     is_fringe_mode = true;
     is_focus_line = false;
+    is_doppler = false;
     p_threshold =0.001;
     f_fft.init(LINE_ARRAY_SIZE,p_n_alines);
     f_fft.init_doppler(fwhm,line_period);
     p_fringe_image = QImage(LINE_ARRAY_SIZE,p_n_alines,QImage::Format_Indexed8);
-    p_image = QImage(LINE_ARRAY_SIZE/2,p_n_alines,QImage::Format_Indexed8);
+    p_image = QImage(LINE_ARRAY_SIZE/2+1,p_n_alines,QImage::Format_Indexed8);
+    p_doppler_image = QImage(LINE_ARRAY_SIZE/2+1,p_n_alines-1,QImage::Format_Indexed8);
 
     pix = QPixmap::fromImage(p_fringe_image);
     setPixmap(pix);
-    p_dimage = (double*) new double[p_n_alines*LINE_ARRAY_SIZE];
     p_data_buffer=new unsigned short[p_n_alines*LINE_ARRAY_SIZE];
-    p_f_data_buffer=new float[p_n_alines*LINE_ARRAY_SIZE];
-    p_doppler_signal=new float[p_n_alines*LINE_ARRAY_SIZE];
 
-    oct_image=new float[(LINE_ARRAY_SIZE/2+1)*p_n_alines];
     setFocusPolicy(Qt::StrongFocus);
     resize(200,400);
-    real_fringe = new double[2048];
 
-//    QVector<QRgb> anat_color_table;
-//    for(int i = 0; i < 256; ++i)
-//    {
-//        anat_color_table.append(qRgb(i,0,255-i));
-//    }
-//    p_image.setColorTable(anat_color_table);
+    QVector<QRgb> anat_color_table;
+    for(int i = 0; i < 256; ++i)
+    {
+        anat_color_table.append(qRgb(i,0,255-i));
+    }
+    p_doppler_image.setColorTable(anat_color_table);
 }
 
 ImageViewer::~ImageViewer()
 {
-    delete [] p_dimage;
     delete [] p_data_buffer;
-    delete [] real_fringe;
-    delete [] p_f_data_buffer;
-    delete [] oct_image;
-    delete [] p_doppler_signal;
-
 }
 
 void ImageViewer::updateThreshold(int new_value)
@@ -91,7 +82,13 @@ void  ImageViewer::keyPressEvent(QKeyEvent *event)
         event->accept();
         is_focus_line = !is_focus_line;
     }
-
+        break;
+    case Qt::Key_D:
+    {
+        event->accept();
+        is_doppler = !is_doppler;
+    }
+        break;
     default:
         event->ignore();
         break;
@@ -122,46 +119,34 @@ void ImageViewer::updateView()
 
         p_mutex.unlock();
         pix = QPixmap::fromImage(p_fringe_image);
-
+        QMatrix rm;
+        rm.rotate(90);
+        pix=pix.transformed(rm);
     }
     else
     {
-        p_mutex.lock();
-        f_fft.interp_and_do_fft(p_data_buffer, oct_image);
-        p_mutex.unlock();
 
-        f_fft.compute_doppler(p_doppler_signal);
-        float min = (float) 1e12;
-        float max = (float) -1e12;
-        for( int i =0; i< n_img_pts;i++)
+        QImage tmp;
+        if(is_doppler)
         {
-            if(oct_image[i]>max) max=oct_image[i];
-            if(oct_image[i]<min) min=oct_image[i];
+            p_mutex.lock();
+            f_fft.compute_doppler(p_data_buffer,p_doppler_image.bits());
+            p_mutex.unlock();
+            QRect rect(10,10,400,p_n_alines-10);
+            tmp = p_doppler_image.copy(rect);
         }
-        // Convert to 8 bits
-        for(int j=0;j<p_n_alines;j++)
+        else
         {
-        for(int i=0;i<1024;i++)
-        {
-            p_image.bits()[i+j*(LINE_ARRAY_SIZE/2)]=(unsigned char) ((oct_image[i+j*(LINE_ARRAY_SIZE/2+1)]-min)*255/(max-min));
+            p_mutex.lock();
+            f_fft.interp_and_do_fft(p_data_buffer, p_image.bits());
+            p_mutex.unlock();
+            QRect rect(0,0,512,p_n_alines);
+            tmp = p_image.copy(rect);
         }
-        }
-        if( is_focus_line )
-        {
-            for(int i=0;i<p_n_alines;i++) p_image.bits()[i*(LINE_ARRAY_SIZE/2)+130] = 255;
-            for(int i=0;i<p_n_alines;i++) p_image.bits()[i*(LINE_ARRAY_SIZE/2)+65] = 255;
-        }
-
-        QRect rect(0,0,512,p_n_alines);
-        QImage tmp = p_image.copy(rect);
         pix = QPixmap::fromImage(tmp);
-
     }
 
     // Set as pixmap
-    QMatrix rm;
-    rm.rotate(90);
-    pix=pix.transformed(rm);
     QLabel::setPixmap(pix.scaled(this->size(),
                                  Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
 
