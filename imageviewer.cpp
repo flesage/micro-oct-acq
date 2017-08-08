@@ -5,15 +5,15 @@
 #include <iostream>
 #include <cmath>
 
-ImageViewer::ImageViewer(QWidget *parent, int n_alines, float fwhm, float line_period) :
+ImageViewer::ImageViewer(QWidget *parent, int n_alines, float msec_fwhm, float line_period, float spatial_fwhm, float dimz, float dimx) :
     QLabel(parent), p_n_alines(n_alines)
 {
     is_fringe_mode = true;
     is_focus_line = false;
     is_doppler = false;
-    p_threshold =0.001;
-    f_fft.init(LINE_ARRAY_SIZE,p_n_alines);
-    f_fft.init_doppler(fwhm,line_period);
+    p_threshold =0.1;
+    f_fft.init(LINE_ARRAY_SIZE,p_n_alines,dimz, dimx);
+    f_fft.init_doppler(msec_fwhm,line_period,spatial_fwhm);
     p_fringe_image = QImage(LINE_ARRAY_SIZE,p_n_alines,QImage::Format_Indexed8);
     p_image = QImage(LINE_ARRAY_SIZE/2+1,p_n_alines,QImage::Format_Indexed8);
     p_doppler_image = QImage(LINE_ARRAY_SIZE/2+1,p_n_alines-1,QImage::Format_Indexed8);
@@ -142,7 +142,7 @@ void ImageViewer::updateView()
         else
         {
             p_mutex.lock();
-            f_fft.interp_and_do_fft(p_data_buffer, p_image.bits());
+            f_fft.interp_and_do_fft(p_data_buffer, p_image.bits(),p_threshold);
             p_mutex.unlock();
             QRect rect(0,0,512,p_n_alines);
             tmp = p_image.copy(rect);

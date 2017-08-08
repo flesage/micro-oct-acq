@@ -15,10 +15,10 @@ class FringeFFT {
 public:
 	FringeFFT();
 	virtual ~FringeFFT();
-	void init( int nz, int nx);
+    void init( int nz, int nx, float dimz, float dimx);
     void set_disp_comp_vect(float* disp_comp_vector);
-    void interp_and_do_fft(unsigned short* in_fringe, unsigned char* out_data);
-    void init_doppler(float fwhm, float line_period);
+    void interp_and_do_fft(unsigned short* in_fringe, unsigned char* out_data, float p_threshold);
+    void init_doppler(float msec_fwhm, float line_period, float spatial_fwhm_um);
     void PutDopplerHPFilterOnGPU(float sigma, float lineperiod);
     void compute_doppler(unsigned short* in_fringe, unsigned char *out_doppler);
 	void read_interp_matrix();
@@ -27,6 +27,8 @@ public:
 private:
     int p_nz;
     int p_nx;
+    float p_dimx;
+    float p_dimz;
     af::array p_fringe;
     af::array p_interpfringe;
     af::array p_signal;
@@ -41,6 +43,7 @@ private:
     int p_hpf_npts;
     float p_line_period;
     int p_n_radial_pts;
+    float p_spatial_fwhm_um;
 };
 
 #endif /* FRINGEFFT_H_ */

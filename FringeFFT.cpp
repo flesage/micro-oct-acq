@@ -24,10 +24,12 @@ FringeFFT::FringeFFT() : p_nz(0),
 FringeFFT::~FringeFFT() {
 }
 
-void FringeFFT::init(int nz, int nx)
+void FringeFFT::init(int nz, int nx, float dimz, float dimx)
 {
     p_nz = nz;
     p_nx = nx;
+    p_dimz=dimz;
+    p_dimx=dimx;
     read_interp_matrix();
 
     p_fringe = af::array(p_nz,p_nx,f32);
@@ -36,7 +38,6 @@ void FringeFFT::init(int nz, int nx)
 
     double* tmp=new double[p_nz];
     FILE* fp=fopen("C:\\Users\\Public\\Documents\\filter.dat","rb");
-    //FILE* fp=fopen("/Users/flesage/Documents/data/oct_icm_datfiles/filter.dat","rb");
 
     if(fp == 0)
     {
@@ -57,7 +58,7 @@ void FringeFFT::set_disp_comp_vect(float* disp_comp_vector)
 
 }
 
-void FringeFFT::interp_and_do_fft(unsigned short* in_fringe, unsigned char* out_signal)
+void FringeFFT::interp_and_do_fft(unsigned short* in_fringe, unsigned char* out_signal, float p_threshold)
 {
     // Interpolation by sparse matrix multiplication
     af::dim4 dims(2048,p_nx,1,1);
@@ -75,23 +76,29 @@ void FringeFFT::interp_and_do_fft(unsigned short* in_fringe, unsigned char* out_
 
     // Here we have the complex signal available, compute its magnitude, take log on GPU to go faster
     // Transfer half as much data back to CPU
-    af::array p_norm_signal = log(abs(p_signal));
+    af::array p_norm_signal = log(abs(p_signal)+p_threshold);
     float l_max = af::max<float>(p_norm_signal);
     float l_min = af::min<float>(p_norm_signal);
     p_norm_signal=255*(p_norm_signal-l_min)/(l_max-l_min);
     p_norm_signal.as(u8).T().host(out_signal);
 }
 
-void FringeFFT::init_doppler(float fwhm, float line_period)
+void FringeFFT::init_doppler(float msec_fwhm, float line_period, float spatial_fwhm_um)
 {
     // FWHM = 2.35482 * sigma
     float sigma= (float) (fwhm/2.35482);
     PutDopplerHPFilterOnGPU(sigma, line_period);
     p_line_period=line_period;
     p_phase=af::array(p_nz/2+1,p_nx-1,f32);
+    p_spatial_fwhm_um = spatial_fwhm_um;
 }
 void FringeFFT::compute_doppler( unsigned short* in_fringe, unsigned char* out_doppler)
 {
+    int n_gauss_x = (int) (p_spatial_fwhm_um/p_dimx);
+    if(n_gauss_x == 0) n_gauss_x=1;
+    int n_gauss_z = (int) (p_spatial_fwhm_um/p_dimz);
+    if(n_gauss_z == 0) n_gauss_z=1;
+
     // Interpolation by sparse matrix multiplication
     af::dim4 dims(2048,p_nx,1,1);
     af::array tmp(p_nz,p_nx,in_fringe,afHost);
@@ -112,7 +119,7 @@ void FringeFFT::compute_doppler( unsigned short* in_fringe, unsigned char* out_d
     p_filt_signal = p_signal;
     float speed_factor=1313*1e-6/(4*PI*p_line_period*1.33);
     p_phase=speed_factor*arg(p_filt_signal.cols(1,af::end)*conjg(p_filt_signal.cols(0,af::end-1)));
-    p_phase = convolve(p_phase,af::gaussianKernel(1,11));
+    p_phase = convolve(p_phase,af::gaussianKernel(n_gauss_z,n_gauss_x));
     float l_max = af::max<float>(p_phase);
     float l_min = af::min<float>(p_phase);
     p_phase=255*(p_phase-l_min)/(l_max-l_min);
@@ -151,7 +158,6 @@ void FringeFFT::read_interp_matrix()
     double* p_interpolation_matrix = new double[p_nz*p_nz];
     float* A=new float[p_nz*p_nz];
     FILE* fp=fopen("C:\\Users\\Public\\Documents\\interpolation_matrix.dat","rb");
-    //FILE* fp=fopen("/Users/flesage/Documents/data/oct_icm_datfiles/interpolation_matrix.dat","rb");
 
     if(fp == 0)
     {
