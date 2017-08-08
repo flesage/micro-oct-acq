@@ -25,12 +25,16 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, float fwhm, float line_p
     setFocusPolicy(Qt::StrongFocus);
     resize(200,400);
 
-    QVector<QRgb> anat_color_table;
-    for(int i = 0; i < 256; ++i)
+    QVector<QRgb> dop_color_table;
+    for(int i = 0; i < 128; ++i)
     {
-        anat_color_table.append(qRgb(i,0,255-i));
+        dop_color_table.append(qRgb(2*i,2*i,255));
     }
-    p_doppler_image.setColorTable(anat_color_table);
+    for(int i = 128; i < 255; ++i)
+    {
+        dop_color_table.append(qRgb(255,511-2*i,511-2*i));
+    }
+    p_doppler_image.setColorTable(dop_color_table);
 }
 
 ImageViewer::~ImageViewer()
@@ -132,7 +136,7 @@ void ImageViewer::updateView()
             p_mutex.lock();
             f_fft.compute_doppler(p_data_buffer,p_doppler_image.bits());
             p_mutex.unlock();
-            QRect rect(10,10,400,p_n_alines-10);
+            QRect rect(0,0,512,p_n_alines);
             tmp = p_doppler_image.copy(rect);
         }
         else

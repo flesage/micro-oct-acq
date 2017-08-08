@@ -12,6 +12,8 @@ TARGET = oct
 TEMPLATE = app
 RC_FILE = oct.rc
 
+DEFINES += NOMINMAX
+
 # Add the necessary libraries
 INCLUDEPATH += "C:\Program Files (x86)\National Instruments\NI-DAQ\DAQmx ANSI C Dev\include"
 INCLUDEPATH += "C:\Program Files (x86)\National Instruments\NI-IMAQ\Include"
