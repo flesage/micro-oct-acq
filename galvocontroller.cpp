@@ -60,6 +60,8 @@ GalvoController::GalvoController() :
     connect(ui->pushButton_up,SIGNAL(clicked()),this,SLOT(moveUp()));
     connect(ui->pushButton_left,SIGNAL(clicked()),this,SLOT(moveLeft()));
 
+    connect(ui->lineEdit_hanningeps,SIGNAL(editingFinished()),this,SLOT(slot_updateHanningThreshold()));
+    connect(ui->lineEdit_logeps,SIGNAL(editingFinished()),this,SLOT(slot_updateImageThreshold()));
     this->updateInfo();
 
     p_save_dir = QDir::home();

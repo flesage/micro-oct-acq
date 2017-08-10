@@ -58,7 +58,7 @@ void FringeFFT::set_disp_comp_vect(float* disp_comp_vector)
 
 }
 
-void FringeFFT::interp_and_do_fft(unsigned short* in_fringe, unsigned char* out_signal, float p_image_threshold, float p_hanning_threshold)
+void FringeFFT::interp_and_do_fft(unsigned short* in_fringe,unsigned char* out_signal, float p_image_threshold, float p_hanning_threshold)
 {
     // Interpolation by sparse matrix multiplication
     af::dim4 dims(2048,p_nx,1,1);
@@ -73,20 +73,20 @@ void FringeFFT::interp_and_do_fft(unsigned short* in_fringe, unsigned char* out_
 
     // Do fft
     p_signal = af::fftR2C<1>(p_interpfringe, dims);
-
+    p_signal = p_signal.rows(1,af::end);
     // Here we have the complex signal available, compute its magnitude, take log on GPU to go faster
     // Transfer half as much data back to CPU
-    af::array p_norm_signal = log(abs(p_signal)+p_image_threshold);
+    af::array p_norm_signal = af::log(af::abs(p_signal)+p_image_threshold);
     float l_max = af::max<float>(p_norm_signal);
     float l_min = af::min<float>(p_norm_signal);
-    p_norm_signal=255*(p_norm_signal-l_min)/(l_max-l_min);
-    p_norm_signal.as(u8).T().host(out_signal);
+    p_norm_signal=255.0*(p_norm_signal-l_min)/(l_max-l_min);
+    p_norm_signal.as(u8).host(out_signal);
 }
 
 void FringeFFT::init_doppler(float msec_fwhm, float line_period, float spatial_fwhm_um)
 {
     // FWHM = 2.35482 * sigma
-    float sigma= (float) (fwhm/2.35482);
+    float sigma= (float) (msec_fwhm/2.35482);
     PutDopplerHPFilterOnGPU(sigma, line_period);
     p_line_period=line_period;
     p_phase=af::array(p_nz/2+1,p_nx-1,f32);
@@ -123,7 +123,8 @@ void FringeFFT::compute_doppler( unsigned short* in_fringe, unsigned char* out_d
     float l_max = af::max<float>(p_phase);
     float l_min = af::min<float>(p_phase);
     p_phase=255*(p_phase-l_min)/(l_max-l_min);
-    p_phase.as(u8).T().host(out_doppler);
+    p_phase = p_phase.rows(1,af::end);
+    p_phase.as(u8).host(out_doppler);
 }
 
 void FringeFFT::PutDopplerHPFilterOnGPU(float sigma, float lineperiod)
