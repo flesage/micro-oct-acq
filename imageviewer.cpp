@@ -141,7 +141,7 @@ void ImageViewer::updateView()
             p_mutex.lock();
             f_fft.compute_doppler(p_data_buffer,p_doppler_image.bits(),p_image_threshold, p_hanning_threshold);
             p_mutex.unlock();
-            QRect rect(0,0,1024,p_n_alines-1);
+            QRect rect(0,0,512,p_n_alines-1);
             tmp = p_doppler_image.copy(rect);
         }
         else
@@ -149,7 +149,7 @@ void ImageViewer::updateView()
             p_mutex.lock();
             f_fft.interp_and_do_fft(p_data_buffer, p_image.bits(),p_image_threshold, p_hanning_threshold);
             p_mutex.unlock();
-            QRect rect(0,0,1024,p_n_alines);
+            QRect rect(0,0,512,p_n_alines);
             tmp = p_image.copy(rect);
 
         }
