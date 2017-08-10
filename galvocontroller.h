@@ -27,6 +27,9 @@ class GalvoController : public QWidget
 public:
     explicit GalvoController();
     ~GalvoController();
+signals:
+    void sig_updateImageThreshold(float);
+    void sig_updateHanningThreshold(float);
 private slots:
     void updateInfo(void);
     void displayFileNumber(int block_number);
@@ -42,6 +45,8 @@ private slots:
     void addDefaultScan(void);
     void setDefaultScan(void);
     void clearCurrentScan(void);
+    void slot_updateImageThreshold();
+    void slot_updateHanningThreshold();
 private:
     Ui::OCTGalvosForm *ui;
     float p_center_x;

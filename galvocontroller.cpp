@@ -213,6 +213,18 @@ void GalvoController::scanTypeChosen(const QString& text)
     }
 }
 
+void GalvoController::slot_updateImageThreshold()
+{
+    float val=ui->lineEdit_logeps->text().toFloat();
+    emit sig_updateImageThreshold(val);
+}
+
+void GalvoController::slot_updateHanningThreshold()
+{
+    float val=ui->lineEdit_hanningeps->text().toFloat();
+    emit sig_updateHanningThreshold(val);
+}
+
 void GalvoController::startScan()
 {
     // Read values
@@ -327,8 +339,11 @@ void GalvoController::startScan()
         float dimx = width/nx;
         float dimz = 3.5;
         p_image_view = new ImageViewer(0,nx+n_extra,hpf_time_constant,spatial_kernel_size,line_period,dimz,dimx);
+        p_image_view->updateHanningThreshold(ui->lineEdit_hanningeps->text().toFloat());
+        p_image_view->updateImageThreshold(ui->lineEdit_logeps->text().toFloat());
         connect(view_timer,SIGNAL(timeout()),p_image_view,SLOT(updateView()));
-        connect(ui->horizontalSlider,SIGNAL(sliderMoved(int)),p_image_view,SLOT(updateThreshold(int)));
+        connect(this,SIGNAL(sig_updateHanningThreshold(float)),p_image_view,SLOT(updateHanningThreshold(float)));
+        connect(this,SIGNAL(sig_updateImageThreshold(float)),p_image_view,SLOT(updateImageThreshold(float)));
 
         p_image_view->show();
         p_camera->setImageViewer(p_image_view);

@@ -24,7 +24,9 @@ public slots:
     void updateView();
     void resizeEvent(QResizeEvent *);
     void setPixmap ( const QPixmap & );
-    void updateThreshold(int);
+    void updateImageThreshold(float);
+    void updateHanningThreshold(float);
+
 protected:
     virtual void  keyPressEvent(QKeyEvent *event);
 
@@ -35,7 +37,8 @@ private:
     QImage p_image;
     QImage p_fringe_image;
     QImage p_doppler_image;
-    double p_threshold;
+    float p_image_threshold;
+    float p_hanning_threshold;
     unsigned short int* p_data_buffer;
     QMutex p_mutex;
     bool is_fringe_mode;

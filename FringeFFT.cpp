@@ -58,7 +58,7 @@ void FringeFFT::set_disp_comp_vect(float* disp_comp_vector)
 
 }
 
-void FringeFFT::interp_and_do_fft(unsigned short* in_fringe, unsigned char* out_signal, float p_threshold)
+void FringeFFT::interp_and_do_fft(unsigned short* in_fringe, unsigned char* out_signal, float p_image_threshold, float p_hanning_threshold)
 {
     // Interpolation by sparse matrix multiplication
     af::dim4 dims(2048,p_nx,1,1);
@@ -69,14 +69,14 @@ void FringeFFT::interp_and_do_fft(unsigned short* in_fringe, unsigned char* out_
 
     // Multiply by dispersion compensation vector and hann window, store back in d_interpfringe
     gfor (af::seq i, p_nx)
-            p_interpfringe(af::span,i)=((p_interpfringe(af::span,i)-p_mean_fringe(af::span))/(p_mean_fringe(af::span)+1e-6))*p_hann_dispcomp;
+            p_interpfringe(af::span,i)=((p_interpfringe(af::span,i)-p_mean_fringe(af::span))/(p_mean_fringe(af::span)+p_hanning_threshold))*p_hann_dispcomp;
 
     // Do fft
     p_signal = af::fftR2C<1>(p_interpfringe, dims);
 
     // Here we have the complex signal available, compute its magnitude, take log on GPU to go faster
     // Transfer half as much data back to CPU
-    af::array p_norm_signal = log(abs(p_signal)+p_threshold);
+    af::array p_norm_signal = log(abs(p_signal)+p_image_threshold);
     float l_max = af::max<float>(p_norm_signal);
     float l_min = af::min<float>(p_norm_signal);
     p_norm_signal=255*(p_norm_signal-l_min)/(l_max-l_min);
@@ -92,7 +92,7 @@ void FringeFFT::init_doppler(float msec_fwhm, float line_period, float spatial_f
     p_phase=af::array(p_nz/2+1,p_nx-1,f32);
     p_spatial_fwhm_um = spatial_fwhm_um;
 }
-void FringeFFT::compute_doppler( unsigned short* in_fringe, unsigned char* out_doppler)
+void FringeFFT::compute_doppler( unsigned short* in_fringe, unsigned char* out_doppler, float p_image_threshold, float p_hanning_threshold)
 {
     int n_gauss_x = (int) (p_spatial_fwhm_um/p_dimx);
     if(n_gauss_x == 0) n_gauss_x=1;
@@ -108,7 +108,7 @@ void FringeFFT::compute_doppler( unsigned short* in_fringe, unsigned char* out_d
 
     // Multiply by dispersion compensation vector and hann window, store back in d_interpfringe
     gfor (af::seq i, p_nx)
-            p_interpfringe(af::span,i)=((p_interpfringe(af::span,i)-p_mean_fringe(af::span))/(p_mean_fringe(af::span)+1e-6))*p_hann_dispcomp;
+            p_interpfringe(af::span,i)=((p_interpfringe(af::span,i)-p_mean_fringe(af::span))/(p_mean_fringe(af::span)+p_hanning_threshold))*p_hann_dispcomp;
 
     // Do fft
     p_signal = af::fftR2C<1>(p_interpfringe, dims);

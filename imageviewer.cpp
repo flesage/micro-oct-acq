@@ -11,7 +11,8 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, float msec_fwhm, float l
     is_fringe_mode = true;
     is_focus_line = false;
     is_doppler = false;
-    p_threshold =0.1;
+    p_image_threshold =0.001;
+    p_hanning_threshold = 1e-6;
     f_fft.init(LINE_ARRAY_SIZE,p_n_alines,dimz, dimx);
     f_fft.init_doppler(msec_fwhm,line_period,spatial_fwhm);
     p_fringe_image = QImage(LINE_ARRAY_SIZE,p_n_alines,QImage::Format_Indexed8);
@@ -42,9 +43,14 @@ ImageViewer::~ImageViewer()
     delete [] p_data_buffer;
 }
 
-void ImageViewer::updateThreshold(int new_value)
+void ImageViewer::updateImageThreshold(float new_value)
 {
-    p_threshold = (new_value+1)*0.00001;
+    p_image_threshold = new_value;
+}
+
+void ImageViewer::updateHanningThreshold(float new_value)
+{
+    p_hanning_threshold = new_value;
 }
 
 int ImageViewer::heightForWidth( int width ) const
@@ -134,7 +140,7 @@ void ImageViewer::updateView()
         if(is_doppler)
         {
             p_mutex.lock();
-            f_fft.compute_doppler(p_data_buffer,p_doppler_image.bits());
+            f_fft.compute_doppler(p_data_buffer,p_doppler_image.bits(),p_image_threshold, p_hanning_threshold);
             p_mutex.unlock();
             QRect rect(0,0,512,p_n_alines);
             tmp = p_doppler_image.copy(rect);
@@ -142,7 +148,7 @@ void ImageViewer::updateView()
         else
         {
             p_mutex.lock();
-            f_fft.interp_and_do_fft(p_data_buffer, p_image.bits(),p_threshold);
+            f_fft.interp_and_do_fft(p_data_buffer, p_image.bits(),p_image_threshold, p_hanning_threshold);
             p_mutex.unlock();
             QRect rect(0,0,512,p_n_alines);
             tmp = p_image.copy(rect);
