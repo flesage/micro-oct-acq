@@ -340,7 +340,7 @@ void GalvoController::startScan()
         float line_period = 1.0f/line_rate/(nx+n_extra);
         float dimx = width/nx;
         float dimz = 3.5;
-        p_image_view = new ImageViewer(0,nx+n_extra,hpf_time_constant,spatial_kernel_size,line_period,dimz,dimx);
+        p_image_view = new ImageViewer(0,nx+n_extra,hpf_time_constant,line_period,spatial_kernel_size,dimz,dimx);
         p_image_view->updateHanningThreshold(ui->lineEdit_hanningeps->text().toFloat());
         p_image_view->updateImageThreshold(ui->lineEdit_logeps->text().toFloat());
         connect(view_timer,SIGNAL(timeout()),p_image_view,SLOT(updateView()));
@@ -371,7 +371,9 @@ void GalvoController::startScan()
     // Set ramp
     if (ui->comboBox_scantype->currentText() == "SawTooth")
     {
-        p_galvos.setSawToothRamp(p_center_x-width/2,p_center_y-height/2,p_center_x+width/2,p_center_y+height/2,nx,ny,n_extra,n_repeat,line_rate,aline_repeat);
+        p_galvos.setSawToothRamp(-width/2,-height/2,+width/2,height/2,nx,ny,n_extra,n_repeat,line_rate,aline_repeat);
+        p_galvos.move(p_center_x, p_center_y);
+
     }
     else if (ui->comboBox_scantype->currentText() == "Triangular")
     {
@@ -452,25 +454,25 @@ void GalvoController::stopScan()
 
 void GalvoController::moveUp(void)
 {
-    p_center_y-=25;
+    p_center_y-=10;
     p_galvos.move(p_center_x,p_center_y);
 }
 
 void GalvoController::moveDown(void)
 {
-    p_center_y+=25;
+    p_center_y+=10;
     p_galvos.move(p_center_x,p_center_y);
 }
 
 void GalvoController::moveRight(void)
 {
-    p_center_x-=25;
+    p_center_x-=10;
     p_galvos.move(p_center_x,p_center_y);
 }
 
 void GalvoController::moveLeft(void)
 {
-    p_center_x+=25;
+    p_center_x+=10;
     p_galvos.move(p_center_x,p_center_y);
 }
 

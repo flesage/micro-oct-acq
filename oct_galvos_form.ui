@@ -336,7 +336,7 @@
            <item row="12" column="1">
             <widget class="QComboBox" name="comboBox_telescope">
              <property name="currentIndex">
-              <number>2</number>
+              <number>0</number>
              </property>
              <item>
               <property name="text">
@@ -387,6 +387,9 @@
            </item>
            <item row="13" column="1">
             <widget class="QComboBox" name="comboBox_objective">
+             <property name="currentIndex">
+              <number>2</number>
+             </property>
              <item>
               <property name="text">
                <string>Thorlabs 10x</string>

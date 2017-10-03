@@ -115,8 +115,8 @@ void FringeFFT::compute_doppler( unsigned short* in_fringe, unsigned char* out_d
 
     // We assume we already have a complex image on the GPU (p_signal) and start from there.
 	// thus this needs to always be called after interp_an_do_fft.
-    //p_filt_signal=convolve(p_signal,p_hp_filter);
-    p_filt_signal = p_signal;
+    p_filt_signal=convolve(p_signal,p_hp_filter);
+    //p_filt_signal = p_signal;
     float speed_factor=1313*1e-6/(4*PI*p_line_period*1.33);
     p_phase=speed_factor*arg(p_filt_signal.cols(1,af::end)*conjg(p_filt_signal.cols(0,af::end-1)));
     p_phase = convolve(p_phase,af::gaussianKernel(n_gauss_z,n_gauss_x));
