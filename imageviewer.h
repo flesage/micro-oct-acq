@@ -8,8 +8,17 @@
 
 class QScrollBar;
 
+
+
 class ImageViewer : public QLabel
 {
+    enum ViewMode
+    {
+        FRINGE = 0,
+        STRUCT = 1,
+        DOPPLER = 2,
+        HILBERT = 3
+    };
     Q_OBJECT
 public:
     explicit ImageViewer(QWidget *parent = 0, int n_alines = 100, float msec_fwhm=0.0002, float spatial_fwhm=3.5,
@@ -36,16 +45,17 @@ private:
     int p_n_alines;
     QImage p_image;
     QImage p_fringe_image;
+    QImage p_hilbert_image;
     QImage p_doppler_image;
     float p_image_threshold;
     float p_hanning_threshold;
     unsigned short int* p_data_buffer;
     QMutex p_mutex;
-    bool is_fringe_mode;
+    bool is_optimization;
     bool is_focus_line;
-    bool is_doppler;
     QPixmap pix;
     double* real_fringe;
+    ViewMode p_current_viewmode;
 };
 
 #endif // ImageViewer_H

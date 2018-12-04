@@ -83,6 +83,35 @@ void FringeFFT::interp_and_do_fft(unsigned short* in_fringe,unsigned char* out_s
     p_norm_signal.as(u8).host(out_signal);
 }
 
+void FringeFFT::compute_hilbert(unsigned short* in_fringe,unsigned char* out_data, float p_hanning_threshold)
+{
+    // Interpolation by sparse matrix multiplication
+    af::dim4 dims(2048,p_nx,1,1);
+    af::array tmp(p_nz,p_nx,in_fringe,afHost);
+    p_interpfringe = matmul(p_sparse_interp,tmp.as(f32));
+    // Compute reference
+    p_mean_fringe = mean(p_interpfringe,1);
+
+    // Multiply by dispersion compensation vector and hann window, store back in d_interpfringe
+    gfor (af::seq i, p_nx)
+            p_interpfringe(af::span,i)=((p_interpfringe(af::span,i)-p_mean_fringe(af::span))/(p_mean_fringe(af::span)+p_hanning_threshold))*p_hann_dispcomp;
+
+    // Do hilbert
+    p_signal = af::fft(p_interpfringe, dims);
+    p_signal(seq(1025,2047),span,0,0)=0;
+    p_signal(seq(1,1023),span,0,0)=2*b(seq(1,1023),span,0,0);
+    p_signal=ifft(p_signal);
+    af::array angle=atan2(imag(p_signal),real(p_signal));
+    angle = angle.rows(1,af::end);
+
+    // Here we have the phase signal available, compute its magnitude, take log on GPU to go faster
+    // Transfer half as much data back to CPU
+    float l_max = af::max<float>(angle);
+    float l_min = af::min<float>(angle);
+    angle=255.0*(angle-l_min)/(l_max-l_min);
+    angle.as(u8).host(out_signal);
+}
+
 void FringeFFT::init_doppler(float msec_fwhm, float line_period, float spatial_fwhm_um)
 {
     // FWHM = 2.35482 * sigma
