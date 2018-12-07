@@ -9,6 +9,7 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, float msec_fwhm, float l
     QLabel(parent), p_n_alines(n_alines)
 {
     p_current_viewmode = FRINGE;
+    p_view_depth=512;
     is_fringe_mode = true;
     is_focus_line = false;
     is_doppler = false;
@@ -22,7 +23,7 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, float msec_fwhm, float l
     p_image = QImage(LINE_ARRAY_SIZE/2,p_n_alines,QImage::Format_Indexed8);
     p_hilbert_image = QImage(LINE_ARRAY_SIZE,p_n_alines,QImage::Format_Indexed8);
     p_doppler_image = QImage(LINE_ARRAY_SIZE/2,p_n_alines-1,QImage::Format_Indexed8);
-
+    p_fwhm_view = new FWHMViewer(0,p_view_depth);
     pix = QPixmap::fromImage(p_fringe_image);
     setPixmap(pix);
     p_data_buffer=new unsigned short[p_n_alines*LINE_ARRAY_SIZE];
@@ -45,6 +46,8 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, float msec_fwhm, float l
 ImageViewer::~ImageViewer()
 {
     delete [] p_data_buffer;
+    p_fwhm_view->close();
+    delete p_fwhm_view;
 }
 
 void ImageViewer::updateImageThreshold(float new_value)
@@ -113,6 +116,14 @@ void  ImageViewer::keyPressEvent(QKeyEvent *event)
     {
         event->accept();
         is_optimization = !is_optimization;
+        if(is_optimization)
+        {
+            p_fwhm_view->show();
+        }
+        else
+        {
+            p_fwhm_view->hide();
+        }
     }
         break;
     case Qt::Key_S:
@@ -189,12 +200,17 @@ void ImageViewer::updateView()
         p_mutex.lock();
         f_fft.interp_and_do_fft(p_data_buffer, p_image.bits(),p_image_threshold, p_hanning_threshold);
         p_mutex.unlock();
-        QRect rect(0,0,512,p_n_alines);
+        QRect rect(0,0,p_view_depth,p_n_alines);
         tmp = p_image.copy(rect);
         pix = QPixmap::fromImage(tmp);
         QMatrix rm;
         rm.rotate(90);
         pix=pix.transformed(rm);
+        if(is_optimisation)
+        {
+            // Push middle line
+            p_fwhm_view->put(p_image.bits()[p_nx/2*1024]);
+        }
     }
         break;
 

@@ -5,6 +5,7 @@
 #include <QLabel>
 #include <QKeyEvent>
 #include "FringeFFT.h"
+#include "fwhmviewer.h"
 
 class QScrollBar;
 
@@ -56,6 +57,8 @@ private:
     QPixmap pix;
     double* real_fringe;
     ViewMode p_current_viewmode;
+    FWHMViewer* p_fwhm_view;
+    int p_view_depth;
 };
 
 #endif // ImageViewer_H

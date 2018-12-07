@@ -14,8 +14,7 @@ class FWHMViewer : public QWidget
 public:
     explicit FWHMViewer(QWidget *parent = 0, unsigned int data_size = 512);
     virtual ~FWHMViewer();
-    void put(unsigned short* data);
-    void Close();
+    void put(unsigned char* data);
 signals:
 
 public slots:

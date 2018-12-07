@@ -18,11 +18,6 @@ FWHMViewer::~FWHMViewer()
     delete [] p_aline;
 }
 
-void FWHMViewer::Close()
-{
-    close();
-}
-
 void FWHMViewer::put(unsigned char* data)
 {
     memcpy(p_aline,data,data_size*sizeof(unsigned char));
