@@ -22,7 +22,7 @@ class ImageViewer : public QLabel
     };
     Q_OBJECT
 public:
-    explicit ImageViewer(QWidget *parent = 0, int n_alines = 100, float msec_fwhm=0.0002, float spatial_fwhm=3.5,
+    explicit ImageViewer(QWidget *parent = 0, int n_alines = 100, int view_depth, float msec_fwhm=0.0002, float spatial_fwhm=3.5,
                          float line_period=0.01, float dimz=3.5, float dimx=3.5);
     virtual ~ImageViewer();
     virtual int heightForWidth( int width ) const;

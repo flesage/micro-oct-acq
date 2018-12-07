@@ -41,6 +41,8 @@ GalvoController::GalvoController() :
     ui->lineEdit_fastaxisrepeat->setValidator(validator3);    
     QIntValidator* validator4=new QIntValidator(1,200,this);
     ui->lineEdit_aline_repeat->setValidator(validator4);
+    QIntValidator* validator5=new QIntValidator(10,2048,this);
+    ui->lineEdit_displayPoints->setValidator(validator5);
 
     connect(ui->lineEdit_linerate,SIGNAL(editingFinished()),this,SLOT(updateInfo()));
     connect(ui->lineEdit_nx,SIGNAL(editingFinished()),this,SLOT(updateInfo()));
@@ -334,13 +336,14 @@ void GalvoController::startScan()
     }
     if(ui->checkBox_view_image->isChecked())
     {
+        int view_depth = ui->lineEdit_displayPoints->text().toInt();
         float hpf_time_constant = ui->lineEdit_doppler_hpf->text().toFloat()/1000.;
         float dop_kernel = ui->lineEdit_doppler_spatial_kernel->text().toFloat();
         float spatial_kernel_size=ui->lineEdit_doppler_spatial_kernel->text().toFloat();
         float line_period = 1.0f/line_rate/(nx+n_extra);
         float dimx = width/nx;
         float dimz = 3.5;
-        p_image_view = new ImageViewer(0,nx+n_extra,hpf_time_constant,line_period,spatial_kernel_size,dimz,dimx);
+        p_image_view = new ImageViewer(0,nx+n_extra,view_depth,hpf_time_constant,line_period,spatial_kernel_size,dimz,dimx);
         p_image_view->updateHanningThreshold(ui->lineEdit_hanningeps->text().toFloat());
         p_image_view->updateImageThreshold(ui->lineEdit_logeps->text().toFloat());
         connect(view_timer,SIGNAL(timeout()),p_image_view,SLOT(updateView()));

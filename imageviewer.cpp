@@ -5,11 +5,10 @@
 #include <iostream>
 #include <cmath>
 
-ImageViewer::ImageViewer(QWidget *parent, int n_alines, float msec_fwhm, float line_period, float spatial_fwhm, float dimz, float dimx) :
-    QLabel(parent), p_n_alines(n_alines)
+ImageViewer::ImageViewer(QWidget *parent, int n_alines, int view_depth, float msec_fwhm, float line_period, float spatial_fwhm, float dimz, float dimx) :
+    QLabel(parent), p_n_alines(n_alines), p_view_depth(view_depth)
 {
     p_current_viewmode = FRINGE;
-    p_view_depth=512;
     is_focus_line = false;
     is_optimization = false;
     p_image_threshold =0.001f;
@@ -21,7 +20,7 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, float msec_fwhm, float l
     p_hilbert_image = QImage(LINE_ARRAY_SIZE,p_n_alines,QImage::Format_Indexed8);
     p_doppler_image = QImage(LINE_ARRAY_SIZE/2,p_n_alines-1,QImage::Format_Indexed8);
     p_fwhm_view = new FWHMViewer(0,p_view_depth);
-    p_phase_view = new FWHMViewer(0,2048);
+    p_phase_view = new FWHMViewer(0,LINE_ARRAY_SIZE);
 
     pix = QPixmap::fromImage(p_fringe_image);
     setPixmap(pix);
@@ -192,7 +191,7 @@ void ImageViewer::updateView()
         p_mutex.lock();
         f_fft.compute_doppler(p_data_buffer,p_doppler_image.bits(),p_image_threshold, p_hanning_threshold);
         p_mutex.unlock();
-        rect.setRect(0,0,512,p_n_alines-1);
+        rect.setRect(0,0,p_view_depth,p_n_alines-1);
         tmp = p_doppler_image.copy(rect);
         pix = QPixmap::fromImage(tmp);
         pix=pix.transformed(rm);
@@ -209,7 +208,7 @@ void ImageViewer::updateView()
         if(is_optimization)
         {
             // Push middle line
-            p_phase_view->put(&p_hilbert_image.bits()[p_n_alines/2*2048]);
+            p_phase_view->put(&p_hilbert_image.bits()[p_n_alines/2*LINE_ARRAY_SIZE]);
         }
         break;
     case STRUCT:
@@ -224,7 +223,7 @@ void ImageViewer::updateView()
         if(is_optimization)
         {
             // Push middle line
-            p_fwhm_view->put(&p_image.bits()[p_n_alines/2*1024]);
+            p_fwhm_view->put(&p_image.bits()[p_n_alines/2*(LINE_ARRAY_SIZE/2)]);
         }
     }
         break;
