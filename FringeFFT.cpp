@@ -101,9 +101,14 @@ void FringeFFT::compute_hilbert(unsigned short* in_fringe,unsigned char* out_dat
     p_signal(seq(1025,2047),span,0,0)=0;
     p_signal(seq(1,1023),span,0,0)=2*b(seq(1,1023),span,0,0);
     p_signal=ifft(p_signal);
-    af::array angle=atan2(imag(p_signal),real(p_signal));
-    angle = angle.rows(1,af::end);
+    af::array wrapped_angle=atan2(imag(p_signal),real(p_signal));
 
+    // On cree les dims dans l'espace k
+    af::array n = af::range(dims,0,f32);
+    n(0,af::span) = 1/sqrt(2048);
+    p_coord = n*n;
+
+    af::array angle = unwrap(wrapped_angle);
     // Here we have the phase signal available, compute its magnitude, take log on GPU to go faster
     // Transfer half as much data back to CPU
     float l_max = af::max<float>(angle);
@@ -259,4 +264,57 @@ void FringeFFT::pre_compute_positions(int n_ang_pts, int n_radial_pts)
     delete [] theta_vals;
     delete [] r_vals;
 
+}
+
+af::array FringeFFT::unwrap(const af::array& angle)
+{
+  return angle + af::round( ( laplacian( af::cos(angle)*laplacian(af::sin(angle),false) -
+                                         af::sin(angle)*laplacian(af::cos(angle),false), true ) - angle ) / 2/af::Pi ) * 2*af::Pi;
+}
+
+// Laplace operator and inverse
+af::array FringeFFT::laplacian(const af::array& arr, bool inverse)
+{
+    if(inverse)
+        return idct1(dct1(arr)/p_coord); // factor -M*N/4/pi**2 omitted
+    else
+        return idct1(dct1(arr)*p_coord); // factor -4*pi**2/M/N omitted
+}
+
+af::array FringeFFT::dct1(const af::array& arr)
+{
+    af::cfloat h_unit;
+    h_unit.real = 0.0;
+    h_unit.imag = 1.0;
+    //af::array unit = af::constant(h_unit, 1, c32);
+
+    int N = arr.dims(0);
+    af::array out=arr.copy();
+    out = 2 * af::real(af::exp(-0.5*h_unit*af::Pi/N*af::range(arr.dims(),0,arr.type())) *
+                       af::fft(af::join(0,arr(af::seq(0,N-1,2),af::span),af::flip(arr(af::seq(1,N-1,2),af::span),0))) );
+    out /= sqrt(2*N);
+    out(0,af::span) /= sqrt(2);
+    return out;
+}
+
+
+af::array FringeFFT::idct1(const af::array& arr)
+{
+    af::cfloat h_unit;
+    h_unit.real = 0.0;
+    h_unit.imag = 1.0;
+    //af::array unit = af::constant(h_unit, 1, c32);
+    int N = arr.dims(0);
+    af::array tmp = arr.copy();
+    af::array offset = af::tile(tmp(0,af::span),N);
+    tmp(0,af::span) = 0.;
+    tmp = 2 * af::real( af::ifft( af::exp(0.5*h_unit*af::Pi/N*af::range(arr.dims(),0,arr.type())) * tmp ) * N );
+    af::array out = af::constant(0,arr.dims(),arr.type());
+    out(af::seq(0,N-1,2),af::span) = tmp(af::seq(0,floor(N/2)-1),af::span);
+    out(af::seq(1,N-1,2),af::span) = af::flip(tmp(af::seq(floor(N/2),af::end),af::span),0);
+    offset /= sqrt(N);
+    out /= sqrt(2*N);
+    out += offset;
+    //tmp = offset = None;
+    return out;
 }

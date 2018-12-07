@@ -33,7 +33,8 @@ SOURCES += main.cpp \
     imageviewer.cpp \
     softwarecamera.cpp \
     analoginput.cpp \
-    FringeFFT.cpp
+    FringeFFT.cpp \
+    fwhmviewer.cpp
 
 HEADERS  += \
     galvocontroller.h \
@@ -50,7 +51,8 @@ HEADERS  += \
     fringeviewer.h \
     analoginput.h \
     float64datasaver.h \
-    FringeFFT.h
+    FringeFFT.h \
+    fwhmviewer.h
 
 FORMS    += \
     oct_galvos_form.ui
