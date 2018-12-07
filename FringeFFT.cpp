@@ -97,11 +97,11 @@ void FringeFFT::compute_hilbert(unsigned short* in_fringe,unsigned char* out_dat
             p_interpfringe(af::span,i)=((p_interpfringe(af::span,i)-p_mean_fringe(af::span))/(p_mean_fringe(af::span)+p_hanning_threshold))*p_hann_dispcomp;
 
     // Do hilbert
-    p_signal = af::fft(p_interpfringe, dims);
-    p_signal(seq(1025,2047),span,0,0)=0;
-    p_signal(seq(1,1023),span,0,0)=2*b(seq(1,1023),span,0,0);
+    p_signal = af::fft(p_interpfringe);
+    p_signal(af::seq(1025,2047),af::span,0,0)=0;
+    p_signal(af::seq(1,1023),af::span,0,0)=2*p_signal(af::seq(1,1023),af::span,0,0);
     p_signal=ifft(p_signal);
-    af::array wrapped_angle=atan2(imag(p_signal),real(p_signal));
+    af::array wrapped_angle=af::atan2(af::imag(p_signal),af::real(p_signal));
 
     // On cree les dims dans l'espace k
     af::array n = af::range(dims,0,f32);
@@ -114,7 +114,7 @@ void FringeFFT::compute_hilbert(unsigned short* in_fringe,unsigned char* out_dat
     float l_max = af::max<float>(angle);
     float l_min = af::min<float>(angle);
     angle=255.0*(angle-l_min)/(l_max-l_min);
-    angle.as(u8).host(out_signal);
+    angle.as(u8).host(out_data);
 }
 
 void FringeFFT::init_doppler(float msec_fwhm, float line_period, float spatial_fwhm_um)

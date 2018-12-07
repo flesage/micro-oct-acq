@@ -58,6 +58,7 @@ private:
     double* real_fringe;
     ViewMode p_current_viewmode;
     FWHMViewer* p_fwhm_view;
+    FWHMViewer* p_phase_view;
     int p_view_depth;
 };
 

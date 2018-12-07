@@ -15,10 +15,6 @@ public:
     explicit FWHMViewer(QWidget *parent = 0, unsigned int data_size = 512);
     virtual ~FWHMViewer();
     void put(unsigned char* data);
-signals:
-
-public slots:
-    void updateView();
 protected:
     void paintEvent(QPaintEvent *event);
 private:

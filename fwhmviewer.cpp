@@ -1,10 +1,10 @@
 #include "fwhmviewer.h"
 #include <QPainter>
 #include <QPaintEvent>
-
+#include <iostream>
 FWHMViewer::FWHMViewer(QWidget *parent, unsigned int data_size) : QWidget(parent), p_data_size(data_size)
 {
-    a_line = new unsigned char[p_data_size];
+    p_aline = new unsigned char[p_data_size];
     background = QBrush(QColor(255, 255,255));
     linePen = QPen(Qt::black);
     linePen.setWidth(1);
@@ -20,7 +20,7 @@ FWHMViewer::~FWHMViewer()
 
 void FWHMViewer::put(unsigned char* data)
 {
-    memcpy(p_aline,data,data_size*sizeof(unsigned char));
+    memcpy(p_aline,data,p_data_size*sizeof(unsigned char));
     repaint();
 }
 
@@ -28,8 +28,7 @@ void FWHMViewer::paintEvent(QPaintEvent *event)
 {
     QSize current_size = size();
     float y_scale = current_size.height()/256.0;
-    float x_scale = current_size.width()/p_data_size;
-
+    float x_scale = 1.0*current_size.width()/p_data_size;
     // Compute FWHM
     // Compute max and its pos
     unsigned char max = 0;

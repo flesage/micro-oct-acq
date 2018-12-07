@@ -10,10 +10,7 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, float msec_fwhm, float l
 {
     p_current_viewmode = FRINGE;
     p_view_depth=512;
-    is_fringe_mode = true;
     is_focus_line = false;
-    is_doppler = false;
-    is_hilbert = false;
     is_optimization = false;
     p_image_threshold =0.001f;
     p_hanning_threshold = 1e-6f;
@@ -24,6 +21,8 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, float msec_fwhm, float l
     p_hilbert_image = QImage(LINE_ARRAY_SIZE,p_n_alines,QImage::Format_Indexed8);
     p_doppler_image = QImage(LINE_ARRAY_SIZE/2,p_n_alines-1,QImage::Format_Indexed8);
     p_fwhm_view = new FWHMViewer(0,p_view_depth);
+    p_phase_view = new FWHMViewer(0,2048);
+
     pix = QPixmap::fromImage(p_fringe_image);
     setPixmap(pix);
     p_data_buffer=new unsigned short[p_n_alines*LINE_ARRAY_SIZE];
@@ -47,7 +46,9 @@ ImageViewer::~ImageViewer()
 {
     delete [] p_data_buffer;
     p_fwhm_view->close();
+    p_phase_view->close();
     delete p_fwhm_view;
+    delete p_phase_view;
 }
 
 void ImageViewer::updateImageThreshold(float new_value)
@@ -116,13 +117,27 @@ void  ImageViewer::keyPressEvent(QKeyEvent *event)
     {
         event->accept();
         is_optimization = !is_optimization;
-        if(is_optimization)
+        if( p_current_viewmode==STRUCT )
         {
-            p_fwhm_view->show();
+            if(is_optimization)
+            {
+                p_fwhm_view->show();
+            }
+            else
+            {
+                p_fwhm_view->hide();
+            }
         }
-        else
+        if( p_current_viewmode==HILBERT )
         {
-            p_fwhm_view->hide();
+            if(is_optimization)
+            {
+                p_phase_view->show();
+            }
+            else
+            {
+                p_phase_view->hide();
+            }
         }
     }
         break;
@@ -144,6 +159,9 @@ void ImageViewer::updateView()
     // We receive a uint16 image that we need to transform to uint8 for display
     int n_pts = p_n_alines * LINE_ARRAY_SIZE;
     QImage tmp;
+    QMatrix rm;
+    rm.rotate(90);
+    QRect rect;
 
     switch(p_current_viewmode)
     {
@@ -166,8 +184,6 @@ void ImageViewer::updateView()
 
         p_mutex.unlock();
         pix = QPixmap::fromImage(p_fringe_image);
-        QMatrix rm;
-        rm.rotate(90);
         pix=pix.transformed(rm);
     }
         break;
@@ -176,11 +192,9 @@ void ImageViewer::updateView()
         p_mutex.lock();
         f_fft.compute_doppler(p_data_buffer,p_doppler_image.bits(),p_image_threshold, p_hanning_threshold);
         p_mutex.unlock();
-        QRect rect(0,0,512,p_n_alines-1);
+        rect.setRect(0,0,512,p_n_alines-1);
         tmp = p_doppler_image.copy(rect);
         pix = QPixmap::fromImage(tmp);
-        QMatrix rm;
-        rm.rotate(90);
         pix=pix.transformed(rm);
     }
         break;
@@ -188,28 +202,29 @@ void ImageViewer::updateView()
         p_mutex.lock();
         f_fft.compute_hilbert(p_data_buffer,p_hilbert_image.bits(), p_hanning_threshold);
         p_mutex.unlock();
-        QRect rect(0,0,2048,p_n_alines);
+        rect.setRect(0,0,2048,p_n_alines);
         tmp = p_hilbert_image.copy(rect);
         pix = QPixmap::fromImage(tmp);
-        QMatrix rm;
-        rm.rotate(90);
         pix=pix.transformed(rm);
+        if(is_optimization)
+        {
+            // Push middle line
+            p_phase_view->put(&p_hilbert_image.bits()[p_n_alines/2*2048]);
+        }
         break;
     case STRUCT:
     {
         p_mutex.lock();
         f_fft.interp_and_do_fft(p_data_buffer, p_image.bits(),p_image_threshold, p_hanning_threshold);
         p_mutex.unlock();
-        QRect rect(0,0,p_view_depth,p_n_alines);
+        rect.setRect(0,0,p_view_depth,p_n_alines);
         tmp = p_image.copy(rect);
         pix = QPixmap::fromImage(tmp);
-        QMatrix rm;
-        rm.rotate(90);
         pix=pix.transformed(rm);
-        if(is_optimisation)
+        if(is_optimization)
         {
             // Push middle line
-            p_fwhm_view->put(p_image.bits()[p_nx/2*1024]);
+            p_fwhm_view->put(&p_image.bits()[p_n_alines/2*1024]);
         }
     }
         break;
