@@ -13,11 +13,12 @@
 
 class FringeFFT {
 public:
-	FringeFFT();
+    FringeFFT(unsigned int n_repeat);
 	virtual ~FringeFFT();
     void init( int nz, int nx, float dimz, float dimx);
     void set_disp_comp_vect(float* disp_comp_vector);
     void interp_and_do_fft(unsigned short* in_fringe,unsigned char* out_data, float p_image_threshold, float p_hanning_threshold);
+    void get_angio(unsigned short* in_fringe,unsigned char* out_data, float p_image_threshold, float p_hanning_threshold);
     void compute_hilbert(unsigned short* in_fringe,unsigned char* out_data, float p_hanning_threshold);
     void init_doppler(float msec_fwhm, float line_period, float spatial_fwhm_um);
     void PutDopplerHPFilterOnGPU(float sigma, float lineperiod);
@@ -32,6 +33,8 @@ private:
     af::array idct1(const af::array& arr);
     int p_nz;
     int p_nx;
+    unsigned int p_n_repeat;
+    int p_current_angio_frame;
     float p_dimx;
     float p_dimz;
     af::array p_fringe;
@@ -45,6 +48,9 @@ private:
     af::array p_sparse_interp;
     af::array p_pos0;
     af::array p_pos1;
+    af::array p_angio_stack;
+    af::array p_angio;
+    af::array p_norm_signal;
     int p_hpf_npts;
     float p_line_period;
     int p_n_radial_pts;

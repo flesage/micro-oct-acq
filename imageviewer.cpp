@@ -5,8 +5,8 @@
 #include <iostream>
 #include <cmath>
 
-ImageViewer::ImageViewer(QWidget *parent, int n_alines, int view_depth, float msec_fwhm, float line_period, float spatial_fwhm, float dimz, float dimx) :
-    QLabel(parent), p_n_alines(n_alines), p_view_depth(view_depth)
+ImageViewer::ImageViewer(QWidget *parent, int n_alines, int view_depth, unsigned int n_repeat, float msec_fwhm, float line_period, float spatial_fwhm, float dimz, float dimx) :
+    QLabel(parent), f_fft(n_repeat), p_n_alines(n_alines), p_view_depth(view_depth)
 {
     p_current_viewmode = FRINGE;
     is_focus_line = false;
@@ -88,6 +88,12 @@ void  ImageViewer::keyPressEvent(QKeyEvent *event)
 {
     switch( event->key() )
     {
+    case Qt::Key_A:
+    {
+        event->accept();
+        p_current_viewmode=ANGIO;
+    }
+        break;
     case Qt::Key_D:
     {
         event->accept();
@@ -225,6 +231,17 @@ void ImageViewer::updateView()
             // Push middle line
             p_fwhm_view->put(&p_image.bits()[p_n_alines/2*(LINE_ARRAY_SIZE/2)]);
         }
+    }
+        break;
+    case ANGIO:
+    {
+        p_mutex.lock();
+        f_fft.get_angio(p_data_buffer, p_image.bits(),p_image_threshold, p_hanning_threshold);
+        p_mutex.unlock();
+        rect.setRect(0,0,p_view_depth,p_n_alines);
+        tmp = p_image.copy(rect);
+        pix = QPixmap::fromImage(tmp);
+        pix=pix.transformed(rm);
     }
         break;
 

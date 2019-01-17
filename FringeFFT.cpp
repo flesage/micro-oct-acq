@@ -13,10 +13,10 @@
 
 #define PI ((float)3.1415926)
 
-FringeFFT::FringeFFT() : p_nz(0),
-    p_nx (0), p_interpfringe(0,0,f32), p_fringe(0,0,f32), p_sparse_interp(0,0,f32),
+FringeFFT::FringeFFT(unsigned int n_repeat) : p_nz(0),
+    p_nx (0), p_n_repeat(n_repeat), p_current_angio_frame(0), p_interpfringe(0,0,f32), p_fringe(0,0,f32), p_sparse_interp(0,0,f32),
     p_mean_fringe(0,0,f32), p_signal(0,0,f32), p_hann_dispcomp(0,0,f32), p_phase(0,0,f32),
-    p_hp_filter(0,0,f32), p_filt_signal(0,0,c32), p_pos0(0,0,f32), p_pos1(0,0,f32)
+    p_hp_filter(0,0,f32), p_filt_signal(0,0,c32), p_pos0(0,0,f32), p_pos1(0,0,f32), p_angio_stack(0,0,0,f32), p_angio(0,0,f32),p_norm_signal(0,0,f32)
 {
     p_hpf_npts=0;
 }
@@ -35,6 +35,8 @@ void FringeFFT::init(int nz, int nx, float dimz, float dimx)
     p_fringe = af::array(p_nz,p_nx,f32);
     p_interpfringe = af::array(p_nz,p_nx,f32);
     p_mean_fringe = af::array(p_nz,1,f32);
+    p_angio=af::array(p_nz,p_nx,p_n_repeat,f32);
+    p_norm_signal=af::constant(0.0,p_nz,p_nx,f32);
 
     double* tmp=new double[p_nz];
     FILE* fp=fopen("C:\\Users\\Public\\Documents\\filter.dat","rb");
@@ -76,11 +78,42 @@ void FringeFFT::interp_and_do_fft(unsigned short* in_fringe,unsigned char* out_s
     p_signal = p_signal.rows(1,af::end);
     // Here we have the complex signal available, compute its magnitude, take log on GPU to go faster
     // Transfer half as much data back to CPU
-    af::array p_norm_signal = af::log(af::abs(p_signal)+p_image_threshold);
+    p_norm_signal = af::log(af::abs(p_signal)+p_image_threshold);
     float l_max = af::max<float>(p_norm_signal);
     float l_min = af::min<float>(p_norm_signal);
     p_norm_signal=255.0*(p_norm_signal-l_min)/(l_max-l_min);
     p_norm_signal.as(u8).host(out_signal);
+}
+
+void FringeFFT::get_angio(unsigned short* in_fringe,unsigned char* out_data, float p_image_threshold, float p_hanning_threshold)
+{
+    // Interpolation by sparse matrix multiplication
+    af::dim4 dims(2048,p_nx,1,1);
+    af::array tmp(p_nz,p_nx,in_fringe,afHost);
+    p_interpfringe = matmul(p_sparse_interp,tmp.as(f32));
+    // Compute reference
+    p_mean_fringe = mean(p_interpfringe,1);
+
+    // Multiply by dispersion compensation vector and hann window, store back in d_interpfringe
+    gfor (af::seq i, p_nx)
+            p_interpfringe(af::span,i)=((p_interpfringe(af::span,i)-p_mean_fringe(af::span))/(p_mean_fringe(af::span)+p_hanning_threshold))*p_hann_dispcomp;
+
+    // Do fft
+    p_signal = af::fftR2C<1>(p_interpfringe, dims);
+    p_signal = p_signal.rows(1,af::end);
+    p_angio_stack(af::span,af::span,p_current_angio_frame)=p_signal;
+    if(p_current_angio_frame == (p_n_repeat-1 ))
+    {
+        p_angio=af::var(p_angio_stack,2);
+        // Here we have the complex signal available, compute its magnitude, take log on GPU to go faster
+        // Transfer half as much data back to CPU
+        p_norm_signal = af::log(af::abs(p_angio)+p_image_threshold);
+        float l_max = af::max<float>(p_norm_signal);
+        float l_min = af::min<float>(p_norm_signal);
+        p_norm_signal=255.0*(p_norm_signal-l_min)/(l_max-l_min);
+    }
+    p_norm_signal.as(u8).host(out_signal);
+    p_current_angio_frame=(p_current_angio_frame+1)%p_n_repeat;
 }
 
 void FringeFFT::compute_hilbert(unsigned short* in_fringe,unsigned char* out_data, float p_hanning_threshold)
