@@ -103,17 +103,15 @@ void FringeFFT::get_angio(unsigned short* in_fringe,unsigned char* out_data, flo
     p_signal = af::fftR2C<1>(p_interpfringe, dims);
     p_signal = af::abs(p_signal.rows(1,af::end));
     p_angio_stack(af::span,af::span,p_current_angio_frame)=p_signal;
-    std::cerr << p_current_angio_frame << std::endl;
     if(p_current_angio_frame == (p_n_repeat-1 ))
     {
-        p_angio=af::var(p_angio_stack,2);
+        p_angio=af::log(af::var(p_angio_stack,0,2)+p_image_threshold);
         // Here we have the complex signal available, compute its magnitude, take log on GPU to go faster
         // Transfer half as much data back to CPU
         p_norm_signal = af::log(af::abs(p_angio)+p_image_threshold);
         float l_max = af::max<float>(p_norm_signal);
         float l_min = af::min<float>(p_norm_signal);
         p_norm_signal=255.0*(p_norm_signal-l_min)/(l_max-l_min);
-        std::cerr << "New image" << std::endl;
     }
     p_norm_signal.as(u8).host(out_data);
     p_current_angio_frame=(p_current_angio_frame+1)%p_n_repeat;
@@ -228,7 +226,7 @@ void FringeFFT::read_interp_matrix()
     // Read matrix and cast to float as a dense A matrix
     double* p_interpolation_matrix = new double[p_nz*p_nz];
     float* A=new float[p_nz*p_nz];
-    FILE* fp=fopen("C:\\Users\\Public\\Documents\\interpolation_matrix.dat","rb");
+    FILE* fp=fopen("C:\\Users\\Public\\Documents\\interpolation_matrix_1.dat","rb");
 
     if(fp == 0)
     {
