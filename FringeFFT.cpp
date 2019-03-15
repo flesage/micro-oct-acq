@@ -35,7 +35,8 @@ void FringeFFT::init(int nz, int nx, float dimz, float dimx)
     p_fringe = af::array(p_nz,p_nx,f32);
     p_interpfringe = af::array(p_nz,p_nx,f32);
     p_mean_fringe = af::array(p_nz,1,f32);
-    p_angio=af::array(p_nz,p_nx,p_n_repeat,f32);
+    p_angio=af::array(p_nz/2,p_nx,f32);
+    p_angio_stack=af::array(p_nz/2,p_nx,p_n_repeat,f32);
     p_norm_signal=af::constant(0.0,p_nz,p_nx,f32);
 
     double* tmp=new double[p_nz];
@@ -100,8 +101,9 @@ void FringeFFT::get_angio(unsigned short* in_fringe,unsigned char* out_data, flo
 
     // Do fft
     p_signal = af::fftR2C<1>(p_interpfringe, dims);
-    p_signal = p_signal.rows(1,af::end);
+    p_signal = af::abs(p_signal.rows(1,af::end));
     p_angio_stack(af::span,af::span,p_current_angio_frame)=p_signal;
+    std::cerr << p_current_angio_frame << std::endl;
     if(p_current_angio_frame == (p_n_repeat-1 ))
     {
         p_angio=af::var(p_angio_stack,2);
@@ -111,8 +113,9 @@ void FringeFFT::get_angio(unsigned short* in_fringe,unsigned char* out_data, flo
         float l_max = af::max<float>(p_norm_signal);
         float l_min = af::min<float>(p_norm_signal);
         p_norm_signal=255.0*(p_norm_signal-l_min)/(l_max-l_min);
+        std::cerr << "New image" << std::endl;
     }
-    p_norm_signal.as(u8).host(out_signal);
+    p_norm_signal.as(u8).host(out_data);
     p_current_angio_frame=(p_current_angio_frame+1)%p_n_repeat;
 }
 

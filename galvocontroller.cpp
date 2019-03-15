@@ -243,13 +243,27 @@ void GalvoController::startScan()
     int aline_repeat = ui->lineEdit_aline_repeat->text().toInt();
 
     int telescope = ui->comboBox_telescope->currentIndex();
-    double radians_per_volt = 2*3.14159265359/(360*0.8);
+    double radians_per_volt = 2*3.14159265359/(360*0.8)*(3.0/4.0)/0.95;
     double f1=50.0;
     double f2=100.0;
-    if(telescope == 1 || telescope == 2)
+    switch(telescope)
     {
+    case 0:
+        f1=54.0;
+        f2=300.0;
+        break;
+    case 1:
+        f1=50.0;
+        f2=100.0;
+        break;
+    case 2:
         f1=75.0;
         f2=75.0;
+        break;
+    case 3:
+        f1=10.0;
+        f2=10.0;
+        break;
     }
 
     int objective = ui->comboBox_objective->currentIndex();
@@ -257,15 +271,22 @@ void GalvoController::startScan()
     switch(objective)
     {
     case 0:
+        fobj=36.0;
         break;
     case 1:
-        fobj=36.0;
+        fobj=18.0;
         break;
     case 2:
         fobj=20.0;
         break;
     case 3:
         fobj=9.0;
+        break;
+    case 4:
+        fobj=7.2;
+        break;
+    case 5:
+        fobj=4.5;
         break;
     default:
         break;
@@ -338,7 +359,6 @@ void GalvoController::startScan()
     {
         int view_depth = ui->lineEdit_displayPoints->text().toInt();
         float hpf_time_constant = ui->lineEdit_doppler_hpf->text().toFloat()/1000.;
-        float dop_kernel = ui->lineEdit_doppler_spatial_kernel->text().toFloat();
         float spatial_kernel_size=ui->lineEdit_doppler_spatial_kernel->text().toFloat();
         float line_period = 1.0f/line_rate/(nx+n_extra);
         float dimx = width/nx;
