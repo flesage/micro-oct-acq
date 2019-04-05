@@ -108,7 +108,7 @@ void FringeFFT::get_angio(unsigned short* in_fringe,unsigned char* out_data, flo
         p_angio=af::log(af::var(p_angio_stack,0,2)+p_image_threshold);
         // Here we have the complex signal available, compute its magnitude, take log on GPU to go faster
         // Transfer half as much data back to CPU
-        p_norm_signal = af::log(af::abs(p_angio)+p_image_threshold);
+        p_norm_signal = -af::log(af::abs(p_angio)+p_image_threshold);
         float l_max = af::max<float>(p_norm_signal);
         float l_min = af::min<float>(p_norm_signal);
         p_norm_signal=255.0*(p_norm_signal-l_min)/(l_max-l_min);

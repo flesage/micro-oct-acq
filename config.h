@@ -2,8 +2,8 @@
 #define CONFIG_H
 
 #define GALVOS_DEV "/Dev4"
-#define GALVOS_AOX "ao0"
-#define GALVOS_AOY "ao1"
+#define GALVOS_AOX "ao1"
+#define GALVOS_AOY "ao0"
 
 #define CAMERA_CLOCK "ctr0"
 #define CAMERA_CLOCK_PFI "PFI12"
