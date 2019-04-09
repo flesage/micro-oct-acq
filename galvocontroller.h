@@ -40,6 +40,7 @@ private slots:
     void moveDown(void);
     void moveRight(void);
     void moveLeft(void);
+    void readOffset(void);
     void goHome(void);
     void setSaveDir(void);
     void addDefaultScan(void);

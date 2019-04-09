@@ -5,6 +5,7 @@
 #include <QDir>
 #include <QFileDialog>
 #include <QTimer>
+#include <QStringList>
 #include "ui_oct_galvos_form.h"
 #include "config.h"
 
@@ -61,6 +62,7 @@ GalvoController::GalvoController() :
     connect(ui->pushButton_right,SIGNAL(clicked()),this,SLOT(moveRight()));
     connect(ui->pushButton_up,SIGNAL(clicked()),this,SLOT(moveUp()));
     connect(ui->pushButton_left,SIGNAL(clicked()),this,SLOT(moveLeft()));
+    connect(ui->pushButton_readOffsetFile,SIGNAL(clicked()),this,SLOT(readOffset()));)
 
     connect(ui->lineEdit_hanningeps,SIGNAL(editingFinished()),this,SLOT(slot_updateHanningThreshold()));
     connect(ui->lineEdit_logeps,SIGNAL(editingFinished()),this,SLOT(slot_updateImageThreshold()));
@@ -505,3 +507,19 @@ void GalvoController::goHome(void)
     p_center_y=0;
     p_galvos.move(p_center_x,p_center_y);
 }
+
+void GalvoController::readOffset(void)
+{
+    // Could be changed to f
+    QString fileName = QFileDialog::getOpenFileName(this,
+        tr("Open Galvo Offset File"), QDir::homePath() , tr("Text Files (*.txt)"));
+
+    QFile file(fileName);
+    QTextStream in(&file);
+    QString line = in.readLine();
+    QStringList fields = line.split("/");
+    p_center_x=fields.at(0).toFloat();
+    p_center_y=fields.at(1).toFloat();
+    p_galvos.move(p_center_x,p_center_y);
+}
+
