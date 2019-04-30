@@ -60,6 +60,12 @@ void ImageViewer::updateHanningThreshold(float new_value)
     p_hanning_threshold = new_value;
 }
 
+void ImageViewer::updateAngioAlgo(int new_value)
+{
+    p_angio_algo = new_value;
+}
+
+
 int ImageViewer::heightForWidth( int width ) const
 {
     return ((qreal)pix.height()*width)/pix.width();
@@ -236,7 +242,7 @@ void ImageViewer::updateView()
     case ANGIO:
     {
         p_mutex.lock();
-        f_fft.get_angio(p_data_buffer, p_image.bits(),p_image_threshold, p_hanning_threshold);
+        f_fft.get_angio(p_data_buffer, p_image.bits(),p_image_threshold, p_hanning_threshold,p_angio_algo);
         p_mutex.unlock();
         rect.setRect(0,0,p_view_depth,p_n_alines);
         tmp = p_image.copy(rect);

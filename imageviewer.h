@@ -37,6 +37,7 @@ public slots:
     void setPixmap ( const QPixmap & );
     void updateImageThreshold(float);
     void updateHanningThreshold(float);
+    void updateAngioAlgo(int);
 
 protected:
     virtual void  keyPressEvent(QKeyEvent *event);
@@ -51,6 +52,7 @@ private:
     QImage p_doppler_image;
     float p_image_threshold;
     float p_hanning_threshold;
+    int p_angio_algo;
     unsigned short int* p_data_buffer;
     QMutex p_mutex;
     bool is_optimization;

@@ -18,7 +18,7 @@ public:
     void init( int nz, int nx, float dimz, float dimx);
     void set_disp_comp_vect(float* disp_comp_vector);
     void interp_and_do_fft(unsigned short* in_fringe,unsigned char* out_data, float p_image_threshold, float p_hanning_threshold);
-    void get_angio(unsigned short* in_fringe,unsigned char* out_data, float p_image_threshold, float p_hanning_threshold);
+    void get_angio(unsigned short* in_fringe,unsigned char* out_data, float p_image_threshold, float p_hanning_threshold, int angio_algo);
     void compute_hilbert(unsigned short* in_fringe,unsigned char* out_data, float p_hanning_threshold);
     void init_doppler(float msec_fwhm, float line_period, float spatial_fwhm_um);
     void PutDopplerHPFilterOnGPU(float sigma, float lineperiod);
@@ -50,6 +50,7 @@ private:
     af::array p_pos1;
     af::array p_angio_stack;
     af::array p_angio;
+    af::array p_struct;
     af::array p_norm_signal;
     int p_hpf_npts;
     float p_line_period;

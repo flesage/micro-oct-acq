@@ -86,7 +86,7 @@ void FringeFFT::interp_and_do_fft(unsigned short* in_fringe,unsigned char* out_s
     p_norm_signal.as(u8).host(out_signal);
 }
 
-void FringeFFT::get_angio(unsigned short* in_fringe,unsigned char* out_data, float p_image_threshold, float p_hanning_threshold)
+void FringeFFT::get_angio(unsigned short* in_fringe,unsigned char* out_data, float p_image_threshold, float p_hanning_threshold, int angio_algo)
 {
     // Interpolation by sparse matrix multiplication
     af::dim4 dims(2048,p_nx,1,1);
@@ -103,16 +103,81 @@ void FringeFFT::get_angio(unsigned short* in_fringe,unsigned char* out_data, flo
     p_signal = af::fftR2C<1>(p_interpfringe, dims);
     p_signal = af::abs(p_signal.rows(1,af::end));
     p_angio_stack(af::span,af::span,p_current_angio_frame)=p_signal;
+    if(p_n_repeat>1)
+    {
     if(p_current_angio_frame == (p_n_repeat-1 ))
     {
+        switch(angio_algo)
+        {
+        case 0:
+        {
+            for(int i=0 ; i<(p_n_repeat-1); i++)
+            {
+                if(i>0)
+                {
+                    if(i==1)
+                    {
+                        p_angio=af::abs(af::abs(p_angio_stack(af::span,af::span,i+1))-af::abs(p_angio_stack(af::span,af::span,i)));
+                        p_struct=af::abs(af::abs(p_angio_stack(af::span,af::span,i+1))+af::abs(p_angio_stack(af::span,af::span,i)));
+                        p_angio=p_angio/(p_n_repeat-1);
+                        p_struct=p_struct/(p_n_repeat-1);
+
+                    } else
+                    {
+                        p_angio=p_angio+(af::abs(af::abs(p_angio_stack(af::span,af::span,i+1))-af::abs(p_angio_stack(af::span,af::span,i))))/(p_n_repeat-1);
+                        p_struct=p_struct+(af::abs(af::abs(p_angio_stack(af::span,af::span,i+1))+af::abs(p_angio_stack(af::span,af::span,i))))/(p_n_repeat-1);
+                    }
+                }
+            }
+            p_norm_signal=(p_angio)/(p_struct+(p_image_threshold*100));
+            p_norm_signal=meanShift(p_norm_signal, .5, .5, 1);
+        }
+        case 1:
+        {
+            for(int i=0 ; i<(p_n_repeat-1); i++)
+            {
+                if(i>0)
+                {
+                    if(i==1)
+                    {
+                        p_angio=af::abs((p_angio_stack(af::span,af::span,i+1))-(p_angio_stack(af::span,af::span,i)));
+                        p_struct=af::abs((p_angio_stack(af::span,af::span,i+1))+(p_angio_stack(af::span,af::span,i)));
+                        p_angio=p_angio/(p_n_repeat-1);
+                        p_struct=p_struct/(p_n_repeat-1);
+
+                    } else
+                    {
+                        p_angio=p_angio+(af::abs(af::abs(p_angio_stack(af::span,af::span,i+1))-af::abs(p_angio_stack(af::span,af::span,i))))/(p_n_repeat-1);
+                        p_struct=p_struct+(af::abs(af::abs(p_angio_stack(af::span,af::span,i+1))+af::abs(p_angio_stack(af::span,af::span,i))))/(p_n_repeat-1);
+                    }
+                }
+            }
+            p_norm_signal=(p_angio)/(p_struct+(p_image_threshold*100));
+            p_norm_signal=meanShift(p_norm_signal, .5, .5, 1);
+        }
+        case 2:
+        {
+            p_angio=af::log(af::var(p_angio_stack,0,2)+p_image_threshold);
+            //             Here we have the complex signal available, compute its magnitude, take log on GPU to go faster
+            //             Transfer half as much data back to CPU
+            p_norm_signal = -af::log(af::abs(p_angio)+p_image_threshold);
+        }
+        }
+
+        float l_max = af::max<float>(p_norm_signal);
+        float l_min = af::min<float>(p_norm_signal);
+        p_norm_signal=255.0*(p_norm_signal-l_min)/(l_max-l_min);
+    }
+    }
+    else
+    {
         p_angio=af::log(af::var(p_angio_stack,0,2)+p_image_threshold);
-        // Here we have the complex signal available, compute its magnitude, take log on GPU to go faster
-        // Transfer half as much data back to CPU
         p_norm_signal = -af::log(af::abs(p_angio)+p_image_threshold);
         float l_max = af::max<float>(p_norm_signal);
         float l_min = af::min<float>(p_norm_signal);
         p_norm_signal=255.0*(p_norm_signal-l_min)/(l_max-l_min);
     }
+
     p_norm_signal.as(u8).host(out_data);
     p_current_angio_frame=(p_current_angio_frame+1)%p_n_repeat;
 }

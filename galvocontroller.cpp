@@ -39,7 +39,7 @@ GalvoController::GalvoController() :
     ui->lineEdit_height->setValidator(validator);
     QIntValidator* validator2=new QIntValidator(2,200,this);
     ui->lineEdit_extrapoints->setValidator(validator2);
-    QIntValidator* validator3=new QIntValidator(1,32,this);
+    QIntValidator* validator3=new QIntValidator(1,128,this);
     ui->lineEdit_fastaxisrepeat->setValidator(validator3);    
     QIntValidator* validator4=new QIntValidator(1,200,this);
     ui->lineEdit_aline_repeat->setValidator(validator4);
@@ -175,6 +175,7 @@ void GalvoController::clearCurrentScan(void)
 
 void GalvoController::updateInfo(void)
 {
+
     QString text("Info:\n");
     int aline_repeat = ui->lineEdit_aline_repeat->text().toInt();
     int nx = ui->lineEdit_nx->text().toInt();
@@ -184,20 +185,28 @@ void GalvoController::updateInfo(void)
     float exposure = ui->lineEdit_exposure->text().toFloat();
     float time_per_pix = 1.0/(line_rate*(nx+n_extra)*aline_repeat)*1e6;
     float speed_x=line_rate*width*(nx+n_extra)/(nx*1000.0);
+    float lat_sampling=width/nx;
+    float interFrameTime=1/line_rate*1000;
     QString tmp;
-    tmp.sprintf("Current time per pixel: %10.2f us\n",time_per_pix);
+    tmp.sprintf("Current time per pixel: \t %10.2f us\n",time_per_pix);
     text = text+tmp;
-    tmp.sprintf("Current exposure: %10.2f us\n",exposure);
+    tmp.sprintf("Current exposure: \t %10.2f us\n",exposure);
     text=text+tmp;
-    tmp.sprintf("Beam speed in x: %10.2f mm/sec\n",speed_x);
+    tmp.sprintf("Beam speed in x: \t %10.2f mm/sec\n",speed_x);
+    text=text+tmp;
+    tmp.sprintf("Lateral sampling in x: \t %10.3f um/pix\n",lat_sampling);
+    text=text+tmp;
+    tmp.sprintf("Inter B-scan time in x: \t %10.3f ms\n",interFrameTime);
     text=text+tmp;
 
-    if (time_per_pix < exposure)
+    if (time_per_pix < 0.9*exposure)
     {
         tmp.sprintf("WARNING: INTEGRATION TIME HIGHER THAN TIME PER PIXEL!!!\n");
         text=text+tmp;
     }
     ui->label_info->setText(text);
+
+
 
 }
 
@@ -369,6 +378,7 @@ void GalvoController::startScan()
         p_image_view = new ImageViewer(0,nx+n_extra,view_depth,n_repeat, hpf_time_constant,line_period,spatial_kernel_size,dimz,dimx);
         p_image_view->updateHanningThreshold(ui->lineEdit_hanningeps->text().toFloat());
         p_image_view->updateImageThreshold(ui->lineEdit_logeps->text().toFloat());
+        p_image_view->updateAngioAlgo(ui->comboBox_angio->currentIndex());
         connect(view_timer,SIGNAL(timeout()),p_image_view,SLOT(updateView()));
         connect(this,SIGNAL(sig_updateHanningThreshold(float)),p_image_view,SLOT(updateHanningThreshold(float)));
         connect(this,SIGNAL(sig_updateImageThreshold(float)),p_image_view,SLOT(updateImageThreshold(float)));
