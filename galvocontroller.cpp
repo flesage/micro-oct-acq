@@ -9,6 +9,7 @@
 #include <QTextStream>
 #include "ui_oct_galvos_form.h"
 #include "config.h"
+#include "motorclass.h"
 
 GalvoController::GalvoController() :
     ui(new Ui::OCTGalvosForm), p_galvos(GALVOS_DEV,GALVOS_AOX,GALVOS_AOY), p_settings("Polytechnique/LIOM","OCT"),
@@ -22,6 +23,8 @@ GalvoController::GalvoController() :
     p_fringe_view = 0;
     p_image_view = 0;
     p_data_saver = 0;
+
+    motors = new MotorClass();
 
     double radians_per_volt = 2*3.14159265359/(360*0.8);
     double f1=50.0;
@@ -91,6 +94,7 @@ GalvoController::GalvoController() :
 
 GalvoController::~GalvoController()
 {
+    delete motors;
     delete ui;
 }
 

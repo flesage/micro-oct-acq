@@ -15,6 +15,7 @@
 #include "datasaver.h"
 #include "float64datasaver.h"
 #include "analoginput.h"
+#include "motorclass.h"
 
 namespace Ui {
 class OCTGalvosForm;
@@ -64,6 +65,7 @@ private:
     AnalogInput* p_ai;
     Float64DataSaver* p_ai_data_saver;
     int p_block_size;
+    MotorClass* motors;
 };
 
 

@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui serialport
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -34,7 +34,8 @@ SOURCES += main.cpp \
     softwarecamera.cpp \
     analoginput.cpp \
     FringeFFT.cpp \
-    fwhmviewer.cpp
+    fwhmviewer.cpp \
+    motorclass.cpp
 
 HEADERS  += \
     galvocontroller.h \
@@ -52,7 +53,8 @@ HEADERS  += \
     analoginput.h \
     float64datasaver.h \
     FringeFFT.h \
-    fwhmviewer.h
+    fwhmviewer.h \
+    motorclass.h
 
 FORMS    += \
     oct_galvos_form.ui
