@@ -12,7 +12,7 @@ MotorClass::~MotorClass()
     ClosePort();
 }
 
-void OpenPort()
+void MotorClass::OpenPort()
 {
     if(!is_open)
     {
@@ -31,10 +31,14 @@ void OpenPort()
     }
 }
 
-void ClosePort()
+void MotorClass::ClosePort()
 {
     if(is_open)
     {
+        port.write("1MF\r", 4);
+        port.write("2MF\r", 4);
+        port.write("3MF\r", 4);
+        port.flush();
         port.close();
         is_open=false;
     }
@@ -91,8 +95,8 @@ void MotorClass::move_dx(float dist)
         do
         {
             QThread::sleep(0.1);
-            port.write('1MD?\r');
-            port.read(data,1);
+            port.write("1MD?\r",5);
+            port.read(&data,1);
         } while(!data);
     }
 }
@@ -109,8 +113,8 @@ void MotorClass::move_dy(float dist)
         do
         {
             QThread::sleep(0.1);
-            port.write('2MD?\r');
-            port.read(data,1);
+            port.write("2MD?\r",5);
+            port.read(&data,1);
         } while(!data);
     }
 }
@@ -127,8 +131,8 @@ void MotorClass::move_dz(float dist)
         do
         {
             QThread::sleep(0.1);
-            port.write('3MD?\r');
-            port.read(data,1);
+            port.write("3MD?\r",5);
+            port.read(&data,1);
         } while(!data);
     }
 }
@@ -145,8 +149,8 @@ void MotorClass::move_ax(float dist)
         do
         {
             QThread::sleep(0.1);
-            port.write('1MD?\r');
-            port.read(data,1);
+            port.write("1MD?\r",5);
+            port.read(&data,1);
         } while(!data);
     }
 }
@@ -163,8 +167,8 @@ void MotorClass::move_ay(float dist)
         do
         {
             QThread::sleep(0.1);
-            port.write('2MD?\r');
-            port.read(data,1);
+            port.write("2MD?\r",5);
+            port.read(&data,1);
         } while(!data);
     }
 }
@@ -181,8 +185,8 @@ void MotorClass::move_az(float dist)
         do
         {
             QThread::sleep(0.1);
-            port.write('3MD?\r');
-            port.read(data,1);
+            port.write("3MD?\r",5);
+            port.read(&data,1);
         } while(!data);
     }
 }

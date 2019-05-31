@@ -19,7 +19,7 @@ public:
     void startSaving();
     void stopSaving();
     void put(unsigned short* frame);
-    void run();
+    void run();    
 signals:
     void available(int);
     void filenumber(int);

@@ -9,6 +9,7 @@
 #include <QTextStream>
 #include "ui_oct_galvos_form.h"
 #include "config.h"
+#include <QApplication>
 #include "motorclass.h"
 
 GalvoController::GalvoController() :
@@ -67,9 +68,27 @@ GalvoController::GalvoController() :
     connect(ui->pushButton_up,SIGNAL(clicked()),this,SLOT(moveUp()));
     connect(ui->pushButton_left,SIGNAL(clicked()),this,SLOT(moveLeft()));
     connect(ui->pushButton_readOffsetFile,SIGNAL(clicked()),this,SLOT(readOffset()));
+    //connect(ui->horizontalScrollBar_offsetX,SIGNAL(valueChanged(int)),this,SLOT(updateOffset()));
+    //connect(ui->horizontalScrollBar_offsetY,SIGNAL(valueChanged(int)),this,SLOT(updateOffset()));
+    connect(ui->horizontalScrollBar_offsetX,SIGNAL(valueChanged(int)),this,SLOT(updateOffsetViewerX()));
+    connect(ui->horizontalScrollBar_offsetY,SIGNAL(valueChanged(int)),this,SLOT(updateOffsetViewerY()));
+    //connect(ui->horizontalScrollBar_coeffY,SIGNAL(valueChanged(int)),this,SLOT(updateOffset()));
+    //connect(ui->horizontalScrollBar_coeffX,SIGNAL(valueChanged(int)),this,SLOT(updateOffset()));
+    connect(ui->horizontalScrollBar_coeffY,SIGNAL(valueChanged(int)),this,SLOT(updateCoeffViewerY()));
+    connect(ui->horizontalScrollBar_coeffX,SIGNAL(valueChanged(int)),this,SLOT(updateCoeffViewerX()));
+
+    connect(ui->pushButton_loadCoeff,SIGNAL(clicked()),this,SLOT(readCoeffTxt()));
+    connect(ui->pushButton_saveCoeff,SIGNAL(clicked()),this,SLOT(writeCoeffTxt()));
+
+    connect(ui->lineEdit_datasetname,SIGNAL(editingFinished(void)),this,SLOT(checkPath()));
+
+    connect(ui->checkBox_motorport,SIGNAL(clicked(bool)),this,SLOT(slot_openMotorPort(bool)));
+    connect(ui->pushButton_doMosaic,SIGNAL(clicked()),this,SLOT(slot_doMosaic()));
+    connect(ui->pushButton_doStack,SIGNAL(clicked()),this,SLOT(slot_doStack()));
 
     connect(ui->lineEdit_hanningeps,SIGNAL(editingFinished()),this,SLOT(slot_updateHanningThreshold()));
     connect(ui->lineEdit_logeps,SIGNAL(editingFinished()),this,SLOT(slot_updateImageThreshold()));
+    connect(ui->checkBox_autoFill,SIGNAL(stateChanged(int)),this,SLOT(autoFillName()));
     this->updateInfo();
 
     p_save_dir = QDir::home();
@@ -90,6 +109,12 @@ GalvoController::GalvoController() :
     connect(ui->pushButton_clearsettings,SIGNAL(clicked()),this,SLOT(clearCurrentScan()));
     ui->pushButton_start->setEnabled(true);
     ui->pushButton_stop->setEnabled(false);
+    ui->lineEdit_datasetname->setEnabled(false);
+    readCoeffTxt();
+    updateOffsetViewerX();
+    updateOffsetViewerY();
+    updateCoeffViewerX();
+    updateCoeffViewerY();
 }
 
 GalvoController::~GalvoController()
@@ -98,14 +123,62 @@ GalvoController::~GalvoController()
     delete ui;
 }
 
+void GalvoController::slot_openMotorPort(bool flag)
+{
+    if(flag)
+    {
+        motors->OpenPort();
+    }
+    else
+    {
+        motors->ClosePort();
+    }
+
+}
+
+void GalvoController::slot_doMosaic()
+{
+    // Need to check motors open
+    int nx = ui->lineEdit_mosaic_nx->text().toInt();
+    int ny = ui->lineEdit_mosaic_ny->text().toInt();
+    int overlap_x = ui->lineEdit_mosaic_offset_x->text().toInt();
+    int overlap_y = ui->lineEdit_mosaic_offset_y->text().toInt();
+    for(unsigned int i=0; i<=nx; i++)
+    {
+        for(unsigned int j=0; j<=ny; j++)
+        {
+            // Move motors
+            // Set new datapathname
+            // Do acquisition
+        }
+    }
+}
+
+void GalvoController::slot_doStack()
+{
+    // Need to check motors open
+    // Need to check motors open
+    int nz = ui->lineEdit_stack_nz->text().toInt();
+    int step_z = ui->lineEdit_stack_step_z->text().toFloat();
+    int start_z = ui->lineEdit_stack_start_offset_z->text().toInt();
+    for(unsigned int i=0; i<=nz; i++)
+    {
+        // Move motors
+        motors->move_az(step_z);
+            // Set new datapathname
+            // Do acquisition
+    }
+}
+
 void GalvoController::setSaveDir()
 {
-    QString dir = QFileDialog::getExistingDirectory(this, tr("choose Directory"),
+    dataDir = QFileDialog::getExistingDirectory(this, tr("choose Directory"),
                                                     p_save_dir.absolutePath(),
                                                     QFileDialog::ShowDirsOnly
                                                     | QFileDialog::DontResolveSymlinks);
-    p_save_dir.setPath(dir);
+    p_save_dir.setPath(dataDir);
     ui->label_directory->setText(p_save_dir.absolutePath());
+    ui->lineEdit_datasetname->setEnabled(true);
 }
 
 void GalvoController::setDefaultScan(void)
@@ -245,8 +318,60 @@ void GalvoController::slot_updateHanningThreshold()
     emit sig_updateHanningThreshold(val);
 }
 
+void GalvoController::autoFillName()
+{
+    bool autoFillFlag=ui->checkBox_autoFill->checkState();
+    if(autoFillFlag)
+    {
+        checkPath();
+    }
+}
+
+void GalvoController::checkPath()
+{
+    bool autoFillFlag=ui->checkBox_autoFill->checkState();
+    QString folderName = ui->lineEdit_datasetname->text();
+    if(autoFillFlag)
+    {
+        folderName = ui->comboBox_scanlist->currentText();
+    }
+    QString newfolderName = folderName;
+    QDir pathToData = QDir::cleanPath(dataDir + QDir::separator() + folderName +QDir::separator());
+    QString pathToDataTest = pathToData.absolutePath();
+    bool folderFlag = true;
+    int counter=1;
+    bool overwriteFlag=ui->checkBox_overwrite->checkState();
+
+    if (!overwriteFlag)
+    {
+        while(folderFlag)
+        {
+            if (pathToData.exists())
+            {
+                newfolderName = folderName+"_"+QString::number(counter);
+                pathToData = QDir::cleanPath(dataDir + QDir::separator() + newfolderName +QDir::separator());
+                counter++;
+            }
+            else
+            {
+                folderFlag=false;
+                ui->lineEdit_datasetname->setText(newfolderName);
+            }
+        }
+    }
+}
+
+//void GalvoController::startScanCheckPath()
+//{
+//    checkPath();
+//    startScan();
+//}
+
+
 void GalvoController::startScan()
 {
+    checkPath();
+    qApp->processEvents();
     // Read values
     int nx = ui->lineEdit_nx->text().toInt();
     int ny = ui->lineEdit_ny->text().toInt();
@@ -327,9 +452,7 @@ void GalvoController::startScan()
         p_block_size = (512*256)/nx;
 
         p_data_saver = new DataSaver(nx+n_extra,p_block_size);
-        p_data_saver->setDatasetName(ui->lineEdit_datasetname->text());
         p_data_saver->setDatasetPath(p_save_dir.absolutePath());
-
         // AI
         if(p_ai != 0) delete p_ai;
         p_ai=new AnalogInput(AIAOSAMPRATE);
@@ -395,12 +518,12 @@ void GalvoController::startScan()
         p_camera->setDataSaver(p_data_saver);
         p_data_saver->writeInfoFile();
         p_data_saver->startSaving();
-
         p_ai->SetDataSaver(p_ai_data_saver);
         p_ai_data_saver->startSaving();
         p_ai->Start();
 
     }
+
     p_camera->Start();
 
     if (ui->checkBox_fringe->isChecked() || ui->checkBox_view_image->isChecked())
@@ -425,6 +548,7 @@ void GalvoController::startScan()
     }
     p_galvos.setTrigDelay(ui->lineEdit_shift->text().toFloat());
     // Start generating
+
     p_galvos.startTask();
     ui->pushButton_start->setEnabled(false);
     ui->pushButton_stop->setEnabled(true);
@@ -521,27 +645,151 @@ void GalvoController::goHome(void)
     p_center_x=0;
     p_center_y=0;
     p_galvos.move(p_center_x,p_center_y);
+    std::cout << "p_center_x" << p_center_x << "/ p_center_y" << p_center_y << std::endl;
 }
 
-void GalvoController::readOffset(void)
+void GalvoController::writeCoeffTxt(void)
 {
-    // Could be changed to f
-    //QString fileName = QFileDialog::getOpenFileName(this,
-        //tr("Open Galvo Offset File"), QDir::homePath() , tr("Text Files (*.txt)"));
+    std::cout<<"in readcoeffTxt"<<std::endl;
+    QFile file("C:/git-projects/micro-oct-acq/coefficients.txt");
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+            return;
+    QTextStream out(&file);
+    p_offset_x=readOffsetX();
+    p_offset_y=readOffsetY();
+    p_coeff_x=readCoeffX();
+    p_coeff_y=readCoeffY();
+    out << p_coeff_x << "/" << p_coeff_y << "/" << p_offset_x << "/" << p_offset_y << "\n";
+    file.close();
+}
 
-    //std::cerr << fileName.toUtf8().constData() << std::endl;
-    //QFile file(fileName);
-    QFile file("C:/git-projects/twophoton/coordinates.txt");
+void GalvoController::readCoeffTxt(void)
+{
+    std::cout<<"in readcoeffTxt"<<std::endl;
+    QFile file("C:/git-projects/micro-oct-acq/coefficients.txt");
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
             return;
     QTextStream in(&file);
     QString line = in.readLine();
     file.close();
     QStringList fields = line.split("/");
-    std::cerr << fields.at(0).toUtf8().constData() << std::endl;
-    std::cerr << fields.at(1).toUtf8().constData() << std::endl;
-    p_center_x=fields.at(0).toFloat();
-    p_center_y=fields.at(1).toFloat();
+    p_coeff_x=fields.at(0).toFloat();
+    p_coeff_x=p_coeff_x*10.0;
+    ui->horizontalScrollBar_coeffX->setValue(p_coeff_x);
+
+    p_coeff_y=fields.at(1).toFloat();
+    p_coeff_y=p_coeff_y*10.0;
+    ui->horizontalScrollBar_coeffY->setValue(p_coeff_y);
+
+    p_offset_x=fields.at(2).toFloat();
+    ui->horizontalScrollBar_offsetX->setValue(p_offset_x);
+
+    p_offset_y=fields.at(3).toFloat();
+    ui->horizontalScrollBar_offsetY->setValue(p_offset_y);
+
+    std::cout<<"coeff:"<< p_coeff_x << "/" << p_coeff_y << "/" << p_offset_x << "/" << p_offset_y << "/" <<std::endl;
+    //updateOffsetViewers();
+    std::cout<<"readcoeffTxt done!"<<std::endl;
+}
+
+void GalvoController::readOffset(void)
+{
+    p_galvos.move(0,0);
+    // Could be changed to f
+    //QString fileName = QFileDialog::getOpenFileName(this,
+        //tr("Open Galvo Offset File"), QDir::homePath() , tr("Text Files (*.txt)"));
+
+    //std::cerr << fileName.toUtf8().constData() << std::endl;
+    //QFile file(fileName);
+    QFile file("C:/git-projects/multiphoton/coordinates.txt");
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+            return;
+    QTextStream in(&file);
+    QString line = in.readLine();
+    file.close();
+    QStringList fields = line.split("/");
+    p_center_x=fields.at(1).toFloat();
+    p_center_y=fields.at(0).toFloat();
+    ui->lineEdit_readOffsetX->setText(QString::number(p_center_x));
+    ui->lineEdit_readOffsetY->setText(QString::number(p_center_y));
+    p_offset_x=readOffsetX();
+    p_offset_y=readOffsetY();
+    p_coeff_x=readCoeffX();
+    p_coeff_y=readCoeffY();
+    p_center_x=p_center_x*p_coeff_x+p_offset_x;
+    p_center_y=p_center_y*p_coeff_y+p_offset_y;
+    std::cout << "p_center_x" << p_center_x << "/ p_center_y" << p_center_y << std::endl;
     p_galvos.move(p_center_x,p_center_y);
 }
 
+void GalvoController::updateOffset(void)
+{
+    p_galvos.move(0,0);
+    p_center_x=ui->lineEdit_readOffsetX->text().toFloat();
+    p_center_y=ui->lineEdit_readOffsetY->text().toFloat();
+    p_offset_x=readOffsetX();
+    p_offset_y=readOffsetY();
+    p_coeff_x=readCoeffX();
+    p_coeff_y=readCoeffY();
+    p_center_x=p_center_x*p_coeff_x+p_offset_x;
+    p_center_y=p_center_y*p_coeff_y+p_offset_y;
+    p_galvos.move(p_center_x,p_center_y);
+}
+
+void GalvoController::updateOffsetViewerX(void)
+{
+    p_offset_x=readOffsetX();
+    ui->lineEdit_offsetX->setText(QString::number(p_offset_x));
+    updateOffset();
+    std::cout<<"in update: offsetX:"<< p_offset_x <<std::endl;
+}
+
+void GalvoController::updateOffsetViewerY(void)
+{
+    p_offset_y=readOffsetY();
+    ui->lineEdit_offsetY->setText(QString::number(p_offset_y));
+    updateOffset();
+    std::cout<<"in update: offsetY:"<< p_offset_y <<std::endl;
+}
+
+void GalvoController::updateCoeffViewerX(void)
+{
+    p_coeff_x=readCoeffX();
+    ui->lineEdit_coeffX->setText(QString::number(p_coeff_x));
+    updateOffset();
+    std::cout<<"in update: coeffX:"<< p_coeff_x <<std::endl;
+}
+
+void GalvoController::updateCoeffViewerY(void)
+{
+    p_coeff_y=readCoeffY();
+    ui->lineEdit_coeffY->setText(QString::number(p_coeff_y));
+    updateOffset();
+    std::cout<<"in update: coeffY:"<< p_coeff_y << std::endl;
+}
+
+float GalvoController::readOffsetX(void)
+{
+    p_offset_x=ui->horizontalScrollBar_offsetX->value();
+    return p_offset_x;
+}
+
+float GalvoController::readOffsetY(void)
+{
+    p_offset_y=ui->horizontalScrollBar_offsetY->value();
+    return p_offset_y;
+}
+
+float GalvoController::readCoeffX(void)
+{
+    p_coeff_x=ui->horizontalScrollBar_coeffX->value();
+    p_coeff_x=p_coeff_x/10;
+    return p_coeff_x;
+}
+
+float GalvoController::readCoeffY(void)
+{
+    p_coeff_y=ui->horizontalScrollBar_coeffY->value();
+    p_coeff_y=p_coeff_y/10;
+    return p_coeff_y;
+}

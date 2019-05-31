@@ -33,6 +33,8 @@ signals:
     void sig_updateHanningThreshold(float);
 private slots:
     void updateInfo(void);
+    void checkPath(void);
+    void autoFillName(void);
     void displayFileNumber(int block_number);
     void scanTypeChosen(const QString& text);
     void startScan(void);
@@ -41,7 +43,18 @@ private slots:
     void moveDown(void);
     void moveRight(void);
     void moveLeft(void);
+    void readCoeffTxt(void);
+    void writeCoeffTxt(void);
     void readOffset(void);
+    float readOffsetX(void);
+    float readOffsetY(void);
+    float readCoeffX(void);
+    float readCoeffY(void);
+    void updateOffsetViewerX(void);
+    void updateOffsetViewerY(void);
+    void updateCoeffViewerX(void);
+    void updateCoeffViewerY(void);
+    void updateOffset(void);
     void goHome(void);
     void setSaveDir(void);
     void addDefaultScan(void);
@@ -49,10 +62,18 @@ private slots:
     void clearCurrentScan(void);
     void slot_updateImageThreshold();
     void slot_updateHanningThreshold();
+    void slot_openMotorPort(bool flag);
+    void slot_doMosaic();
+    void slot_doStack();
 private:
     Ui::OCTGalvosForm *ui;
+    QString dataDir;
     float p_center_x;
     float p_center_y;
+    float p_offset_x;
+    float p_offset_y;
+    float p_coeff_x;
+    float p_coeff_y;
     Galvos p_galvos;
     Camera* p_camera;
     QDir p_save_dir;
