@@ -28,6 +28,15 @@ Galvos::Galvos(QString device, QString ao_x, QString ao_y) : p_device(device), p
     p_trigdelay = 0.0;
 }
 
+void Galvos::setGalvoAxes(QString ao_fast, QString ao_slow)
+{
+    p_ao_x=ao_fast;
+    p_ao_y=ao_slow;
+    std::cout<<"axes inverted"<<std::endl;
+    //std::cout<<'fast axis: '+ ao_fast.toStdString() + ' ; slow axis: ' + ao_slow.toStdString()<<std::endl;
+    //std::cout<<'p_ao_x: '+ p_ao_x.toUtf8().constData() + ' ; p_ao_y: ' + p_ao_y.toUtf8().constData()<<std::endl;
+}
+
 void Galvos::setTrigDelay(float trigdelay)
 {
     p_trigdelay = trigdelay;

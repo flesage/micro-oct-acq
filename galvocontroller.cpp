@@ -107,6 +107,7 @@ GalvoController::GalvoController() :
     connect(ui->pushButton_add_scanlist,SIGNAL(clicked()),this,SLOT(addDefaultScan()));
     connect(ui->pushButton_load_scanlist,SIGNAL(clicked()),this,SLOT(setDefaultScan()));
     connect(ui->pushButton_clearsettings,SIGNAL(clicked()),this,SLOT(clearCurrentScan()));
+    connect(ui->checkBox_invertAxes,SIGNAL(stateChanged(int)),this, SLOT(invertAxes()));
     ui->pushButton_start->setEnabled(true);
     ui->pushButton_stop->setEnabled(false);
     ui->lineEdit_datasetname->setEnabled(false);
@@ -122,6 +123,22 @@ GalvoController::~GalvoController()
     delete motors;
     delete ui;
 }
+
+void GalvoController::invertAxes()
+{
+    std::cout<<"invert axes!"<<std::endl;
+    QString ao_fast = "ao0";
+    QString ao_slow = "ao1";
+    if(ui->checkBox_invertAxes->checkState())
+    {
+        p_galvos.setGalvoAxes(ao_slow,ao_fast);
+    }
+    else
+    {
+        p_galvos.setGalvoAxes(ao_fast,ao_slow);
+    }
+}
+
 
 void GalvoController::slot_openMotorPort(bool flag)
 {
@@ -282,9 +299,6 @@ void GalvoController::updateInfo(void)
         text=text+tmp;
     }
     ui->label_info->setText(text);
-
-
-
 }
 
 void GalvoController::scanTypeChosen(const QString& text)
@@ -452,6 +466,7 @@ void GalvoController::startScan()
         p_block_size = (512*256)/nx;
 
         p_data_saver = new DataSaver(nx+n_extra,p_block_size);
+        p_data_saver->setDatasetName(ui->lineEdit_datasetname->text());
         p_data_saver->setDatasetPath(p_save_dir.absolutePath());
         // AI
         if(p_ai != 0) delete p_ai;

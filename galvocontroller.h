@@ -32,6 +32,7 @@ signals:
     void sig_updateImageThreshold(float);
     void sig_updateHanningThreshold(float);
 private slots:
+    void invertAxes(void);
     void updateInfo(void);
     void checkPath(void);
     void autoFillName(void);

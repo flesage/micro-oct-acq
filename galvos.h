@@ -14,6 +14,7 @@ class Galvos : public QThread
     Q_OBJECT
 public:
     Galvos(QString device, QString ao_x, QString ao_y);
+    void setGalvoAxes(QString ao_x, QString ao_y);
     void config();
     void setUnitConverter(Converter converter);
     //void setSynchronizedAITask(a_task);
