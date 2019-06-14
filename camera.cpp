@@ -149,7 +149,7 @@ void Camera::Start()
         // start the acquisition, asynchronous
         errChk(imgSessionAcquire(sid, TRUE, NULL));
 #endif
-        start();
+        start(QThread::TimeCriticalPriority);
     }
 }
 

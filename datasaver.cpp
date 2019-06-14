@@ -9,7 +9,6 @@ DataSaver::DataSaver(int n_alines, int save_block_size) : p_save_block_size(save
 {
     p_frame_size = n_alines*2048;
     p_buffer_size = 2*p_save_block_size;
-
     p_data_buffer = new unsigned short[p_frame_size*p_buffer_size];
 
     p_started = false;

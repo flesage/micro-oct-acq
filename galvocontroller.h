@@ -66,6 +66,7 @@ private slots:
     void slot_openMotorPort(bool flag);
     void slot_doMosaic();
     void slot_doStack();
+    void updateCenterLineEdit();
 private:
     Ui::OCTGalvosForm *ui;
     QString dataDir;

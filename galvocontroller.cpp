@@ -19,6 +19,10 @@ GalvoController::GalvoController() :
     ui->setupUi(this);
     p_center_x=0.0;
     p_center_y=0.0;
+    p_offset_x=0.0;
+    p_offset_y=0.0;
+    p_coeff_x=1.0;
+    p_coeff_y=1.0;
     p_block_size = 256;
     p_camera = 0;
     p_fringe_view = 0;
@@ -111,17 +115,26 @@ GalvoController::GalvoController() :
     ui->pushButton_start->setEnabled(true);
     ui->pushButton_stop->setEnabled(false);
     ui->lineEdit_datasetname->setEnabled(false);
+    connect(ui->pushButton_readOffsetFile,SIGNAL(clicked()),this,SLOT(updateCenterLineEdit()));
+
     readCoeffTxt();
     updateOffsetViewerX();
     updateOffsetViewerY();
     updateCoeffViewerX();
     updateCoeffViewerY();
+    updateCenterLineEdit();
 }
 
 GalvoController::~GalvoController()
 {
     delete motors;
     delete ui;
+}
+
+void GalvoController::updateCenterLineEdit()
+{
+    ui->lineEdit_center_x->setText(QString::number(p_center_x));
+    ui->lineEdit_center_y->setText(QString::number(p_center_y));
 }
 
 void GalvoController::invertAxes()
@@ -132,6 +145,7 @@ void GalvoController::invertAxes()
     if(ui->checkBox_invertAxes->checkState())
     {
         p_galvos.setGalvoAxes(ao_slow,ao_fast);
+
     }
     else
     {
@@ -396,7 +410,8 @@ void GalvoController::startScan()
     float line_rate = ui->lineEdit_linerate->text().toFloat();
     float exposure = ui->lineEdit_exposure->text().toFloat();
     int aline_repeat = ui->lineEdit_aline_repeat->text().toInt();
-
+    int factor = 1;
+    if (line_rate > 30) factor = (int) ((line_rate/30)+1);
     int telescope = ui->comboBox_telescope->currentIndex();
     double radians_per_volt = 2*3.14159265359/(360*0.8)*(3.0/4.0)/0.95;
     double f1=50.0;
@@ -458,14 +473,14 @@ void GalvoController::startScan()
     }
     // Set Camera
     if (p_camera != NULL) delete p_camera;
-    p_camera=new Camera(nx+n_extra,exposure);
+    p_camera=new Camera((nx+n_extra)*factor,exposure);
 
     // If we are saving, setup for it
     if (ui->checkBox_save->isChecked())
     {
-        p_block_size = (512*256)/nx;
+        p_block_size = (int) ((512.0*256.0)/nx/factor);
 
-        p_data_saver = new DataSaver(nx+n_extra,p_block_size);
+        p_data_saver = new DataSaver((nx+n_extra)*factor,p_block_size);
         p_data_saver->setDatasetName(ui->lineEdit_datasetname->text());
         p_data_saver->setDatasetPath(p_save_dir.absolutePath());
         // AI
@@ -489,6 +504,13 @@ void GalvoController::startScan()
         info=info+tmp.sprintf("exposure: %f\n",exposure);
         info=info+tmp.sprintf("alinerepeat: %d\n",aline_repeat);
         info=info+"scantype: "+ui->comboBox_scantype->currentText()+"\n";
+        info=info+tmp.sprintf("center_x: %f\n",p_center_x);
+        info=info+tmp.sprintf("center_y: %f\n",p_center_y);
+        info=info+tmp.sprintf("offset_x: %f\n",p_offset_x);
+        info=info+tmp.sprintf("offset_y: %f\n",p_offset_y);
+        info=info+tmp.sprintf("coeff_x: %f\n",p_coeff_x);
+        info=info+tmp.sprintf("coeff_y: %f\n",p_coeff_y);
+
         p_data_saver->addInfo(info);
         connect(p_data_saver,SIGNAL(available(int)),ui->lcdNumber_saveqsize,SLOT(display(int)));
         connect(p_data_saver,SIGNAL(filenumber(int)),this,SLOT(displayFileNumber(int)));
@@ -641,18 +663,21 @@ void GalvoController::moveDown(void)
 {
     p_center_y+=10;
     p_galvos.move(p_center_x,p_center_y);
+    updateCenterLineEdit();
 }
 
 void GalvoController::moveRight(void)
 {
     p_center_x-=10;
     p_galvos.move(p_center_x,p_center_y);
+    updateCenterLineEdit();
 }
 
 void GalvoController::moveLeft(void)
 {
     p_center_x+=10;
     p_galvos.move(p_center_x,p_center_y);
+    updateCenterLineEdit();
 }
 
 void GalvoController::goHome(void)
@@ -660,7 +685,8 @@ void GalvoController::goHome(void)
     p_center_x=0;
     p_center_y=0;
     p_galvos.move(p_center_x,p_center_y);
-    std::cout << "p_center_x" << p_center_x << "/ p_center_y" << p_center_y << std::endl;
+    std::cout << "p_center_x: " << p_center_x << "/ p_center_y: " << p_center_y << std::endl;
+    updateCenterLineEdit();
 }
 
 void GalvoController::writeCoeffTxt(void)
@@ -733,7 +759,7 @@ void GalvoController::readOffset(void)
     p_coeff_y=readCoeffY();
     p_center_x=p_center_x*p_coeff_x+p_offset_x;
     p_center_y=p_center_y*p_coeff_y+p_offset_y;
-    std::cout << "p_center_x" << p_center_x << "/ p_center_y" << p_center_y << std::endl;
+    std::cout << "p_center_x: " << p_center_x << "/ p_center_y: " << p_center_y << std::endl;
     p_galvos.move(p_center_x,p_center_y);
 }
 

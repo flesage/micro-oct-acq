@@ -72,7 +72,7 @@ void MotorClass::Home()
         } while(!done);
 
         *done=0;
-        port.write("3OR0\r",5);
+       port.write("3OR0\r",5);
         do
         {
             port.write("3MD?\r",5);

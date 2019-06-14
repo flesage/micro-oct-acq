@@ -1,6 +1,6 @@
 #ifndef MOTORCLASS_H
 #define MOTORCLASS_H
-#include <QtSerialPort>
+#include <QSerialPort>
 
 class MotorClass
 {
