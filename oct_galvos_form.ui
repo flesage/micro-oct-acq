@@ -2462,6 +2462,13 @@
            </property>
           </widget>
          </item>
+         <item row="2" column="0">
+          <widget class="QCheckBox" name="checkBox_centreAuto">
+           <property name="text">
+            <string>Centre auto?</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </item>
        <item>

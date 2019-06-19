@@ -395,10 +395,30 @@ void GalvoController::checkPath()
 //    startScan();
 //}
 
+void GalvoController::automaticCentering()
+{
+    bool centreAutoFlag=ui->checkBox_centreAuto->checkState();
+    if(centreAutoFlag)
+    {
+        QString folderName = ui->comboBox_scanlist->currentText();
+        if (folderName=="RBCpassage_1_5_ms")
+        {
+            std::cout<<"RBC"<<std::endl;
+            readOffset();
+        }
+        else if(folderName=="angio_40reps_150Hz")
+        {
+            std::cout<<"40reps"<<std::endl;
+            goHome();
+        }
+    }
+    updateCenterLineEdit();
+}
 
 void GalvoController::startScan()
 {
     checkPath();
+    automaticCentering();
     qApp->processEvents();
     // Read values
     int nx = ui->lineEdit_nx->text().toInt();
