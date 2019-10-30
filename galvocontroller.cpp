@@ -22,7 +22,15 @@ GalvoController::GalvoController() :
     p_offset_x=0.0;
     p_offset_y=0.0;
     p_coeff_x=1.0;
-    p_coeff_y=1.0;
+    p_coeff_y_quad=1.0;
+    p_coeff_x_quad=1.0;
+    p_coeff_xy=1.0;
+    p_coeff_yx=1.0;
+    p_coeff_xy_quad=1.0;
+    p_coeff_yx_quad=1.0;
+    p_coeff_yyx=1.0;
+    p_coeff_xxy=1.0;
+
     p_block_size = 256;
     p_camera = 0;
     p_fringe_view = 0;
@@ -122,10 +130,10 @@ GalvoController::GalvoController() :
     connect(ui->pushButton_readOffsetFile,SIGNAL(clicked()),this,SLOT(updateCenterLineEdit()));
 
     readCoeffTxt();
-    updateOffsetViewerX();
-    updateOffsetViewerY();
-    updateCoeffViewerX();
-    updateCoeffViewerY();
+    //updateOffsetViewerX();
+    //updateOffsetViewerY();
+    //updateCoeffViewerX();
+    //updateCoeffViewerY();
     updateCenterLineEdit();
 }
 
@@ -793,26 +801,33 @@ void GalvoController::writeCoeffTxt(void)
 void GalvoController::readCoeffTxt(void)
 {
     std::cout<<"in readcoeffTxt"<<std::endl;
-    QFile file("C:/git-projects/micro-oct-acq/coefficients.txt");
+    QFile file("C:/git-projects/micro-oct-acq/coefficientsOCT.txt");
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
             return;
     QTextStream in(&file);
     QString line = in.readLine();
     file.close();
     QStringList fields = line.split("/");
-    p_coeff_x=fields.at(0).toFloat();
-    p_coeff_x=p_coeff_x*10.0;
-    ui->horizontalScrollBar_coeffX->setValue(p_coeff_x);
 
-    p_coeff_y=fields.at(1).toFloat();
-    p_coeff_y=p_coeff_y*10.0;
-    ui->horizontalScrollBar_coeffY->setValue(p_coeff_y);
+    std::cout<<"in readcoeffTxt"<<std::endl;
 
-    p_offset_x=fields.at(2).toFloat();
-    ui->horizontalScrollBar_offsetX->setValue(p_offset_x);
 
-    p_offset_y=fields.at(3).toFloat();
-    ui->horizontalScrollBar_offsetY->setValue(p_offset_y);
+    p_offset_x=fields.at(6).toFloat();
+    p_coeff_x=fields.at(7).toFloat();
+    p_coeff_x_quad=fields.at(8).toFloat();
+    p_coeff_xy=fields.at(9).toFloat();
+    p_coeff_xy_quad=fields.at(10).toFloat();
+    std::cout<<"in readcoeffTxt"<<std::endl;
+    p_coeff_xxy=fields.at(11).toFloat();
+
+    p_offset_y=fields.at(0).toFloat();
+    p_coeff_yx=fields.at(1).toFloat();
+    p_coeff_yx_quad=fields.at(2).toFloat();
+    p_coeff_y=fields.at(3).toFloat();
+    std::cout<<"in readcoeffTxt"<<std::endl;
+
+    p_coeff_y_quad=fields.at(4).toFloat();
+    p_coeff_yyx=fields.at(5).toFloat();
 
     std::cout<<"coeff:"<< p_coeff_x << "/" << p_coeff_y << "/" << p_offset_x << "/" << p_offset_y << "/" <<std::endl;
     //updateOffsetViewers();
@@ -841,12 +856,8 @@ void GalvoController::readOffset(void)
     ui->lineEdit_readOffsetX->setText(QString::number(p_center_x));
     ui->lineEdit_readOffsetY->setText(QString::number(p_center_y));
     ui->lineEdit_readLineNumber->setText(QString::number(p_line_number));
-    p_offset_x=readOffsetX();
-    p_offset_y=readOffsetY();
-    p_coeff_x=readCoeffX();
-    p_coeff_y=readCoeffY();
-    p_center_x=p_center_x*p_coeff_x+p_offset_x;
-    p_center_y=p_center_y*p_coeff_y+p_offset_y;
+    p_center_x=p_offset_x+p_center_x*p_coeff_x+p_center_x*p_coeff_x_quad+p_center_y*p_coeff_xy+p_center_y*p_coeff_xy_quad+p_center_y*p_center_x*p_coeff_xxy;
+    p_center_y=p_offset_y+p_center_y*p_coeff_y+p_center_y*p_coeff_y_quad+p_center_x*p_coeff_yx+p_center_x*p_coeff_yx_quad+p_center_y*p_center_x*p_coeff_yyx;
     std::cout << "p_center_x: " << p_center_x << "/ p_center_y: " << p_center_y << std::endl;
     p_galvos.move(p_center_x,p_center_y);
 }
@@ -856,12 +867,10 @@ void GalvoController::updateOffset(void)
     p_galvos.move(0,0);
     p_center_x=ui->lineEdit_readOffsetX->text().toFloat();
     p_center_y=ui->lineEdit_readOffsetY->text().toFloat();
-    p_offset_x=readOffsetX();
-    p_offset_y=readOffsetY();
-    p_coeff_x=readCoeffX();
-    p_coeff_y=readCoeffY();
-    p_center_x=p_center_x*p_coeff_x+p_offset_x;
-    p_center_y=p_center_y*p_coeff_y+p_offset_y;
+
+    p_center_x=p_offset_x+p_center_x*p_coeff_x+p_center_x*p_coeff_x_quad+p_center_y*p_coeff_xy+p_center_y*p_coeff_xy_quad+p_center_y*p_center_x*p_coeff_xxy;
+    p_center_y=p_offset_y+p_center_y*p_coeff_y+p_center_y*p_coeff_y_quad+p_center_x*p_coeff_yx+p_center_x*p_coeff_yx_quad+p_center_y*p_center_x*p_coeff_yyx;
+
     p_galvos.move(p_center_x,p_center_y);
 }
 
@@ -886,7 +895,7 @@ void GalvoController::updateCoeffViewerX(void)
     p_coeff_x=readCoeffX();
     ui->lineEdit_coeffX->setText(QString::number(p_coeff_x));
     updateOffset();
-    std::cout<<"in update: coeffX:"<< p_coeff_x <<std::endl;
+    std::cout<<"in update: coeffX2:"<< p_coeff_x <<std::endl;
 }
 
 void GalvoController::updateCoeffViewerY(void)
@@ -894,7 +903,7 @@ void GalvoController::updateCoeffViewerY(void)
     p_coeff_y=readCoeffY();
     ui->lineEdit_coeffY->setText(QString::number(p_coeff_y));
     updateOffset();
-    std::cout<<"in update: coeffY:"<< p_coeff_y << std::endl;
+    std::cout<<"in update: coeffY2:"<< p_coeff_y << std::endl;
 }
 
 float GalvoController::readOffsetX(void)

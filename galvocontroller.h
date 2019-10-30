@@ -78,6 +78,14 @@ private:
     float p_offset_y;
     float p_coeff_x;
     float p_coeff_y;
+    float p_coeff_x_quad;
+    float p_coeff_y_quad;
+    float p_coeff_xy;
+    float p_coeff_yx;
+    float p_coeff_xy_quad;
+    float p_coeff_yx_quad;
+    float p_coeff_yyx;
+    float p_coeff_xxy;
     int p_line_number;
     QString p_line_number_str;
     Galvos p_galvos;
