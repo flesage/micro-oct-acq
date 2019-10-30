@@ -68,6 +68,7 @@ private slots:
     void slot_doStack();
     void updateCenterLineEdit(void);
     void automaticCentering(void);
+    QString readLineNumber(void);
 private:
     Ui::OCTGalvosForm *ui;
     QString dataDir;
@@ -77,6 +78,8 @@ private:
     float p_offset_y;
     float p_coeff_x;
     float p_coeff_y;
+    int p_line_number;
+    QString p_line_number_str;
     Galvos p_galvos;
     Camera* p_camera;
     QDir p_save_dir;

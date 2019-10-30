@@ -38,6 +38,8 @@ public slots:
     void updateImageThreshold(float);
     void updateHanningThreshold(float);
     void updateAngioAlgo(int);
+    void setCurrentViewModeStruct();
+    void checkLine(bool,int,int);
 
 protected:
     virtual void  keyPressEvent(QKeyEvent *event);
@@ -63,6 +65,9 @@ private:
     FWHMViewer* p_fwhm_view;
     FWHMViewer* p_phase_view;
     int p_view_depth;
+    bool p_line_status;
+    int p_start_line;
+    int p_stop_line;
 };
 
 #endif // ImageViewer_H

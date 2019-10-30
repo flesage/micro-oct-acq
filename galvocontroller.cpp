@@ -49,7 +49,7 @@ GalvoController::GalvoController() :
     ui->lineEdit_extrapoints->setValidator(validator2);
     QIntValidator* validator3=new QIntValidator(1,128,this);
     ui->lineEdit_fastaxisrepeat->setValidator(validator3);    
-    QIntValidator* validator4=new QIntValidator(1,200,this);
+    QIntValidator* validator4=new QIntValidator(1,1000,this);
     ui->lineEdit_aline_repeat->setValidator(validator4);
     QIntValidator* validator5=new QIntValidator(10,2048,this);
     ui->lineEdit_displayPoints->setValidator(validator5);
@@ -86,6 +86,8 @@ GalvoController::GalvoController() :
 
     connect(ui->lineEdit_datasetname,SIGNAL(editingFinished(void)),this,SLOT(checkPath()));
 
+
+
     connect(ui->checkBox_motorport,SIGNAL(clicked(bool)),this,SLOT(slot_openMotorPort(bool)));
     connect(ui->pushButton_doMosaic,SIGNAL(clicked()),this,SLOT(slot_doMosaic()));
     connect(ui->pushButton_doStack,SIGNAL(clicked()),this,SLOT(slot_doStack()));
@@ -112,6 +114,8 @@ GalvoController::GalvoController() :
     connect(ui->pushButton_load_scanlist,SIGNAL(clicked()),this,SLOT(setDefaultScan()));
     connect(ui->pushButton_clearsettings,SIGNAL(clicked()),this,SLOT(clearCurrentScan()));
     connect(ui->checkBox_invertAxes,SIGNAL(stateChanged(int)),this, SLOT(invertAxes()));
+    connect(ui->checkBox_updateLSnumber,SIGNAL(stateChanged(int)),this, SLOT(checkPath()));
+
     ui->pushButton_start->setEnabled(true);
     ui->pushButton_stop->setEnabled(false);
     ui->lineEdit_datasetname->setEnabled(false);
@@ -357,6 +361,7 @@ void GalvoController::autoFillName()
 
 void GalvoController::checkPath()
 {
+    readOffset();
     bool autoFillFlag=ui->checkBox_autoFill->checkState();
     QString folderName = ui->lineEdit_datasetname->text();
     if(autoFillFlag)
@@ -369,6 +374,10 @@ void GalvoController::checkPath()
     bool folderFlag = true;
     int counter=1;
     bool overwriteFlag=ui->checkBox_overwrite->checkState();
+    bool updateLSnumberFlag=ui->checkBox_updateLSnumber->checkState();
+    bool RBCflag=(newfolderName=="RBCpassage_1_5_ms");
+    bool updateLSFlag=(updateLSnumberFlag && RBCflag);
+    std::cout<<"LS flag: "<<updateLSnumberFlag<< "RBC flag: "<< RBCflag<<" flag: "<< RBCflag<<std::endl;
 
     if (!overwriteFlag)
     {
@@ -376,14 +385,27 @@ void GalvoController::checkPath()
         {
             if (pathToData.exists())
             {
+
                 newfolderName = folderName+"_"+QString::number(counter);
                 pathToData = QDir::cleanPath(dataDir + QDir::separator() + newfolderName +QDir::separator());
                 counter++;
             }
             else
             {
-                folderFlag=false;
-                ui->lineEdit_datasetname->setText(newfolderName);
+                if (updateLSFlag)
+                {
+                    folderFlag=false;
+                    std::cout<<"in line update"<<std::endl;
+                    p_line_number_str = readLineNumber();
+                    newfolderName = folderName+"_"+p_line_number_str;
+                    ui->lineEdit_datasetname->setText(newfolderName);
+                }
+                else
+                {
+                    folderFlag=false;
+                    ui->lineEdit_datasetname->setText(newfolderName);
+                }
+
             }
         }
     }
@@ -403,14 +425,27 @@ void GalvoController::automaticCentering()
         QString folderName = ui->comboBox_scanlist->currentText();
         if (folderName=="RBCpassage_1_5_ms")
         {
-            std::cout<<"RBC"<<std::endl;
+            std::cout<<"RBC passage: aligning on 2P linescan"<<std::endl;
             readOffset();
         }
         else if(folderName=="angio_40reps_150Hz")
         {
-            std::cout<<"40reps"<<std::endl;
             goHome();
+            std::cout<<"40 reps: going Home centered with 2P"<<std::endl;
+            p_center_x=readOffsetX();
+            p_center_y=readOffsetY();
+            p_galvos.move(p_center_x,p_center_y);
         }
+        else
+        {
+            std::cout<<"Other mode selected: aligning on 2P linescan"<<std::endl;
+            readOffset();
+        }
+    }
+    else
+    {
+        std::cout<<"Going home:"<<std::endl;
+        goHome();
     }
     updateCenterLineEdit();
 }
@@ -436,6 +471,10 @@ void GalvoController::startScan()
     double radians_per_volt = 2*3.14159265359/(360*0.8)*(3.0/4.0)/0.95;
     double f1=50.0;
     double f2=100.0;
+    bool show_line_flag=ui->checkBox_view_line->isChecked();
+    int p_start_line=0;
+    int p_stop_line=0;
+
     switch(telescope)
     {
     case 0:
@@ -443,14 +482,18 @@ void GalvoController::startScan()
         f2=300.0;
         break;
     case 1:
+        f1=18.0;
+        f2=36.0;
+        break;
+    case 2:
         f1=50.0;
         f2=100.0;
         break;
-    case 2:
+    case 3:
         f1=75.0;
         f2=75.0;
         break;
-    case 3:
+    case 4:
         f1=10.0;
         f2=10.0;
         break;
@@ -496,6 +539,14 @@ void GalvoController::startScan()
     p_camera=new Camera((nx+n_extra)*factor,exposure);
 
     // If we are saving, setup for it
+    if (show_line_flag)
+    {
+        std::cout<<"show flag!"<<std::endl;
+        p_start_line=ui->lineEdit_startLine->text().toInt();
+        p_stop_line=ui->lineEdit_stopLine->text().toInt();
+    }
+
+
     if (ui->checkBox_save->isChecked())
     {
         p_block_size = (int) ((512.0*256.0)/nx/factor);
@@ -531,6 +582,12 @@ void GalvoController::startScan()
         info=info+tmp.sprintf("coeff_x: %f\n",p_coeff_x);
         info=info+tmp.sprintf("coeff_y: %f\n",p_coeff_y);
 
+        if (show_line_flag)
+        {
+            std::cout<<"show flag!  - in save"<<std::endl;
+            info=info+tmp.sprintf("start_line: %d\n",p_start_line);
+            info=info+tmp.sprintf("stop_line: %d\n",p_stop_line);
+        }
         p_data_saver->addInfo(info);
         connect(p_data_saver,SIGNAL(available(int)),ui->lcdNumber_saveqsize,SLOT(display(int)));
         connect(p_data_saver,SIGNAL(filenumber(int)),this,SLOT(displayFileNumber(int)));
@@ -549,6 +606,8 @@ void GalvoController::startScan()
         p_fringe_view = new FringeViewer(0,nx+n_extra);
         connect(view_timer,SIGNAL(timeout()),p_fringe_view,SLOT(updateView()));
         p_fringe_view->show();
+        if(ui->checkBox_placeImage->isChecked())
+            p_fringe_view->move(75,150);
         p_camera->setFringeViewer(p_fringe_view);
     }
     if(ui->checkBox_view_image->isChecked())
@@ -563,12 +622,19 @@ void GalvoController::startScan()
         p_image_view->updateHanningThreshold(ui->lineEdit_hanningeps->text().toFloat());
         p_image_view->updateImageThreshold(ui->lineEdit_logeps->text().toFloat());
         p_image_view->updateAngioAlgo(ui->comboBox_angio->currentIndex());
+        p_image_view->checkLine(show_line_flag,p_start_line,p_stop_line);
         connect(view_timer,SIGNAL(timeout()),p_image_view,SLOT(updateView()));
         connect(this,SIGNAL(sig_updateHanningThreshold(float)),p_image_view,SLOT(updateHanningThreshold(float)));
         connect(this,SIGNAL(sig_updateImageThreshold(float)),p_image_view,SLOT(updateImageThreshold(float)));
-
+        if(ui->checkBox_placeImage->isChecked())
+            p_image_view->move(200,150);
         p_image_view->show();
         p_camera->setImageViewer(p_image_view);
+        QString folderName = ui->comboBox_scanlist->currentText();
+        if (folderName=="RBCpassage_1_5_ms")
+        {
+            p_image_view->setCurrentViewModeStruct();
+        }
     }
     if (ui->checkBox_save->isChecked())
     {
@@ -769,10 +835,12 @@ void GalvoController::readOffset(void)
     QString line = in.readLine();
     file.close();
     QStringList fields = line.split("/");
-    p_center_x=fields.at(1).toFloat();
-    p_center_y=fields.at(0).toFloat();
+    p_line_number=fields.at(2).toInt();
+    p_center_x=fields.at(0).toFloat();
+    p_center_y=fields.at(1).toFloat();
     ui->lineEdit_readOffsetX->setText(QString::number(p_center_x));
     ui->lineEdit_readOffsetY->setText(QString::number(p_center_y));
+    ui->lineEdit_readLineNumber->setText(QString::number(p_line_number));
     p_offset_x=readOffsetX();
     p_offset_y=readOffsetY();
     p_coeff_x=readCoeffX();
@@ -853,4 +921,10 @@ float GalvoController::readCoeffY(void)
     p_coeff_y=ui->horizontalScrollBar_coeffY->value();
     p_coeff_y=p_coeff_y/10;
     return p_coeff_y;
+}
+
+QString GalvoController::readLineNumber(void)
+{
+    p_line_number_str=ui->lineEdit_readLineNumber->text();
+    return p_line_number_str;
 }

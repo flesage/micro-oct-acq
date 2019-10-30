@@ -4,6 +4,8 @@
 #include <QTime>
 #include <iostream>
 #include <cmath>
+#include <QPainter>
+
 
 ImageViewer::ImageViewer(QWidget *parent, int n_alines, int view_depth, unsigned int n_repeat, float msec_fwhm, float line_period, float spatial_fwhm, float dimz, float dimx) :
     QLabel(parent), f_fft(n_repeat), p_n_alines(n_alines), p_view_depth(view_depth)
@@ -21,6 +23,11 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, int view_depth, unsigned
     p_doppler_image = QImage(LINE_ARRAY_SIZE/2,p_n_alines-1,QImage::Format_Indexed8);
     p_fwhm_view = new FWHMViewer(0,p_view_depth);
     p_phase_view = new FWHMViewer(0,LINE_ARRAY_SIZE);
+
+    p_line_status = false;
+    p_start_line = 250;
+    p_stop_line = 500;
+
 
     pix = QPixmap::fromImage(p_fringe_image);
     setPixmap(pix);
@@ -88,6 +95,11 @@ void ImageViewer::resizeEvent(QResizeEvent *)
     if(!pix.isNull())
         QLabel::setPixmap(pix.scaled(this->size(),
                                      Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
+}
+
+void ImageViewer::setCurrentViewModeStruct()
+{
+    p_current_viewmode=STRUCT;
 }
 
 void  ImageViewer::keyPressEvent(QKeyEvent *event)
@@ -253,9 +265,31 @@ void ImageViewer::updateView()
 
     }
 
+    if (p_line_status == true)
+    {
+        std::cout<<"show lines!"<<std::endl;
+        QPainter painter(&pix);
+        int Width = 2;
+        QImage start_line(p_n_alines,Width,QImage::Format_RGB32);
+        start_line.fill(Qt::green);
+        QPixmap start_line_pixmap;
+        start_line_pixmap=QPixmap::fromImage(start_line);
+        painter.drawPixmap(0, p_start_line-1, p_n_alines, Width, start_line_pixmap);
+        QImage stop_line(p_n_alines,Width,QImage::Format_RGB32);
+        stop_line.fill(Qt::yellow);
+        QPixmap stop_line_pixmap;
+        stop_line_pixmap=QPixmap::fromImage(stop_line);
+        painter.drawPixmap(0, p_stop_line-1, p_n_alines, Width, stop_line_pixmap);
+    }
+    else
+    {
+        std::cout<<"don't show lines!"<<std::endl;
+    }
+
     // Set as pixmap
     QLabel::setPixmap(pix.scaled(this->size(),
                                  Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
+
 
 }
 
@@ -266,4 +300,11 @@ void ImageViewer::put(unsigned short* data)
         memcpy(p_data_buffer,data,p_n_alines*2048*sizeof(unsigned short));
         p_mutex.unlock();
     }
+}
+
+void ImageViewer::checkLine(bool lineStatus, int startLine, int stopLine)
+{
+    p_line_status=lineStatus;
+    p_start_line=startLine;
+    p_stop_line=stopLine;
 }
