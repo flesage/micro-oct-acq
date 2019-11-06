@@ -49,12 +49,8 @@ private slots:
     void readOffset(void);
     float readOffsetX(void);
     float readOffsetY(void);
-    float readCoeffX(void);
-    float readCoeffY(void);
     void updateOffsetViewerX(void);
     void updateOffsetViewerY(void);
-    void updateCoeffViewerX(void);
-    void updateCoeffViewerY(void);
     void updateOffset(void);
     void goHome(void);
     void setSaveDir(void);
@@ -86,6 +82,8 @@ private:
     float p_coeff_yx_quad;
     float p_coeff_yyx;
     float p_coeff_xxy;
+    float p_offset_x_added;
+    float p_offset_y_added;
     int p_line_number;
     QString p_line_number_str;
     Galvos p_galvos;

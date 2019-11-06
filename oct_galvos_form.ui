@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>613</width>
-    <height>992</height>
+    <height>934</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -260,13 +260,13 @@
              </property>
              <property name="minimumSize">
               <size>
-               <width>50</width>
+               <width>70</width>
                <height>0</height>
               </size>
              </property>
              <property name="maximumSize">
               <size>
-               <width>50</width>
+               <width>70</width>
                <height>16777215</height>
               </size>
              </property>
@@ -286,13 +286,13 @@
              </property>
              <property name="minimumSize">
               <size>
-               <width>50</width>
+               <width>70</width>
                <height>0</height>
               </size>
              </property>
              <property name="maximumSize">
               <size>
-               <width>50</width>
+               <width>70</width>
                <height>16777215</height>
               </size>
              </property>
@@ -2177,11 +2177,11 @@
      </item>
      <item>
       <layout class="QGridLayout" name="gridLayout_4">
-       <item row="5" column="1">
+       <item row="3" column="1">
         <widget class="QScrollBar" name="horizontalScrollBar_offsetY">
          <property name="minimumSize">
           <size>
-           <width>120</width>
+           <width>100</width>
            <height>0</height>
           </size>
          </property>
@@ -2202,7 +2202,7 @@
          </property>
         </widget>
        </item>
-       <item row="4" column="0">
+       <item row="2" column="0">
         <widget class="QLabel" name="label_28">
          <property name="minimumSize">
           <size>
@@ -2221,7 +2221,7 @@
          </property>
         </widget>
        </item>
-       <item row="5" column="0">
+       <item row="3" column="0">
         <widget class="QLabel" name="label_29">
          <property name="minimumSize">
           <size>
@@ -2240,11 +2240,11 @@
          </property>
         </widget>
        </item>
-       <item row="4" column="1">
+       <item row="2" column="1">
         <widget class="QScrollBar" name="horizontalScrollBar_offsetX">
          <property name="minimumSize">
           <size>
-           <width>120</width>
+           <width>100</width>
            <height>0</height>
           </size>
          </property>
@@ -2265,162 +2265,39 @@
          </property>
         </widget>
        </item>
-       <item row="4" column="2">
+       <item row="2" column="2">
         <widget class="QLineEdit" name="lineEdit_offsetX">
          <property name="enabled">
           <bool>false</bool>
          </property>
          <property name="minimumSize">
           <size>
-           <width>50</width>
+           <width>70</width>
            <height>20</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
-           <width>50</width>
-           <height>30</height>
-          </size>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="2">
-        <widget class="QLineEdit" name="lineEdit_offsetY">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>50</width>
-           <height>20</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>50</width>
-           <height>30</height>
-          </size>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
-        <widget class="QScrollBar" name="horizontalScrollBar_coeffX">
-         <property name="minimumSize">
-          <size>
-           <width>120</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>100</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="minimum">
-          <number>-99</number>
-         </property>
-         <property name="maximum">
-          <number>100</number>
-         </property>
-         <property name="pageStep">
-          <number>1</number>
-         </property>
-         <property name="value">
-          <number>10</number>
-         </property>
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="1">
-        <widget class="QScrollBar" name="horizontalScrollBar_coeffY">
-         <property name="minimumSize">
-          <size>
-           <width>120</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>100</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="minimum">
-          <number>-99</number>
-         </property>
-         <property name="maximum">
-          <number>100</number>
-         </property>
-         <property name="singleStep">
-          <number>1</number>
-         </property>
-         <property name="pageStep">
-          <number>1</number>
-         </property>
-         <property name="value">
-          <number>10</number>
-         </property>
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="label_32">
-         <property name="text">
-          <string>Coeff x</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <widget class="QLabel" name="label_33">
-         <property name="text">
-          <string>Coeff y</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="2">
-        <widget class="QLineEdit" name="lineEdit_coeffX">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>50</width>
-           <height>20</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>50</width>
+           <width>70</width>
            <height>30</height>
           </size>
          </property>
         </widget>
        </item>
        <item row="3" column="2">
-        <widget class="QLineEdit" name="lineEdit_coeffY">
+        <widget class="QLineEdit" name="lineEdit_offsetY">
          <property name="enabled">
           <bool>false</bool>
          </property>
          <property name="minimumSize">
           <size>
-           <width>50</width>
+           <width>70</width>
            <height>20</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
-           <width>50</width>
+           <width>70</width>
            <height>30</height>
           </size>
          </property>

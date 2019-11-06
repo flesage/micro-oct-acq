@@ -281,10 +281,7 @@ void ImageViewer::updateView()
         stop_line_pixmap=QPixmap::fromImage(stop_line);
         painter.drawPixmap(0, p_stop_line-1, p_n_alines, Width, stop_line_pixmap);
     }
-    else
-    {
-        std::cout<<"don't show lines!"<<std::endl;
-    }
+
 
     // Set as pixmap
     QLabel::setPixmap(pix.scaled(this->size(),
