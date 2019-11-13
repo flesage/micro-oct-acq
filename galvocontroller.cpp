@@ -386,7 +386,7 @@ void GalvoController::checkPath()
     int counter=1;
     bool overwriteFlag=ui->checkBox_overwrite->checkState();
     bool updateLSnumberFlag=ui->checkBox_updateLSnumber->checkState();
-    bool RBCflag=(newfolderName=="RBCpassage_1_5_ms");
+    bool RBCflag=((newfolderName=="RBCpassage_1_5_ms")||(newfolderName=="CapVel"));
     bool updateLSFlag=(updateLSnumberFlag && RBCflag);
     std::cout<<"LS flag: "<<updateLSnumberFlag<< "RBC flag: "<< RBCflag<<" flag: "<< RBCflag<<std::endl;
 
