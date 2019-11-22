@@ -5,6 +5,7 @@
 MotorClass::MotorClass()
 {
     is_open = false;
+    piezo_is_open = false;
 }
 
 MotorClass::~MotorClass()
@@ -41,6 +42,13 @@ void MotorClass::ClosePort()
         port.flush();
         port.close();
         is_open=false;
+    }
+    if(piezo_is_open)
+    {
+        piezo_port.write("1MF\r", 4);
+        piezo_port.flush();
+        piezo_port.close();
+        piezo_is_open=false;
     }
 }
 
@@ -191,7 +199,88 @@ void MotorClass::move_az(float dist)
     }
 }
 
+void MotorClass::PiezoOpenPort()
+{
+    std::cout<<"...opening piezo"<<std::endl;
+    if(!piezo_is_open)
+    {
+        piezo_port.setPortName("COM5");
+        piezo_port.open(QSerialPort::ReadWrite);
+        piezo_port.setBaudRate(19200);
+        piezo_port.setDataBits(QSerialPort::Data8);
+        piezo_port.setParity(QSerialPort::NoParity);
+        piezo_port.setStopBits(QSerialPort::OneStop);
+        piezo_port.setFlowControl(QSerialPort::SoftwareControl);
+
+        piezo_port.flush();
+        piezo_port.write("1MO\r", 4);
+        piezo_is_open=true;
+    }
+    std::cout<<"...done!"<<std::endl;
+}
+
+void MotorClass::PiezoClosePort()
+{
+    std::cout<<"...closing piezo"<<std::endl;
+    if(piezo_is_open)
+    {
+        piezo_port.write("1MF\r", 4);
+        piezo_port.flush();
+        piezo_port.close();
+        piezo_is_open=false;
+    }
+    std::cout<<"...done!"<<std::endl;
+}
+
+void MotorClass::PiezoHome()
+{
+    if(piezo_is_open)
+    {
+        std::cout<<"...homing piezo"<<std::endl;
+
+        char buffer[4];
+
+        //        Wait until homing is done to return from this function to
+        //        make sure we have accurate positioning
+        //        Motor 1
+        int* piezodone = (int*) &buffer;
+        piezo_port.write("1JA1\r",5);
+        //do
+        //{
+         //   port.write("1MD?\r",5);
+          //  piezodone=port.read(buffer,4);
+           // QThread::sleep(0.2);
+        //} while(!piezodone);
+
+        //*piezodone=0;
+    }
+
+}
+
+//void MotorClass::PiezoHome()
+//{
+//    if(piezo_is_open)
+//    {
+//        char buffer[4];
+
+//        //        Wait until homing is done to return from this function to
+//        //        make sure we have accurate positioning
+//        //        Motor 1
+//        int* done = (int*) &buffer;
+//        piezo_port.write("1OR\r",5);
+//        do
+//        {
+//            piezo_port.write("1MD?\r",5);
+//            done=piezo_port.read(buffer,4);
+//            QThread::sleep(0.2);
+//        } while(done==81);
+
+//    }
+
+//}
+
 /*
+
 
 
 def get_pos_axial(self):

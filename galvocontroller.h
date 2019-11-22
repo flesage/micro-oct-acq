@@ -32,6 +32,9 @@ signals:
     void sig_updateImageThreshold(float);
     void sig_updateHanningThreshold(float);
 private slots:
+    void turnPiezoOn(void);
+    void turnPiezoOff(void);
+    void homePiezo(void);
     void invertAxes(void);
     void updateInfo(void);
     void checkPath(void);
@@ -99,6 +102,7 @@ private:
     Float64DataSaver* p_ai_data_saver;
     int p_block_size;
     MotorClass* motors;
+
 };
 
 

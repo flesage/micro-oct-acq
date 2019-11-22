@@ -10,6 +10,9 @@ public:
     void OpenPort();
     void ClosePort();
     void Home();
+    void PiezoOpenPort();
+    void PiezoClosePort();
+    void PiezoHome();
     void move_dx(float dist);
     void move_dy(float dist);
     void move_dz(float dist);
@@ -19,7 +22,10 @@ public:
 
 private:
     QSerialPort port;
+    QSerialPort piezo_port;
     bool is_open;
+    bool piezo_is_open;
+
 };
 
 #endif // MOTORCLASS_H

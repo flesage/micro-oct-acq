@@ -11,6 +11,7 @@
 #include "config.h"
 #include <QApplication>
 #include "motorclass.h"
+#include "piezostage.h"
 
 GalvoController::GalvoController() :
     ui(new Ui::OCTGalvosForm), p_galvos(GALVOS_DEV,GALVOS_AOX,GALVOS_AOY), p_settings("Polytechnique/LIOM","OCT"),
@@ -71,6 +72,11 @@ GalvoController::GalvoController() :
     connect(ui->lineEdit_exposure,SIGNAL(editingFinished()),this,SLOT(updateInfo()));
     connect(ui->lineEdit_width,SIGNAL(editingFinished()),this,SLOT(updateInfo()));
     connect(ui->lineEdit_aline_repeat,SIGNAL(editingFinished()),this,SLOT(updateInfo()));
+
+    connect(ui->pushButton_piezoOn,SIGNAL(clicked()),this,SLOT(turnPiezoOn()));
+    connect(ui->pushButton_piezoOff,SIGNAL(clicked()),this,SLOT(turnPiezoOff()));
+    connect(ui->pushButton_piezoHome,SIGNAL(clicked()),this,SLOT(homePiezo()));
+
 
     connect(ui->comboBox_scantype,SIGNAL(activated(const QString&)),this,SLOT(scanTypeChosen(const QString&)));
 
@@ -141,6 +147,27 @@ GalvoController::~GalvoController()
 {
     delete motors;
     delete ui;
+}
+
+
+void GalvoController::turnPiezoOn()
+{
+    std::cout<<"piezo turning on"<<std::endl;
+    motors->PiezoOpenPort();
+}
+
+void GalvoController::turnPiezoOff()
+{
+    std::cout<<"piezo turning off"<<std::endl;
+    motors->PiezoClosePort();
+
+}
+
+void GalvoController::homePiezo()
+{
+    std::cout<<"homing piezo"<<std::endl;
+    motors->PiezoHome();
+
 }
 
 void GalvoController::updateCenterLineEdit()
