@@ -32,9 +32,12 @@ signals:
     void sig_updateImageThreshold(float);
     void sig_updateHanningThreshold(float);
 private slots:
+    void updateSpeedPiezo(void);
     void turnPiezoOn(void);
     void turnPiezoOff(void);
     void homePiezo(void);
+    void jogPiezo(void);
+    void stopPiezo(void);
     void invertAxes(void);
     void updateInfo(void);
     void checkPath(void);
@@ -52,6 +55,8 @@ private slots:
     void readOffset(void);
     float readOffsetX(void);
     float readOffsetY(void);
+    float readOffsetX_2(void);
+    float readOffsetY_2(void);
     void updateOffsetViewerX(void);
     void updateOffsetViewerY(void);
     void updateOffset(void);
@@ -87,6 +92,8 @@ private:
     float p_coeff_xxy;
     float p_offset_x_added;
     float p_offset_y_added;
+    float p_offset_x_added_2;
+    float p_offset_y_added_2;
     int p_line_number;
     QString p_line_number_str;
     Galvos p_galvos;

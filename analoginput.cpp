@@ -51,6 +51,8 @@ void AnalogInput::Stop()
     DAQmxErrChk(DAQmxClearTask(p_ai_task_handle));
 }
 
+
+
 void AnalogInput::run()
 {
     // Read every second and send to saver

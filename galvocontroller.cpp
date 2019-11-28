@@ -76,6 +76,10 @@ GalvoController::GalvoController() :
     connect(ui->pushButton_piezoOn,SIGNAL(clicked()),this,SLOT(turnPiezoOn()));
     connect(ui->pushButton_piezoOff,SIGNAL(clicked()),this,SLOT(turnPiezoOff()));
     connect(ui->pushButton_piezoHome,SIGNAL(clicked()),this,SLOT(homePiezo()));
+    connect(ui->spinBox_piezoSpeed,SIGNAL(valueChanged(int)),this,SLOT(updateSpeedPiezo()));
+    connect(ui->pushButton_piezoJog,SIGNAL(clicked()),this,SLOT(jogPiezo()));
+    connect(ui->pushButton_piezoStop,SIGNAL(clicked()),this,SLOT(stopPiezo()));
+
 
 
     connect(ui->comboBox_scantype,SIGNAL(activated(const QString&)),this,SLOT(scanTypeChosen(const QString&)));
@@ -149,6 +153,24 @@ GalvoController::~GalvoController()
     delete ui;
 }
 
+void GalvoController::updateSpeedPiezo()
+{
+    std::cout<<"piezo speed update"<<std::endl;
+    int speedValue = ui->spinBox_piezoSpeed->value();
+    motors->getSpeed(speedValue);
+}
+
+void GalvoController::jogPiezo()
+{
+    std::cout<<"piezo go!"<<std::endl;
+    motors->PiezoStartJog();
+}
+
+void GalvoController::stopPiezo()
+{
+    std::cout<<"piezo stop!"<<std::endl;
+    motors->PiezoStopJog();
+}
 
 void GalvoController::turnPiezoOn()
 {
@@ -516,7 +538,7 @@ void GalvoController::startScan()
         break;
     case 1:
         f1=18.0;
-        f2=36.0;
+        f2=36.0*0.83;
         break;
     case 2:
         f1=50.0;
@@ -589,6 +611,7 @@ void GalvoController::startScan()
         p_data_saver->setDatasetPath(p_save_dir.absolutePath());
         // AI
         if(p_ai != 0) delete p_ai;
+
         p_ai=new AnalogInput(AIAOSAMPRATE);
 
         p_ai_data_saver = new Float64DataSaver(N_AI_CHANNELS,AIAOSAMPRATE,256,"ai");
@@ -843,7 +866,7 @@ void GalvoController::readCoeffTxt(void)
     std::cout<<"in readcoeffTxt"<<std::endl;
     p_coeff_xxy=fields.at(11).toFloat();
 
-    p_offset_y=fields.at(0).toFloat()+0.0;
+    p_offset_y=fields.at(0).toFloat();
     p_coeff_yx=fields.at(1).toFloat();
     p_coeff_yx_quad=fields.at(2).toFloat();
     p_coeff_y=fields.at(3).toFloat();
@@ -893,46 +916,71 @@ void GalvoController::readOffset(void)
     file.close();
     QStringList fields = line.split("/");
     p_line_number=fields.at(2).toInt();
-    p_center_x=fields.at(0).toFloat();
     p_center_y=fields.at(1).toFloat();
+    p_center_x=fields.at(0).toFloat();
+
     ui->lineEdit_readOffsetX->setText(QString::number(p_center_x));
     ui->lineEdit_readOffsetY->setText(QString::number(p_center_y));
+    std::cout << "1a. p_center_x: " << p_center_x << "/ p_center_y: " << p_center_y << std::endl;
+
     ui->lineEdit_readLineNumber->setText(QString::number(p_line_number));
-    p_center_x=(p_offset_x+p_offset_x_added)+p_center_x*p_coeff_x+p_center_x*p_coeff_x_quad+p_center_y*p_coeff_xy+p_center_y*p_coeff_xy_quad+p_center_y*p_center_x*p_coeff_xxy;
-    p_center_y=(p_offset_y+p_offset_y_added)+p_center_y*p_coeff_y+p_center_y*p_coeff_y_quad+p_center_x*p_coeff_yx+p_center_x*p_coeff_yx_quad+p_center_y*p_center_x*p_coeff_yyx;
-    std::cout << "p_center_x: " << p_center_x << "/ p_center_y: " << p_center_y << std::endl;
+    std::cout << "1b. p_offset_y_added: " << p_offset_x_added << "/ p_offset_y_added: " << p_offset_y_added << std::endl;
+    std::cout << "1c. p_offset_y: " << p_offset_y << "/ p_offset_x: " << p_offset_x << std::endl;
+
+    float p_center_y_mod=(p_offset_x+p_offset_x_added)+p_center_x*p_coeff_x+p_center_x*p_coeff_x_quad+p_center_y*p_coeff_xy+p_center_y*p_coeff_xy_quad+p_coeff_xxy*p_center_y*p_center_x;
+
+    float p_center_x_mod=(p_offset_y+p_offset_y_added)+p_center_x*p_coeff_yx+p_center_x*p_coeff_yx_quad+p_coeff_y*p_center_y+p_center_y*p_coeff_y_quad+p_coeff_yyx*p_center_y*p_center_x;
+
+    p_center_y=p_center_x_mod;
+    p_center_x=-p_center_y_mod;
+
+
+    std::cout << "2. p_center_x: " << p_center_x << "/ p_center_y: " << p_center_y << std::endl;
     p_galvos.move(p_center_x,p_center_y);
 }
 
 void GalvoController::updateOffset(void)
 {
     p_galvos.move(0,0);
-    p_center_x=ui->lineEdit_readOffsetX->text().toFloat();
-    p_center_y=ui->lineEdit_readOffsetY->text().toFloat();
+    QFile file("C:/git-projects/multiphoton/coordinates.txt");
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+            return;
+    QTextStream in(&file);
+    QString line = in.readLine();
+    file.close();
+    QStringList fields = line.split("/");
+    p_line_number=fields.at(2).toInt();
+    p_center_x=fields.at(0).toFloat();
+    p_center_y=fields.at(1).toFloat();
 
-    p_center_x=(p_offset_x+p_offset_x_added)+p_center_x*p_coeff_x+p_center_x*p_coeff_x_quad+p_center_y*p_coeff_xy+p_center_y*p_coeff_xy_quad+p_center_y*p_center_x*p_coeff_xxy;
-    p_center_y=(p_offset_y+p_offset_y_added)+p_center_y*p_coeff_y+p_center_y*p_coeff_y_quad+p_center_x*p_coeff_yx+p_center_x*p_coeff_yx_quad+p_center_y*p_center_x*p_coeff_yyx;
+    float p_center_y_mod=(p_offset_x+p_offset_x_added)+p_center_x*p_coeff_x+p_center_x*p_coeff_x_quad+p_center_y*p_coeff_xy+p_center_y*p_coeff_xy_quad+p_coeff_xxy*p_center_y*p_center_x;
+    float p_center_x_mod=(p_offset_y+p_offset_y_added)+p_center_x*p_coeff_yx+p_center_x*p_coeff_yx_quad+p_coeff_y*p_center_y+p_center_y*p_coeff_y_quad+p_coeff_yyx*p_center_y*p_center_x;
+
+    p_center_y=p_center_x_mod;
+    p_center_x=-p_center_y_mod;
 
     p_galvos.move(p_center_x,p_center_y);
 }
 
 void GalvoController::updateOffsetViewerX(void)
 {
-    std::cout<<"in update: previous value: offsetX:"<< p_offset_x <<std::endl;
+    std::cout<<"in update: previous value: offsetX:"<< p_offset_x+p_offset_x_added <<std::endl;
     p_offset_x_added=readOffsetX();
     ui->lineEdit_offsetX->setText(QString::number(p_offset_x_added));
     updateOffset();
-
-    std::cout<<"in update: offsetX:"<< p_offset_x <<std::endl;
+    std::cout<<"in update: offsetY:"<< p_offset_y+p_offset_y_added <<std::endl;
+    std::cout<<"in update: offsetX:"<< p_offset_x+p_offset_x_added <<std::endl;
 }
 
 void GalvoController::updateOffsetViewerY(void)
 {
-    std::cout<<"in update: previous value: offsetX:"<< p_offset_x <<std::endl;
+    std::cout<<"in update: previous value: offsetY:"<< p_offset_y+p_offset_y_added <<std::endl;
     p_offset_y_added=readOffsetY();
     ui->lineEdit_offsetY->setText(QString::number(p_offset_y_added));
     updateOffset();
-    std::cout<<"in update: offsetY:"<< p_offset_y <<std::endl;
+    std::cout<<"in update: offsetY:"<< p_offset_y+p_offset_y_added <<std::endl;
+    std::cout<<"in update: offsetX:"<< p_offset_x+p_offset_x_added <<std::endl;
+
 }
 
 float GalvoController::readOffsetX(void)
@@ -945,6 +993,18 @@ float GalvoController::readOffsetY(void)
 {
     p_offset_y_added=ui->horizontalScrollBar_offsetY->value();
     return p_offset_y_added;
+}
+
+float GalvoController::readOffsetX_2(void)
+{
+    p_offset_x_added_2=ui->horizontalScrollBar_offsetX_2->value();
+    return p_offset_x_added_2;
+}
+
+float GalvoController::readOffsetY_2(void)
+{
+    p_offset_y_added_2=ui->horizontalScrollBar_offsetY_2->value();
+    return p_offset_y_added_2;
 }
 
 QString GalvoController::readLineNumber(void)

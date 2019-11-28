@@ -19,12 +19,17 @@ public:
     void move_ax(float dist);
     void move_ay(float dist);
     void move_az(float dist);
+    void getSpeed(int speedval);
+    void PiezoStartJog();
+    void PiezoStopJog();
 
 private:
     QSerialPort port;
     QSerialPort piezo_port;
     bool is_open;
     bool piezo_is_open;
+    int p_piezo_speed;
+    bool p_piezo_moving;
 
 };
 
