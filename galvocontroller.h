@@ -109,6 +109,7 @@ private:
     Float64DataSaver* p_ai_data_saver;
     int p_block_size;
     MotorClass* motors;
+    bool flagMotor;
 
 };
 

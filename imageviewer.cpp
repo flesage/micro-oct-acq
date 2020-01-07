@@ -267,7 +267,6 @@ void ImageViewer::updateView()
 
     if (p_line_status == true)
     {
-        std::cout<<"show lines!"<<std::endl;
         QPainter painter(&pix);
         int Width = 2;
         QImage start_line(p_n_alines,Width,QImage::Format_RGB32);

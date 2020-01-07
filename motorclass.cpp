@@ -269,7 +269,21 @@ void MotorClass::getSpeed(int speedval)
 {
     p_piezo_speed=speedval;
     std::cout<<"speed updated: "<<p_piezo_speed<<std::endl;
+    QByteArray buffer2;
+    piezo_port.flush();
 
+     QThread::sleep(0.1);
+     piezo_port.write("1TS?\r");
+
+     char buffer[4];
+
+
+
+     buffer2 = piezo_port.readAll();
+     std::cout<<"done: "<<buffer2.constData()<<std::endl;
+     QThread::sleep(0.5);
+
+   piezo_port.flush();
 }
 
 
@@ -278,12 +292,8 @@ void MotorClass::PiezoStartJog()
     if(piezo_is_open)
     {
         std::cout<<"...moving piezo"<<std::endl;
-        char data=0;
-        piezo_port.write("1TS?\r",5);
-        piezo_port.read(&data,1);
-        std::cout<<"status: "<<data<<std::endl;
-        piezo_port.flush();
         QThread::sleep(0.2);
+        piezo_port.flush();
         switch(p_piezo_speed)
         {
         case 0:
@@ -311,14 +321,14 @@ void MotorClass::PiezoStartJog()
             piezo_port.write("1JA3\r",5);
             QThread::sleep(0.5);
             piezo_port.flush();
-            piezo_port.write("1J3\r",5);
+            piezo_port.write("1JA3\r",5);
             std::cout<<"speed 3 written!"<<std::endl;
             break;
         case 4:
-            piezo_port.write("1J4\r",5);
+            piezo_port.write("1JA4\r",5);
             QThread::sleep(0.5);
             piezo_port.flush();
-            piezo_port.write("1J4\r",5);
+            piezo_port.write("1JA4\r",5);
             std::cout<<"speed 4 written!"<<std::endl;
             break;
         case 5:
@@ -342,6 +352,55 @@ void MotorClass::PiezoStartJog()
             piezo_port.write("1JA7\r",5);
             std::cout<<"speed 7 written!"<<std::endl;
             break;
+        case -7:
+            piezo_port.write("1JA-7\r",6);
+            QThread::sleep(0.5);
+            piezo_port.flush();
+            piezo_port.write("1JA-7\r",6);
+            std::cout<<"speed -7 written!"<<std::endl;
+            break;
+        case -6:
+            piezo_port.write("1JA-6\r",6);
+            QThread::sleep(0.5);
+            piezo_port.flush();
+            piezo_port.write("1JA-6\r",6);
+            std::cout<<"speed -6 written!"<<std::endl;
+            break;
+        case -5:
+            piezo_port.write("1JA-5\r",6);
+            QThread::sleep(0.5);
+            piezo_port.flush();
+            piezo_port.write("1JA-5\r",6);
+            std::cout<<"speed -5 written!"<<std::endl;
+            break;
+        case -4:
+            piezo_port.write("1JA-4\r",6);
+            QThread::sleep(0.5);
+            piezo_port.flush();
+            piezo_port.write("1JA-4\r",6);
+            std::cout<<"speed -4 written!"<<std::endl;
+            break;
+        case -3:
+            piezo_port.write("1JA-3\r",6);
+            QThread::sleep(0.5);
+            piezo_port.flush();
+            piezo_port.write("1JA-3\r",6);
+            std::cout<<"speed -3 written!"<<std::endl;
+            break;
+        case -2:
+            piezo_port.write("1JA-2\r",6);
+            QThread::sleep(0.5);
+            piezo_port.flush();
+            piezo_port.write("1JA-2\r",6);
+            std::cout<<"speed -2 written!"<<std::endl;
+            break;
+        case -1:
+            piezo_port.write("1JA-1\r",6);
+            QThread::sleep(0.5);
+            piezo_port.flush();
+            piezo_port.write("1JA-1\r",6);
+            std::cout<<"speed -1 written!"<<std::endl;
+            break;
         default:
             std::cout<<"nothing is happening"<<std::endl;
             break;
@@ -359,7 +418,7 @@ void MotorClass::PiezoStopJog()
         std::cout<<"...stopping piezo"<<std::endl;
         piezo_port.flush();
 
-        char buffer[4];
+        char buffer=0;
 
         //        Wait until homing is done to return from this function to
         //        make sure we have accurate positioning

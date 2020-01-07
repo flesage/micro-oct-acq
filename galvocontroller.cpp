@@ -145,6 +145,7 @@ GalvoController::GalvoController() :
     //updateCoeffViewerX();
     //updateCoeffViewerY();
     updateCenterLineEdit();
+    flagMotor=0;
 }
 
 GalvoController::~GalvoController()
@@ -176,12 +177,14 @@ void GalvoController::turnPiezoOn()
 {
     std::cout<<"piezo turning on"<<std::endl;
     motors->PiezoOpenPort();
+    flagMotor=1;
 }
 
 void GalvoController::turnPiezoOff()
 {
     std::cout<<"piezo turning off"<<std::endl;
     motors->PiezoClosePort();
+    flagMotor=0;
 
 }
 
@@ -537,8 +540,8 @@ void GalvoController::startScan()
         f2=300.0;
         break;
     case 1:
-        f1=18.0;
-        f2=36.0*0.83;
+        f1=36.0;
+        f2=18.0*0.83;
         break;
     case 2:
         f1=50.0;
@@ -709,6 +712,18 @@ void GalvoController::startScan()
     {
         view_timer->start(100);
     }
+    std::cout<<"flagMotor:"<<std::endl;
+
+    std::cout<<"flagMotor:"<<flagMotor<<std::endl;
+
+
+    if (ui->checkBox_speckle_mod->isChecked() && flagMotor)
+    {
+        motors->PiezoStartJog();
+        std::cout<<"starting piezo"<<std::endl;
+
+    }
+
 
     // Set ramp
     if (ui->comboBox_scantype->currentText() == "SawTooth")
@@ -747,6 +762,15 @@ void GalvoController::stopScan()
     // Saver stop
     // Needs to be stopped first due to potential deadlock, will
     // stop when next block size if filled.
+
+
+
+    if (ui->checkBox_speckle_mod->isChecked() && flagMotor)
+    {
+        motors->PiezoStopJog();
+        std::cout<<"stopping piezo"<<std::endl;
+    }
+
     if(p_data_saver)
     {
         p_data_saver->stopSaving();

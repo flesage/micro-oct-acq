@@ -333,7 +333,7 @@
      <item>
       <widget class="QTabWidget" name="tabWidget">
        <property name="currentIndex">
-        <number>2</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="tab">
         <attribute name="title">
@@ -837,7 +837,7 @@
              </item>
              <item>
               <property name="text">
-               <string>Telescope: 18-36mm</string>
+               <string>Telescope: 36-18mm</string>
               </property>
              </item>
              <item>
@@ -1744,6 +1744,9 @@
                        <height>30</height>
                       </size>
                      </property>
+                     <property name="minimum">
+                      <number>-7</number>
+                     </property>
                      <property name="maximum">
                       <number>7</number>
                      </property>
@@ -1917,6 +1920,13 @@
         <widget class="QCheckBox" name="checkBox_view_line">
          <property name="text">
           <string>View Line</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="2">
+        <widget class="QCheckBox" name="checkBox_speckle_mod">
+         <property name="text">
+          <string>Speckle Mod.</string>
          </property>
         </widget>
        </item>
