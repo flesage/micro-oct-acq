@@ -238,9 +238,9 @@ void GalvoController::slot_doMosaic()
     int ny = ui->lineEdit_mosaic_ny->text().toInt();
     int overlap_x = ui->lineEdit_mosaic_offset_x->text().toInt();
     int overlap_y = ui->lineEdit_mosaic_offset_y->text().toInt();
-    for(unsigned int i=0; i<=nx; i++)
+    for(int i=0; i<=nx; i++)
     {
-        for(unsigned int j=0; j<=ny; j++)
+        for(int j=0; j<=ny; j++)
         {
             // Move motors
             // Set new datapathname
@@ -256,7 +256,7 @@ void GalvoController::slot_doStack()
     int nz = ui->lineEdit_stack_nz->text().toInt();
     int step_z = ui->lineEdit_stack_step_z->text().toFloat();
     int start_z = ui->lineEdit_stack_start_offset_z->text().toInt();
-    for(unsigned int i=0; i<=nz; i++)
+    for(int i=0; i<=nz; i++)
     {
         // Move motors
         motors->move_az(step_z);
@@ -594,7 +594,11 @@ void GalvoController::startScan()
     }
     // Set Camera
     if (p_camera != NULL) delete p_camera;
+#ifndef SIMULATION
     p_camera=new Camera((nx+n_extra)*factor,exposure);
+#else
+    p_camera=new SoftwareCamera((nx+n_extra)*factor,exposure);
+#endif
 
     // If we are saving, setup for it
     if (show_line_flag)
@@ -677,7 +681,7 @@ void GalvoController::startScan()
         float line_period = 1.0f/line_rate/(nx+n_extra);
         float dimx = width/nx;
         float dimz = 3.5;
-        p_image_view = new ImageViewer(0,nx+n_extra,view_depth,n_repeat, hpf_time_constant,line_period,spatial_kernel_size,dimz,dimx);
+        p_image_view = new ImageViewer(0,nx+n_extra,ny, view_depth,n_repeat, hpf_time_constant,line_period,spatial_kernel_size,dimz,dimx);
         p_image_view->updateHanningThreshold(ui->lineEdit_hanningeps->text().toFloat());
         p_image_view->updateImageThreshold(ui->lineEdit_logeps->text().toFloat());
         p_image_view->updateAngioAlgo(ui->comboBox_angio->currentIndex());
@@ -721,7 +725,6 @@ void GalvoController::startScan()
     {
         motors->PiezoStartJog();
         std::cout<<"starting piezo"<<std::endl;
-
     }
 
 

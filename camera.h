@@ -8,11 +8,8 @@
 #include "fringeviewer.h"
 #include "imageviewer.h"
 #include "datasaver.h"
-
-#ifdef SIMULATION
-#else
 #include "niimaq.h"
-#endif
+
 
 class Camera : public QThread
 {
@@ -31,13 +28,11 @@ public:
     void setImageViewer(ImageViewer* ptr);
     void setDataSaver(DataSaver* ptr);
 private:
-#ifndef SIMULATION
     SESSION_ID sid;
     INTERFACE_ID iid;
     BUFLIST_ID bid;
     Int32 p_error;
     Int8* p_imaq_buffers[NUM_GRAB_BUFFERS];
-#endif
     int p_n_lines;
     float p_exposure;
     int p_bufsize;

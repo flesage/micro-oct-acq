@@ -24,6 +24,7 @@ LIBS += -L"C:\Program Files (x86)\National Instruments\Shared\ExternalCompilerSu
 LIBS += -L"C:\Program Files (x86)\National Instruments\NI-IMAQ\Lib\MSVC" -limaq
 
 SOURCES += main.cpp \
+    angioviewer3dform.cpp \
     galvocontroller.cpp \
     galvos.cpp \
     converter.cpp \
@@ -38,6 +39,7 @@ SOURCES += main.cpp \
     motorclass.cpp
 
 HEADERS  += \
+    angioviewer3dform.h \
     galvocontroller.h \
     galvos.h \
     converter.h \
@@ -57,6 +59,7 @@ HEADERS  += \
     motorclass.h
 
 FORMS    += \
+    angioviewer3dform.ui \
     oct_galvos_form.ui
 
 RESOURCES += \

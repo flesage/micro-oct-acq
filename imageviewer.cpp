@@ -7,8 +7,8 @@
 #include <QPainter>
 
 
-ImageViewer::ImageViewer(QWidget *parent, int n_alines, int view_depth, unsigned int n_repeat, float msec_fwhm, float line_period, float spatial_fwhm, float dimz, float dimx) :
-    QLabel(parent), f_fft(n_repeat), p_n_alines(n_alines), p_view_depth(view_depth)
+ImageViewer::ImageViewer(QWidget *parent, int n_alines, int ny, int view_depth, unsigned int n_repeat, float msec_fwhm, float line_period, float spatial_fwhm, float dimz, float dimx) :
+    QLabel(parent), p_ny(ny), f_fft(n_repeat), p_n_alines(n_alines), p_view_depth(view_depth)
 {
     p_current_viewmode = FRINGE;
     is_focus_line = false;
@@ -23,11 +23,12 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, int view_depth, unsigned
     p_doppler_image = QImage(LINE_ARRAY_SIZE/2,p_n_alines-1,QImage::Format_Indexed8);
     p_fwhm_view = new FWHMViewer(0,p_view_depth);
     p_phase_view = new FWHMViewer(0,LINE_ARRAY_SIZE);
+    p_angio_view = new AngioViewer3DForm(0,n_alines, p_ny, p_view_depth);
 
     p_line_status = false;
     p_start_line = 250;
     p_stop_line = 500;
-
+    p_frame_number = 0;
 
     pix = QPixmap::fromImage(p_fringe_image);
     setPixmap(pix);
@@ -53,8 +54,10 @@ ImageViewer::~ImageViewer()
     delete [] p_data_buffer;
     p_fwhm_view->close();
     p_phase_view->close();
+    p_angio_view->close();
     delete p_fwhm_view;
     delete p_phase_view;
+    delete p_angio_view;
 }
 
 void ImageViewer::updateImageThreshold(float new_value)
@@ -71,7 +74,6 @@ void ImageViewer::updateAngioAlgo(int new_value)
 {
     p_angio_algo = new_value;
 }
-
 
 int ImageViewer::heightForWidth( int width ) const
 {
@@ -110,24 +112,43 @@ void  ImageViewer::keyPressEvent(QKeyEvent *event)
     {
         event->accept();
         p_current_viewmode=ANGIO;
+        p_fwhm_view->hide();
+        p_phase_view->hide();
+        if(p_ny > 1)
+        {
+            p_angio_view->show();
+        }
+        else
+        {
+            p_angio_view->hide();
+        }
     }
         break;
     case Qt::Key_D:
     {
         event->accept();
         p_current_viewmode=DOPPLER;
+        p_fwhm_view->hide();
+        p_phase_view->hide();
+        p_angio_view->hide();
     }
         break;
     case Qt::Key_F:
     {
         event->accept();
         p_current_viewmode=FRINGE;
+        p_fwhm_view->hide();
+        p_phase_view->hide();
+        p_angio_view->hide();
     }
         break;
     case Qt::Key_H:
     {
         event->accept();
         p_current_viewmode=HILBERT;
+        p_fwhm_view->hide();
+        p_phase_view->hide();
+        p_angio_view->hide();
     }
         break;
     case Qt::Key_L:
@@ -150,6 +171,8 @@ void  ImageViewer::keyPressEvent(QKeyEvent *event)
             {
                 p_fwhm_view->hide();
             }
+            p_phase_view->hide();
+            p_angio_view->hide();
         }
         if( p_current_viewmode==HILBERT )
         {
@@ -161,6 +184,8 @@ void  ImageViewer::keyPressEvent(QKeyEvent *event)
             {
                 p_phase_view->hide();
             }
+            p_fwhm_view->hide();
+            p_angio_view->hide();
         }
     }
         break;
@@ -168,6 +193,9 @@ void  ImageViewer::keyPressEvent(QKeyEvent *event)
     {
         event->accept();
         p_current_viewmode=STRUCT;
+        p_fwhm_view->hide();
+        p_phase_view->hide();
+        p_angio_view->hide();
     }
         break;
 
@@ -260,6 +288,11 @@ void ImageViewer::updateView()
         tmp = p_image.copy(rect);
         pix = QPixmap::fromImage(tmp);
         pix=pix.transformed(rm);
+        if( p_ny > 1 )
+        {
+            // Push current angio
+            p_angio_view->put(tmp.bits());
+        }
     }
         break;
 
@@ -291,6 +324,7 @@ void ImageViewer::updateView()
 
 void ImageViewer::put(unsigned short* data)
 {
+    p_frame_number++;
     if (p_mutex.tryLock())
     {
         memcpy(p_data_buffer,data,p_n_alines*2048*sizeof(unsigned short));

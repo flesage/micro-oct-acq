@@ -6,6 +6,7 @@
 #include <QKeyEvent>
 #include "FringeFFT.h"
 #include "fwhmviewer.h"
+#include "angioviewer3dform.h"
 
 class QScrollBar;
 
@@ -23,7 +24,7 @@ class ImageViewer : public QLabel
     };
     Q_OBJECT
 public:
-    explicit ImageViewer(QWidget *parent = 0, int n_alines = 100, int view_depth=512, unsigned int n_repeat=1, float msec_fwhm=0.0002, float spatial_fwhm=3.5,
+    explicit ImageViewer(QWidget *parent = 0, int n_alines = 100, int ny=1, int view_depth=512, unsigned int n_repeat=1, float msec_fwhm=0.0002, float spatial_fwhm=3.5,
                          float line_period=0.01, float dimz=3.5, float dimx=3.5);
     virtual ~ImageViewer();
     virtual int heightForWidth( int width ) const;
@@ -64,10 +65,13 @@ private:
     ViewMode p_current_viewmode;
     FWHMViewer* p_fwhm_view;
     FWHMViewer* p_phase_view;
+    AngioViewer3DForm* p_angio_view;
     int p_view_depth;
     bool p_line_status;
     int p_start_line;
     int p_stop_line;
+    unsigned int p_frame_number;
+    int p_ny;
 };
 
 #endif // ImageViewer_H

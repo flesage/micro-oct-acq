@@ -2,9 +2,9 @@
 #include "imaqexception.h"
 #include <iostream>
 USER_FUNC  niimaquDisable32bitPhysMemLimitEnforcement(SESSION_ID boardid);
-#ifndef SIMULATION
+
 #define errChk(fCall) if (p_error = (fCall), p_error < 0) {throw IMAQException(p_error);} else
-#endif
+
 
 Camera::Camera(int n_lines, float exposure)
 {
@@ -34,31 +34,26 @@ void Camera::setDataSaver(DataSaver* ptr)
 void Camera::SetCameraString(const char* attribute, const char* value)
 {
     char tmp[256];
-#ifndef SIMULATION
     Int32 ret = imgSetCameraAttributeString(sid,(Int8*) attribute,(Int8*) value);
     if (ret != 0)
     {
         imgShowError(ret,tmp);
         std::cerr << tmp << std::endl;
     }
-#endif
 }
 
 void Camera::SetCameraNumeric(const char* attribute, double value)
 {
     char tmp[256];
-#ifndef SIMULATION
     Int32 ret = imgSetCameraAttributeNumeric(sid,(Int8*) attribute,(double) value);
     if (ret != 0)
     {
         imgShowError(ret,tmp);
         std::cerr << tmp << std::endl;
     }
-#endif
 }
 void Camera::Open()
 {
-#ifndef SIMULATION
     // OPEN A COMMUNICATION CHANNEL WITH THE CAMERA
     // our camera has been given its proper name in Measurement & Automation Explorer (MAX)
     Int32 width;
@@ -75,13 +70,10 @@ void Camera::Open()
     imgGetAttribute(sid, IMG_ATTR_BYTESPERPIXEL, &bytes_per_pixel);
     p_bufsize = width*height*bytes_per_pixel;
     niimaquDisable32bitPhysMemLimitEnforcement(sid);
-#endif
-
 }
 
 void Camera::ConfigureForSingleGrab()
 {
-#ifndef SIMULATION
     int buf_cmd;
 
     p_current_copied_buffer = (unsigned short*) malloc(p_bufsize * sizeof (Int8));
@@ -106,12 +98,10 @@ void Camera::ConfigureForSingleGrab()
     errChk(imgMemLock(bid));
     // configure the session to use this buffer list
     errChk(imgSessionConfigure(sid, bid));
-#endif
 }
 
 void Camera::Close()
 {
-#ifndef SIMULATION
     // stop the acquisition
     imgSessionAbort(sid, NULL);
 
@@ -137,7 +127,6 @@ void Camera::Close()
         imgClose (sid, TRUE);
     if(iid != 0)
         imgClose (iid, TRUE);
-#endif
 }
 
 void Camera::Start()

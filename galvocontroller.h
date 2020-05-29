@@ -9,6 +9,7 @@
 
 #include "galvos.h"
 #include "camera.h"
+#include "softwarecamera.h"
 #include "datasaver.h"
 #include "fringeviewer.h"
 #include "imageviewer.h"
@@ -97,7 +98,11 @@ private:
     int p_line_number;
     QString p_line_number_str;
     Galvos p_galvos;
+#ifndef SIMULATION
     Camera* p_camera;
+#else
+    SoftwareCamera* p_camera;
+#endif
     QDir p_save_dir;
     QSettings p_settings;
     QStringList p_saved_scans;

@@ -14,8 +14,8 @@
 #define PI ((float)3.1415926)
 
 FringeFFT::FringeFFT(unsigned int n_repeat) : p_nz(0),
-    p_nx (0), p_n_repeat(n_repeat), p_current_angio_frame(0), p_interpfringe(0,0,f32), p_fringe(0,0,f32), p_sparse_interp(0,0,f32),
-    p_mean_fringe(0,0,f32), p_signal(0,0,f32), p_hann_dispcomp(0,0,f32), p_phase(0,0,f32),
+    p_nx (0), p_n_repeat(n_repeat), p_current_angio_frame(0), p_fringe(0,0,f32), p_interpfringe(0,0,f32), p_mean_fringe(0,0,f32),p_signal(0,0,f32),
+    p_sparse_interp(0,0,f32),  p_hann_dispcomp(0,0,f32), p_phase(0,0,f32),
     p_hp_filter(0,0,f32), p_filt_signal(0,0,c32), p_pos0(0,0,f32), p_pos1(0,0,f32), p_angio_stack(0,0,0,f32), p_angio(0,0,f32),p_norm_signal(0,0,f32)
 {
     p_hpf_npts=0;
@@ -41,7 +41,6 @@ void FringeFFT::init(int nz, int nx, float dimz, float dimx)
 
     double* tmp=new double[p_nz];
     FILE* fp=fopen("C:\\Users\\Public\\Documents\\filter.dat","rb");
-
     if(fp == 0)
     {
         std::cerr << "Check if filter file exists" << std::endl;
@@ -158,8 +157,6 @@ void FringeFFT::get_angio(unsigned short* in_fringe,unsigned char* out_data, flo
         case 2:
         {
             p_angio=af::log(af::var(p_angio_stack,0,2)+p_image_threshold);
-            //             Here we have the complex signal available, compute its magnitude, take log on GPU to go faster
-            //             Transfer half as much data back to CPU
             p_norm_signal = -af::log(af::abs(p_angio)+p_image_threshold);
         }
         }

@@ -1,5 +1,5 @@
 #include <iostream>
-#include "SoftwareCamera.h"
+#include "softwarecamera.h"
 
 SoftwareCamera::SoftwareCamera(int n_lines, float exposure)
 {
@@ -20,6 +20,24 @@ SoftwareCamera::~SoftwareCamera()
 void SoftwareCamera::setFringeViewer(FringeViewer *ptr)
 {
     fv_ptr = ptr;
+}
+
+void SoftwareCamera::setImageViewer(ImageViewer* ptr)
+{
+    imv_ptr = ptr;
+}
+void SoftwareCamera::setDataSaver(DataSaver* ptr)
+{
+   dsaver_ptr = ptr;
+}
+
+void SoftwareCamera::SetCameraString(const char* attribute, const char *value)
+{
+   return;
+}
+void SoftwareCamera::SetCameraNumeric(const char* attribute, double value)
+{
+   return;
 }
 
 void SoftwareCamera::Open()
