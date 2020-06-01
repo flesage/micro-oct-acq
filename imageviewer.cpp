@@ -51,13 +51,14 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, int ny, int view_depth, 
 
 ImageViewer::~ImageViewer()
 {
+    p_angio_view->close();
+    delete p_angio_view;
+
     delete [] p_data_buffer;
     p_fwhm_view->close();
     p_phase_view->close();
-    p_angio_view->close();
     delete p_fwhm_view;
     delete p_phase_view;
-    delete p_angio_view;
 }
 
 void ImageViewer::updateImageThreshold(float new_value)

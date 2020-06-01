@@ -16,7 +16,7 @@
 FringeFFT::FringeFFT(unsigned int n_repeat) : p_nz(0),
     p_nx (0), p_n_repeat(n_repeat), p_current_angio_frame(0), p_fringe(0,0,f32), p_interpfringe(0,0,f32), p_mean_fringe(0,0,f32),p_signal(0,0,f32),
     p_sparse_interp(0,0,f32),  p_hann_dispcomp(0,0,f32), p_phase(0,0,f32),
-    p_hp_filter(0,0,f32), p_filt_signal(0,0,c32), p_pos0(0,0,f32), p_pos1(0,0,f32), p_angio_stack(0,0,0,f32), p_angio(0,0,f32),p_norm_signal(0,0,f32)
+    p_hp_filter(0,0,f32), p_filt_signal(0,0,c32), p_pos0(0,0,f32), p_pos1(0,0,f32), p_angio_stack(0,0,0,f32), p_angio(0,0,f32),p_struct(0,0,f32), p_norm_signal(0,0,f32)
 {
     p_hpf_npts=0;
 }
@@ -36,6 +36,7 @@ void FringeFFT::init(int nz, int nx, float dimz, float dimx)
     p_interpfringe = af::array(p_nz,p_nx,f32);
     p_mean_fringe = af::array(p_nz,1,f32);
     p_angio=af::array(p_nz/2,p_nx,f32);
+    p_struct=af::array(p_nz/2,p_nx,f32);
     p_angio_stack=af::array(p_nz/2,p_nx,p_n_repeat,f32);
     p_norm_signal=af::constant(0.0,p_nz,p_nx,f32);
 
@@ -102,77 +103,70 @@ void FringeFFT::get_angio(unsigned short* in_fringe,unsigned char* out_data, flo
     p_signal = af::fftR2C<1>(p_interpfringe, dims);
     p_signal = af::abs(p_signal.rows(1,af::end));
     p_angio_stack(af::span,af::span,p_current_angio_frame)=p_signal;
-    if(p_n_repeat>1)
+    p_norm_signal=p_signal * 0.0f;
+    if(p_n_repeat>1) // Need to have a repeat for angio, otherwise zero
     {
-    if(p_current_angio_frame == (p_n_repeat-1 ))
-    {
-        switch(angio_algo)
+        if(p_current_angio_frame == (p_n_repeat-1 ))
         {
-        case 0:
-        {
-            for(int i=0 ; i<(p_n_repeat-1); i++)
+            switch(angio_algo)
             {
-                if(i>0)
+            case 0:
+            {
+                for(int i=0 ; i<(p_n_repeat-1); i++)
                 {
-                    if(i==1)
+                    if(i>0)
                     {
-                        p_angio=af::abs(af::abs(p_angio_stack(af::span,af::span,i+1))-af::abs(p_angio_stack(af::span,af::span,i)));
-                        p_struct=af::abs(af::abs(p_angio_stack(af::span,af::span,i+1))+af::abs(p_angio_stack(af::span,af::span,i)));
-                        p_angio=p_angio/(p_n_repeat-1);
-                        p_struct=p_struct/(p_n_repeat-1);
+                        if(i==1)
+                        {
+                            p_angio=af::abs(af::abs(p_angio_stack(af::span,af::span,i+1))-af::abs(p_angio_stack(af::span,af::span,i)));
+                            p_struct=af::abs(af::abs(p_angio_stack(af::span,af::span,i+1))+af::abs(p_angio_stack(af::span,af::span,i)));
+                            p_angio=p_angio/(p_n_repeat-1);
+                            p_struct=p_struct/(p_n_repeat-1);
 
-                    } else
-                    {
-                        p_angio=p_angio+(af::abs(af::abs(p_angio_stack(af::span,af::span,i+1))-af::abs(p_angio_stack(af::span,af::span,i))))/(p_n_repeat-1);
-                        p_struct=p_struct+(af::abs(af::abs(p_angio_stack(af::span,af::span,i+1))+af::abs(p_angio_stack(af::span,af::span,i))))/(p_n_repeat-1);
+                        } else
+                        {
+                            p_angio=p_angio+(af::abs(af::abs(p_angio_stack(af::span,af::span,i+1))-af::abs(p_angio_stack(af::span,af::span,i))))/(p_n_repeat-1);
+                            p_struct=p_struct+(af::abs(af::abs(p_angio_stack(af::span,af::span,i+1))+af::abs(p_angio_stack(af::span,af::span,i))))/(p_n_repeat-1);
+                        }
                     }
                 }
+                p_norm_signal=(p_angio)/(p_struct+(p_image_threshold*100));
+                p_norm_signal=meanShift(p_norm_signal, .5, .5, 1);
             }
-            p_norm_signal=(p_angio)/(p_struct+(p_image_threshold*100));
-            p_norm_signal=meanShift(p_norm_signal, .5, .5, 1);
-        }
-        case 1:
-        {
-            for(int i=0 ; i<(p_n_repeat-1); i++)
+            case 1:
             {
-                if(i>0)
+                for(int i=0 ; i<(p_n_repeat-1); i++)
                 {
-                    if(i==1)
+                    if(i>0)
                     {
-                        p_angio=af::abs((p_angio_stack(af::span,af::span,i+1))-(p_angio_stack(af::span,af::span,i)));
-                        p_struct=af::abs((p_angio_stack(af::span,af::span,i+1))+(p_angio_stack(af::span,af::span,i)));
-                        p_angio=p_angio/(p_n_repeat-1);
-                        p_struct=p_struct/(p_n_repeat-1);
+                        if(i==1)
+                        {
+                            p_angio=af::abs((p_angio_stack(af::span,af::span,i+1))-(p_angio_stack(af::span,af::span,i)));
+                            p_struct=af::abs((p_angio_stack(af::span,af::span,i+1))+(p_angio_stack(af::span,af::span,i)));
+                            p_angio=p_angio/(p_n_repeat-1);
+                            p_struct=p_struct/(p_n_repeat-1);
 
-                    } else
-                    {
-                        p_angio=p_angio+(af::abs(af::abs(p_angio_stack(af::span,af::span,i+1))-af::abs(p_angio_stack(af::span,af::span,i))))/(p_n_repeat-1);
-                        p_struct=p_struct+(af::abs(af::abs(p_angio_stack(af::span,af::span,i+1))+af::abs(p_angio_stack(af::span,af::span,i))))/(p_n_repeat-1);
+                        } else
+                        {
+                            p_angio=p_angio+(af::abs(af::abs(p_angio_stack(af::span,af::span,i+1))-af::abs(p_angio_stack(af::span,af::span,i))))/(p_n_repeat-1);
+                            p_struct=p_struct+(af::abs(af::abs(p_angio_stack(af::span,af::span,i+1))+af::abs(p_angio_stack(af::span,af::span,i))))/(p_n_repeat-1);
+                        }
                     }
                 }
+                p_norm_signal=(p_angio)/(p_struct+(p_image_threshold*100));
+                p_norm_signal=meanShift(p_norm_signal, .5, .5, 1);
             }
-            p_norm_signal=(p_angio)/(p_struct+(p_image_threshold*100));
-            p_norm_signal=meanShift(p_norm_signal, .5, .5, 1);
-        }
-        case 2:
-        {
-            p_angio=af::log(af::var(p_angio_stack,0,2)+p_image_threshold);
-            p_norm_signal = -af::log(af::abs(p_angio)+p_image_threshold);
-        }
-        }
+            case 2:
+            {
+                p_angio=af::log(af::var(p_angio_stack,0,2)+p_image_threshold);
+                p_norm_signal = -af::log(af::abs(p_angio)+p_image_threshold);
+            }
+            }
 
-        float l_max = af::max<float>(p_norm_signal);
-        float l_min = af::min<float>(p_norm_signal);
-        p_norm_signal=255.0*(p_norm_signal-l_min)/(l_max-l_min);
-    }
-    }
-    else
-    {
-        p_angio=af::log(af::var(p_angio_stack,0,2)+p_image_threshold);
-        p_norm_signal = -af::log(af::abs(p_angio)+p_image_threshold);
-        float l_max = af::max<float>(p_norm_signal);
-        float l_min = af::min<float>(p_norm_signal);
-        p_norm_signal=255.0*(p_norm_signal-l_min)/(l_max-l_min);
+            float l_max = af::max<float>(p_norm_signal);
+            float l_min = af::min<float>(p_norm_signal);
+            p_norm_signal=255.0*(p_norm_signal-l_min)/(l_max-l_min);
+        }
     }
 
     p_norm_signal.as(u8).host(out_data);
@@ -244,7 +238,7 @@ void FringeFFT::compute_doppler( unsigned short* in_fringe, unsigned char* out_d
     p_signal = af::fftR2C<1>(p_interpfringe, dims);
 
     // We assume we already have a complex image on the GPU (p_signal) and start from there.
-	// thus this needs to always be called after interp_an_do_fft.
+    // thus this needs to always be called after interp_an_do_fft.
     p_filt_signal=convolve(p_signal,p_hp_filter);
     //p_filt_signal = p_signal;
     float speed_factor=1313*1e-6/(4*PI*p_line_period*1.33);
@@ -292,8 +286,8 @@ void FringeFFT::read_interp_matrix()
 
     if(fp == 0)
     {
-    	std::cerr << "Check if interpolation file exists" << std::endl;
-    	exit(-1);
+        std::cerr << "Check if interpolation file exists" << std::endl;
+        exit(-1);
     }
     fread(p_interpolation_matrix,sizeof(double),p_nz*p_nz,fp);
     fclose(fp);
@@ -364,8 +358,8 @@ void FringeFFT::pre_compute_positions(int n_ang_pts, int n_radial_pts)
 
 af::array FringeFFT::unwrap(const af::array& angle)
 {
-  return angle + af::round( ( laplacian( af::cos(angle)*laplacian(af::sin(angle),false) -
-                                         af::sin(angle)*laplacian(af::cos(angle),false), true ) - angle ) / 2/af::Pi ) * 2*af::Pi;
+    return angle + af::round( ( laplacian( af::cos(angle)*laplacian(af::sin(angle),false) -
+                                           af::sin(angle)*laplacian(af::cos(angle),false), true ) - angle ) / 2/af::Pi ) * 2*af::Pi;
 }
 
 // Laplace operator and inverse

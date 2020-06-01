@@ -21,6 +21,7 @@ public:
 public slots:
     void updateView();
     void changeDepth(int value);
+    void changeSliceThickness();
 
 private:
     Ui::AngioViewer3DForm *ui;
@@ -33,6 +34,7 @@ private:
     int p_nx;
     int p_ny;
     int p_nz;
+    int p_slice_thickness;
     QMutex p_mutex;
 };
 

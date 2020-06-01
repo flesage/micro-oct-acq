@@ -4,7 +4,7 @@
 
 AngioViewer3DForm::AngioViewer3DForm(QWidget *parent,int nx, int ny, int nz) :
     QWidget(parent),
-    ui(new Ui::AngioViewer3DForm), p_nx(nx), p_ny(ny), p_nz(nz)
+    ui(new Ui::AngioViewer3DForm), p_nx(nx), p_ny(ny), p_nz(nz), p_slice_thickness(5)
 {
     ui->setupUi(this);
     ui->horizontalSlider_zpos->setRange(0,p_nz-1);
@@ -14,6 +14,7 @@ AngioViewer3DForm::AngioViewer3DForm(QWidget *parent,int nx, int ny, int nz) :
     p_current_frame=0;
     p_current_depth=0;
     connect(ui->horizontalSlider_zpos, &QSlider::valueChanged, this, &AngioViewer3DForm::changeDepth );
+    connect(ui->lineEdit_sliceThickness,SIGNAL(returnPressed()),this,SLOT(changeSliceThickness()));
 }
 
 AngioViewer3DForm::~AngioViewer3DForm()
@@ -41,13 +42,33 @@ void AngioViewer3DForm::changeDepth(int depth)
     p_current_depth = depth;
 }
 
+void AngioViewer3DForm::changeSliceThickness()
+{
+    p_slice_thickness=ui->lineEdit_sliceThickness->text().toInt();
+}
+
 void AngioViewer3DForm::updateView()
 {
     // Critical section
+    int n_slices;
+    if(p_current_depth+p_slice_thickness>p_nz-1)
+    {
+        n_slices = p_nz-p_current_depth;
+    }
+    else
+    {
+        n_slices=p_slice_thickness;
+    }
+
     p_mutex.lock();
     for(int j =0; j<p_ny; j++){
         for(int i=0; i<p_nx; i++){
-            p_current_slice[i+p_nx*j]=p_angio[p_current_depth+p_nz*i+p_nz*p_nx*j];
+            float mip=0.0;
+            for(int k=0;k<n_slices;k++)
+            {
+                mip+=p_angio[p_current_depth+k+p_nz*i+p_nz*p_nx*j];
+            }
+            p_current_slice[i+p_nx*j]=(unsigned char) (mip/n_slices);
         }
     }
     p_mutex.unlock();
