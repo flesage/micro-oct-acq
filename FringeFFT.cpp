@@ -13,8 +13,8 @@
 
 #define PI ((float)3.1415926)
 
-FringeFFT::FringeFFT(unsigned int n_repeat) : p_nz(0),
-    p_nx (0), p_n_repeat(n_repeat), p_current_angio_frame(0), p_fringe(0,0,f32), p_interpfringe(0,0,f32), p_mean_fringe(0,0,f32),p_signal(0,0,f32),
+FringeFFT::FringeFFT(unsigned int n_repeat, int factor) : p_nz(0),
+    p_nx (0), p_n_repeat(n_repeat), p_factor(factor), p_current_angio_frame(0), p_fringe(0,0,f32), p_interpfringe(0,0,f32), p_mean_fringe(0,0,f32),p_signal(0,0,f32),
     p_sparse_interp(0,0,f32),  p_hann_dispcomp(0,0,f32), p_phase(0,0,f32),
     p_hp_filter(0,0,f32), p_filt_signal(0,0,c32), p_pos0(0,0,f32), p_pos1(0,0,f32), p_angio_stack(0,0,0,f32), p_angio(0,0,f32),p_struct(0,0,f32), p_norm_signal(0,0,f32)
 {
@@ -86,8 +86,9 @@ void FringeFFT::interp_and_do_fft(unsigned short* in_fringe,unsigned char* out_s
     p_norm_signal.as(u8).host(out_signal);
 }
 
-void FringeFFT::get_angio(unsigned short* in_fringe,unsigned char* out_data, float p_image_threshold, float p_hanning_threshold, int angio_algo)
+bool FringeFFT::get_angio(unsigned short* in_fringe,unsigned char* out_data, float p_image_threshold, float p_hanning_threshold, int angio_algo)
 {
+    bool flag = false;
     // Interpolation by sparse matrix multiplication
     af::dim4 dims(2048,p_nx,1,1);
     af::array tmp(p_nz,p_nx,in_fringe,afHost);
@@ -166,11 +167,13 @@ void FringeFFT::get_angio(unsigned short* in_fringe,unsigned char* out_data, flo
             float l_max = af::max<float>(p_norm_signal);
             float l_min = af::min<float>(p_norm_signal);
             p_norm_signal=255.0*(p_norm_signal-l_min)/(l_max-l_min);
+            flag = true;
         }
     }
 
     p_norm_signal.as(u8).host(out_data);
     p_current_angio_frame=(p_current_angio_frame+1)%p_n_repeat;
+    return flag;
 }
 
 void FringeFFT::compute_hilbert(unsigned short* in_fringe,unsigned char* out_data, float p_hanning_threshold)

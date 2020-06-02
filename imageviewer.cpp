@@ -7,8 +7,8 @@
 #include <QPainter>
 
 
-ImageViewer::ImageViewer(QWidget *parent, int n_alines, int ny, int view_depth, unsigned int n_repeat, float msec_fwhm, float line_period, float spatial_fwhm, float dimz, float dimx) :
-    QLabel(parent), p_ny(ny), f_fft(n_repeat), p_n_alines(n_alines), p_view_depth(view_depth)
+ImageViewer::ImageViewer(QWidget *parent, int n_alines, int ny, int view_depth, unsigned int n_repeat, float msec_fwhm, float line_period, float spatial_fwhm, float dimz, float dimx, int factor) :
+    QLabel(parent), p_ny(ny), p_factor(factor), f_fft(n_repeat,factor), p_n_alines(n_alines), p_view_depth(view_depth)
 {
     p_current_viewmode = FRINGE;
     is_focus_line = false;
@@ -32,7 +32,7 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, int ny, int view_depth, 
 
     pix = QPixmap::fromImage(p_fringe_image);
     setPixmap(pix);
-    p_data_buffer=new unsigned short[p_n_alines*LINE_ARRAY_SIZE];
+    p_data_buffer=new unsigned short[p_n_alines*LINE_ARRAY_SIZE*factor];
 
     setFocusPolicy(Qt::StrongFocus);
     resize(200,400);
@@ -51,14 +51,13 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, int ny, int view_depth, 
 
 ImageViewer::~ImageViewer()
 {
-    p_angio_view->close();
-    delete p_angio_view;
-
     delete [] p_data_buffer;
     p_fwhm_view->close();
     p_phase_view->close();
     delete p_fwhm_view;
     delete p_phase_view;
+    p_angio_view->close();
+    delete p_angio_view;
 }
 
 void ImageViewer::updateImageThreshold(float new_value)
@@ -283,13 +282,13 @@ void ImageViewer::updateView()
     case ANGIO:
     {
         p_mutex.lock();
-        f_fft.get_angio(p_data_buffer, p_image.bits(),p_image_threshold, p_hanning_threshold,p_angio_algo);
+        bool flag = f_fft.get_angio(p_data_buffer, p_image.bits(),p_image_threshold, p_hanning_threshold,p_angio_algo);
         p_mutex.unlock();
         rect.setRect(0,0,p_view_depth,p_n_alines);
         tmp = p_image.copy(rect);
         pix = QPixmap::fromImage(tmp);
         pix=pix.transformed(rm);
-        if( p_ny > 1 )
+        if( p_ny > 1 && flag )
         {
             // Push current angio
             p_angio_view->put(tmp.bits());
@@ -328,7 +327,7 @@ void ImageViewer::put(unsigned short* data)
     p_frame_number++;
     if (p_mutex.tryLock())
     {
-        memcpy(p_data_buffer,data,p_n_alines*2048*sizeof(unsigned short));
+        memcpy(p_data_buffer,data,p_n_alines*2048*sizeof(unsigned short)*p_factor);
         p_mutex.unlock();
     }
 }

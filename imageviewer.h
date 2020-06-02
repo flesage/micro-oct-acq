@@ -25,7 +25,7 @@ class ImageViewer : public QLabel
     Q_OBJECT
 public:
     explicit ImageViewer(QWidget *parent = 0, int n_alines = 100, int ny=1, int view_depth=512, unsigned int n_repeat=1, float msec_fwhm=0.0002, float spatial_fwhm=3.5,
-                         float line_period=0.01, float dimz=3.5, float dimx=3.5);
+                         float line_period=0.01, float dimz=3.5, float dimx=3.5, int factor=1);
     virtual ~ImageViewer();
     virtual int heightForWidth( int width ) const;
     virtual QSize sizeHint() const;
@@ -49,6 +49,7 @@ private:
     FringeFFT f_fft;
     double scaleFactor;
     int p_n_alines;
+    int p_factor;
     QImage p_image;
     QImage p_fringe_image;
     QImage p_hilbert_image;

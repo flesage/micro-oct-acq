@@ -681,7 +681,7 @@ void GalvoController::startScan()
         float line_period = 1.0f/line_rate/(nx+n_extra);
         float dimx = width/nx;
         float dimz = 3.5;
-        p_image_view = new ImageViewer(0,nx+n_extra,ny, view_depth,n_repeat, hpf_time_constant,line_period,spatial_kernel_size,dimz,dimx);
+        p_image_view = new ImageViewer(0,nx+n_extra,ny, view_depth,n_repeat, hpf_time_constant,line_period,spatial_kernel_size,dimz,dimx,factor);
         p_image_view->updateHanningThreshold(ui->lineEdit_hanningeps->text().toFloat());
         p_image_view->updateImageThreshold(ui->lineEdit_logeps->text().toFloat());
         p_image_view->updateAngioAlgo(ui->comboBox_angio->currentIndex());
