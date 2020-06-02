@@ -282,20 +282,26 @@ void ImageViewer::updateView()
     case ANGIO:
     {
         // Here we are insured that p_data_buffer contains n_repeat frame to compute the angio, so every
-        // call returns an angio frame
-        p_mutex.lock();
-        f_fft.get_angio(p_data_buffer, p_image.bits(),p_image_threshold, p_hanning_threshold,p_angio_algo);
-        p_mutex.unlock();
-        // Push current angio
-        rect.setRect(0,0,p_view_depth,p_n_alines);
-        tmp = p_image.copy(rect);
-        pix = QPixmap::fromImage(tmp);
-        pix=pix.transformed(rm);
-
-        if( p_ny > 1 )
+        // call returns an angio frame. However sometimes if very fast, we could have more than p_n_repeat
+        // frames, so we need to loop to not lose frames
+        int n_angios = p_factor/p_n_repeat;
+        for(int i=0; i<n_angios;i++)
         {
-            // Here we have to account for potential skips by providing index
-            p_angio_view->put(tmp.bits(), p_frame_number);
+            p_mutex.lock();
+            f_fft.get_angio(&p_data_buffer[i*p_n_alines*2048*p_n_repeat], p_image.bits(),p_image_threshold, p_hanning_threshold,p_angio_algo);
+            p_mutex.unlock();
+            // Push current angio
+            rect.setRect(0,0,p_view_depth,p_n_alines);
+            tmp = p_image.copy(rect);
+            pix = QPixmap::fromImage(tmp);
+            pix=pix.transformed(rm);
+
+            if( p_ny > 1 )
+            {
+                // Here we have to account for potential skips by providing index
+                int frame_number = p_frame_number - n_angios + i;
+                p_angio_view->put(tmp.bits(), frame_number);
+            }
         }
     }
         break;

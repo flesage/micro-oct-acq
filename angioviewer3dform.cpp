@@ -10,9 +10,15 @@ AngioViewer3DForm::AngioViewer3DForm(QWidget *parent,int nx, int ny, int nz) :
     ui->horizontalSlider_zpos->setRange(0,p_nz-1);
     p_angio=new unsigned char[p_nx*p_ny*p_nz];
     p_current_slice = new unsigned char[p_nx*p_ny];
+    p_average = new int[ny];
+    p_tmp_avg = new unsigned char[p_nx*p_nz];
     p_image = QImage(p_nx,p_ny,QImage::Format_Indexed8);
     p_current_frame=0;
     p_current_depth=0;
+    for(int i=0;i<p_ny;i++) p_average[i]=0;
+    for( int i=0;i<p_nx*p_ny*p_nz;i++){
+        p_angio[i]=0;
+    }
     connect(ui->horizontalSlider_zpos, &QSlider::valueChanged, this, &AngioViewer3DForm::changeDepth );
     connect(ui->lineEdit_sliceThickness,SIGNAL(returnPressed()),this,SLOT(changeSliceThickness()));
 }
@@ -21,16 +27,23 @@ AngioViewer3DForm::~AngioViewer3DForm()
 {
     delete [] p_current_slice;
     delete [] p_angio;
+    delete [] p_average;
+    delete [] p_tmp_avg;
     delete ui;
 }
 
 void AngioViewer3DForm::put(unsigned char* data, unsigned int frame_number)
 {
-    // Could be done more intelligently to average repeats over multiple volumes
-    // Look at this later
-
-    p_current_frame = (frame_number-1)%p_ny;
-    memcpy(&p_angio[p_current_frame*p_nz*p_nx],data,p_nx*p_nz*sizeof(unsigned char));
+    p_current_frame = (frame_number)%p_ny;
+    p_average[p_current_frame]+=1;
+    // Copy current angio
+    memcpy(p_tmp_avg,data,p_nx*p_nz*sizeof(unsigned char));
+    // Running average to previous angio
+    for(int i=0;i<p_nx*p_nz;i++)
+    {
+        p_angio[p_current_frame*p_nz*p_nx+i]=(char) ((1.0*p_tmp_avg[i])/p_average[p_current_frame]
+             + p_angio[p_current_frame*p_nz*p_nx+i]*(p_average[p_current_frame]-1.0)/p_average[p_current_frame]);
+    }
     updateView();
 }
 

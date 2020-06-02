@@ -27,6 +27,7 @@ private:
     Ui::AngioViewer3DForm *ui;
     unsigned char* p_angio;
     unsigned char* p_current_slice;
+    unsigned char* p_tmp_avg;
     unsigned int p_current_frame;
     QImage p_image;
     QPixmap pix;
@@ -35,6 +36,7 @@ private:
     int p_ny;
     int p_nz;
     int p_slice_thickness;
+    int* p_average;
 };
 
 #endif // ANGIOVIEWER3DFORM_H
