@@ -8,7 +8,7 @@
 
 
 ImageViewer::ImageViewer(QWidget *parent, int n_alines, int ny, int view_depth, unsigned int n_repeat, float msec_fwhm, float line_period, float spatial_fwhm, float dimz, float dimx, int factor) :
-    QLabel(parent), p_ny(ny), p_factor(factor), f_fft(n_repeat,factor), p_n_alines(n_alines), p_view_depth(view_depth)
+    QLabel(parent), p_ny(ny), p_factor(factor), p_n_repeat(n_repeat), f_fft(n_repeat,factor), p_n_alines(n_alines), p_view_depth(view_depth)
 {
     p_current_viewmode = FRINGE;
     is_focus_line = false;
@@ -207,7 +207,6 @@ void  ImageViewer::keyPressEvent(QKeyEvent *event)
 
 void ImageViewer::updateView()
 {
-    bool flag = true;
     // We receive a uint16 image that we need to transform to uint8 for display
     int n_pts = p_n_alines * LINE_ARRAY_SIZE;
     QImage tmp;
@@ -282,17 +281,21 @@ void ImageViewer::updateView()
         break;
     case ANGIO:
     {
+        // Here we are insured that p_data_buffer contains n_repeat frame to compute the angio, so every
+        // call returns an angio frame
         p_mutex.lock();
-        flag = f_fft.get_angio(p_data_buffer, p_image.bits(),p_image_threshold, p_hanning_threshold,p_angio_algo);
+        f_fft.get_angio(p_data_buffer, p_image.bits(),p_image_threshold, p_hanning_threshold,p_angio_algo);
         p_mutex.unlock();
-        if( p_ny > 1 && flag )
+        // Push current angio
+        rect.setRect(0,0,p_view_depth,p_n_alines);
+        tmp = p_image.copy(rect);
+        pix = QPixmap::fromImage(tmp);
+        pix=pix.transformed(rm);
+
+        if( p_ny > 1 )
         {
-            // Push current angio
-            rect.setRect(0,0,p_view_depth,p_n_alines);
-            tmp = p_image.copy(rect);
-            pix = QPixmap::fromImage(tmp);
-            pix=pix.transformed(rm);
-            p_angio_view->put(tmp.bits());
+            // Here we have to account for potential skips by providing index
+            p_angio_view->put(tmp.bits(), p_frame_number);
         }
     }
         break;
@@ -315,18 +318,15 @@ void ImageViewer::updateView()
         painter.drawPixmap(0, p_stop_line-1, p_n_alines, Width, stop_line_pixmap);
     }
 
-    if(flag)
-    {
-        // Set as pixmap
-        QLabel::setPixmap(pix.scaled(this->size(),
+    // Set as pixmap
+    QLabel::setPixmap(pix.scaled(this->size(),
                                  Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
-    }
 
 }
 
 void ImageViewer::put(unsigned short* data)
 {
-    p_frame_number++;
+    p_frame_number+= p_factor/p_n_repeat;
     if (p_mutex.tryLock())
     {
         memcpy(p_data_buffer,data,p_n_alines*2048*sizeof(unsigned short)*p_factor);

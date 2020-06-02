@@ -24,17 +24,14 @@ AngioViewer3DForm::~AngioViewer3DForm()
     delete ui;
 }
 
-void AngioViewer3DForm::put(unsigned char* data)
+void AngioViewer3DForm::put(unsigned char* data, unsigned int frame_number)
 {
-    if(p_mutex.tryLock())
-    {
-        // Could be done more intelligently to add repeats over multiple volumes
-        // Look at this later
-        memcpy(&p_angio[p_current_frame*p_nz*p_nx],data,p_nx*p_nz*sizeof(unsigned char));
-        p_current_frame = (p_current_frame+1)%p_ny;
-        p_mutex.unlock();
-        updateView();
-    }
+    // Could be done more intelligently to average repeats over multiple volumes
+    // Look at this later
+
+    p_current_frame = (frame_number-1)%p_ny;
+    memcpy(&p_angio[p_current_frame*p_nz*p_nx],data,p_nx*p_nz*sizeof(unsigned char));
+    updateView();
 }
 
 void AngioViewer3DForm::changeDepth(int depth)
@@ -60,7 +57,6 @@ void AngioViewer3DForm::updateView()
         n_slices=p_slice_thickness;
     }
 
-    p_mutex.lock();
     for(int j =0; j<p_ny; j++){
         for(int i=0; i<p_nx; i++){
             float mip=0.0;
@@ -71,7 +67,6 @@ void AngioViewer3DForm::updateView()
             p_current_slice[i+p_nx*j]=(unsigned char) (mip/n_slices);
         }
     }
-    p_mutex.unlock();
     memcpy(p_image.bits(),p_current_slice,p_nx*p_ny*sizeof(unsigned char));
     pix = QPixmap::fromImage(p_image);
     // Set as pixmap

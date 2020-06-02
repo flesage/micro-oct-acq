@@ -523,8 +523,9 @@ void GalvoController::startScan()
     float line_rate = ui->lineEdit_linerate->text().toFloat();
     float exposure = ui->lineEdit_exposure->text().toFloat();
     int aline_repeat = ui->lineEdit_aline_repeat->text().toInt();
-    int factor = 1;
-    if (line_rate > 30) factor = (int) ((line_rate/30)+1);
+    // Insuring that the factor is always a multiple of n_repeat to facilitate angios
+    int factor = n_repeat;
+    if (line_rate/n_repeat > 30) factor = ((int) ((line_rate/n_repeat/30)+1))*n_repeat;
     int telescope = ui->comboBox_telescope->currentIndex();
     double radians_per_volt = 2*3.14159265359/(360*0.8)*(3.0/4.0)/0.95;
     double f1=50.0;
@@ -714,7 +715,7 @@ void GalvoController::startScan()
 
     if (ui->checkBox_fringe->isChecked() || ui->checkBox_view_image->isChecked())
     {
-        view_timer->start(100);
+        view_timer->start(30);
     }
     std::cout<<"flagMotor:"<<std::endl;
 

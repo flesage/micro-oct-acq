@@ -50,6 +50,7 @@ private:
     double scaleFactor;
     int p_n_alines;
     int p_factor;
+    int p_n_repeat;
     QImage p_image;
     QImage p_fringe_image;
     QImage p_hilbert_image;

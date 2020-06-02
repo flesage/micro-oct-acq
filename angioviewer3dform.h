@@ -17,7 +17,7 @@ class AngioViewer3DForm : public QWidget
 public:
     explicit AngioViewer3DForm(QWidget *parent = nullptr, int nx=512, int ny=512, int nz=512);
     ~AngioViewer3DForm();
-    void put(unsigned char* angio_data);
+    void put(unsigned char* angio_data, unsigned int frame_number);
 public slots:
     void updateView();
     void changeDepth(int value);
@@ -35,7 +35,6 @@ private:
     int p_ny;
     int p_nz;
     int p_slice_thickness;
-    QMutex p_mutex;
 };
 
 #endif // ANGIOVIEWER3DFORM_H
