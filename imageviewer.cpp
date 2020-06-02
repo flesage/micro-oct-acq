@@ -207,6 +207,7 @@ void  ImageViewer::keyPressEvent(QKeyEvent *event)
 
 void ImageViewer::updateView()
 {
+    bool flag = true;
     // We receive a uint16 image that we need to transform to uint8 for display
     int n_pts = p_n_alines * LINE_ARRAY_SIZE;
     QImage tmp;
@@ -282,15 +283,15 @@ void ImageViewer::updateView()
     case ANGIO:
     {
         p_mutex.lock();
-        bool flag = f_fft.get_angio(p_data_buffer, p_image.bits(),p_image_threshold, p_hanning_threshold,p_angio_algo);
+        flag = f_fft.get_angio(p_data_buffer, p_image.bits(),p_image_threshold, p_hanning_threshold,p_angio_algo);
         p_mutex.unlock();
-        rect.setRect(0,0,p_view_depth,p_n_alines);
-        tmp = p_image.copy(rect);
-        pix = QPixmap::fromImage(tmp);
-        pix=pix.transformed(rm);
         if( p_ny > 1 && flag )
         {
             // Push current angio
+            rect.setRect(0,0,p_view_depth,p_n_alines);
+            tmp = p_image.copy(rect);
+            pix = QPixmap::fromImage(tmp);
+            pix=pix.transformed(rm);
             p_angio_view->put(tmp.bits());
         }
     }
@@ -314,11 +315,12 @@ void ImageViewer::updateView()
         painter.drawPixmap(0, p_stop_line-1, p_n_alines, Width, stop_line_pixmap);
     }
 
-
-    // Set as pixmap
-    QLabel::setPixmap(pix.scaled(this->size(),
+    if(flag)
+    {
+        // Set as pixmap
+        QLabel::setPixmap(pix.scaled(this->size(),
                                  Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
-
+    }
 
 }
 
