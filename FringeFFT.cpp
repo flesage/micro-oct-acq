@@ -96,7 +96,7 @@ void FringeFFT::get_angio(unsigned short* in_fringe,unsigned char* out_data, flo
     p_mean_fringe = mean(p_interpfringe,1);
 
     // Multiply by dispersion compensation vector and hann window, store back in d_interpfringe
-    gfor (af::seq i, p_nx)
+    gfor (af::seq i, p_nx*p_n_repeat)
             p_interpfringe(af::span,i)=((p_interpfringe(af::span,i)-p_mean_fringe(af::span))/(p_mean_fringe(af::span)+p_hanning_threshold))*p_hann_dispcomp;
 
     // Do fft
@@ -153,8 +153,7 @@ void FringeFFT::get_angio(unsigned short* in_fringe,unsigned char* out_data, flo
     }
     case 2:
     {
-        p_angio=af::log(af::var(p_angio_stack,0,2)+p_image_threshold);
-        p_norm_signal = -af::log(af::abs(p_angio)+p_image_threshold);
+        p_norm_signal=af::log(af::var(p_angio_stack,0,2)+p_image_threshold);
     }
     }
 
