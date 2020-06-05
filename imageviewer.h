@@ -31,7 +31,8 @@ public:
     virtual QSize sizeHint() const;
     void put(unsigned short* frame);
 signals:
-
+    void sig_updateImageThreshold(float);
+    void sig_updateLineScanPos(int,int,int,int);
 public slots:
     void updateView();
     void resizeEvent(QResizeEvent *);
@@ -41,6 +42,7 @@ public slots:
     void updateAngioAlgo(int);
     void setCurrentViewModeStruct();
     void checkLine(bool,int,int);
+    void updateLineScanPos(int start_x, int start_y, int stop_x, int stop_y);
 
 protected:
     virtual void  keyPressEvent(QKeyEvent *event);

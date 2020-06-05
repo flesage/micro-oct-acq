@@ -24,6 +24,7 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, int ny, int view_depth, 
     p_fwhm_view = new FWHMViewer(0,p_view_depth);
     p_phase_view = new FWHMViewer(0,LINE_ARRAY_SIZE);
     p_angio_view = new AngioViewer3DForm(0,n_alines, p_ny, p_view_depth);
+    connect(p_angio_view,SIGNAL(sig_updateLineScanPos(int,int,int,int)),this,SLOT(updateLineScanPos(int,int,int,int)));
 
     p_line_status = false;
     p_start_line = 250;
@@ -58,6 +59,11 @@ ImageViewer::~ImageViewer()
     delete p_phase_view;
     p_angio_view->close();
     delete p_angio_view;
+}
+
+void ImageViewer::updateLineScanPos(int start_x, int start_y, int stop_x, int stop_y)
+{
+    emit sig_updateLineScanPos(start_x,start_y,stop_x,stop_y);
 }
 
 void ImageViewer::updateImageThreshold(float new_value)

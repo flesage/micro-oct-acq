@@ -1,4 +1,6 @@
 #include <iostream>
+#include <QPainter>
+#include <QPen>
 #include "angioviewer3dform.h"
 #include "ui_angioviewer3dform.h"
 
@@ -21,6 +23,12 @@ AngioViewer3DForm::AngioViewer3DForm(QWidget *parent,int nx, int ny, int nz) :
     }
     connect(ui->horizontalSlider_zpos, &QSlider::valueChanged, this, &AngioViewer3DForm::changeDepth );
     connect(ui->lineEdit_sliceThickness,SIGNAL(returnPressed()),this,SLOT(changeSliceThickness()));
+    ui->label_angioview->installEventFilter( this );
+    p_start_x=0;
+    p_stop_x=0;
+    p_start_y=0;
+    p_stop_y=0;
+    p_show_line = true;
 }
 
 AngioViewer3DForm::~AngioViewer3DForm()
@@ -31,6 +39,42 @@ AngioViewer3DForm::~AngioViewer3DForm()
     delete [] p_tmp_avg;
     delete ui;
 }
+
+bool AngioViewer3DForm::eventFilter( QObject* watched, QEvent* event ) {
+    if ( watched != ui->label_angioview )
+        return false;
+    if ( event->type() != QEvent::MouseButtonPress && event->type() != QEvent::MouseButtonRelease
+         && event->type() != QEvent::MouseMove ) return false;
+    const QMouseEvent* const me = static_cast<const QMouseEvent*>( event );
+
+
+    //might want to check the buttons here
+    if ( event->type() == QEvent::MouseButtonPress)
+    {
+        p_start_x=(int) (1.0*me->x()/ui->label_angioview->size().width()*p_nx);
+        p_start_y=(int) (1.0*me->y()/ui->label_angioview->size().height()*p_ny);
+        p_stop_x = p_start_x;
+        p_stop_y = p_start_y;
+    }
+    if ( event->type() == QEvent::MouseMove)
+    {
+        if( p_show_line )
+        {
+            p_stop_x=(int) (1.0*me->x()/ui->label_angioview->size().width()*p_nx);
+            p_stop_y=(int) (1.0*me->y()/ui->label_angioview->size().height()*p_ny);
+        }
+    }
+
+    if ( event->type() == QEvent::MouseButtonRelease)
+    {
+        p_stop_x=(int) (1.0*me->x()/ui->label_angioview->size().width()*p_nx);
+        p_stop_y=(int) (1.0*me->y()/ui->label_angioview->size().height()*p_ny);
+        emit sig_updateLineScanPos(p_start_x,p_start_y,p_stop_x,p_stop_y);
+    }
+    updateView();
+    return false;
+}
+
 
 void AngioViewer3DForm::put(unsigned char* data, unsigned int frame_number)
 {
@@ -81,8 +125,21 @@ void AngioViewer3DForm::updateView()
         }
     }
     memcpy(p_image.bits(),p_current_slice,p_nx*p_ny*sizeof(unsigned char));
-    pix = QPixmap::fromImage(p_image);
+    QImage tmp = p_image.convertToFormat(QImage::Format_ARGB32);
+
+    pix = QPixmap::fromImage(tmp);
+    QPainter painter(&pix);
+    QPen pen(Qt::red);
+    painter.drawLine(p_start_x,p_start_y,p_stop_x, p_stop_y);
     // Set as pixmap
-    ui->label_angioview->setPixmap(pix);
+    ui->label_angioview->setPixmap(pix.scaled(ui->label_angioview->size(),
+                                              Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
 }
 
+
+void AngioViewer3DForm::resizeEvent(QResizeEvent *)
+{
+    if(!pix.isNull())
+       ui->label_angioview->setPixmap(pix.scaled(ui->label_angioview->size(),
+                                     Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
+}

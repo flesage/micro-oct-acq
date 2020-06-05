@@ -40,6 +40,10 @@ GalvoController::GalvoController() :
     p_fringe_view = 0;
     p_image_view = 0;
     p_data_saver = 0;
+    p_start_line_x = 0;
+    p_stop_line_x = 0;
+    p_start_line_y = 0;
+    p_stop_line_y = 0;
 
     motors = new MotorClass();
 
@@ -152,6 +156,23 @@ GalvoController::~GalvoController()
 {
     delete motors;
     delete ui;
+}
+
+void GalvoController::setLineScanPos(int start_x, int start_y, int stop_x, int stop_y)
+{
+    int nx = ui->lineEdit_nx->text().toInt();
+    int ny = ui->lineEdit_ny->text().toInt();
+    float width = ui->lineEdit_width->text().toFloat();
+    float height = ui->lineEdit_height->text().toFloat();
+    if(stop_x > nx) stop_x = nx;
+    if(start_x > nx) start_x = nx;
+
+    p_start_line_x = (1.0*start_x-nx/2.0)*width/nx;
+    p_stop_line_x = (1.0*stop_x-nx/2.0)*width/nx;
+    p_start_line_y = (1.0*start_y-ny/2.0)*height/ny;
+    p_stop_line_y = (1.0*stop_y-ny/2.0)*height/ny;
+    std::cerr << p_start_line_x << " " << p_start_line_y << " " << p_stop_line_x << " " << p_stop_line_y << std::endl;
+    return;
 }
 
 void GalvoController::updateSpeedPiezo()
@@ -690,6 +711,7 @@ void GalvoController::startScan()
         connect(view_timer,SIGNAL(timeout()),p_image_view,SLOT(updateView()));
         connect(this,SIGNAL(sig_updateHanningThreshold(float)),p_image_view,SLOT(updateHanningThreshold(float)));
         connect(this,SIGNAL(sig_updateImageThreshold(float)),p_image_view,SLOT(updateImageThreshold(float)));
+        connect(p_image_view,SIGNAL(sig_updateLineScanPos(int,int,int,int)),this,SLOT(setLineScanPos(int,int,int,int)));
         if(ui->checkBox_placeImage->isChecked())
             p_image_view->move(200,150);
         p_image_view->show();
@@ -742,7 +764,8 @@ void GalvoController::startScan()
     }
     else if(ui->comboBox_scantype->currentText() == "Line")
     {
-        p_galvos.setLineRamp(p_center_x-width/2,p_center_y-height/2,p_center_x+width/2,p_center_y+height/2,nx,ny,n_extra,line_rate);
+        p_galvos.setLineRamp(p_center_x+p_start_line_x,p_center_y+p_start_line_y,
+                             p_center_x+p_stop_line_x,p_center_y+p_stop_line_y,nx,ny,n_extra,line_rate);
     }
     p_galvos.setTrigDelay(ui->lineEdit_shift->text().toFloat());
     // Start generating
