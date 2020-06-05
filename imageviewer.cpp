@@ -5,7 +5,7 @@
 #include <iostream>
 #include <cmath>
 #include <QPainter>
-
+#include "arrayfire.h"
 
 ImageViewer::ImageViewer(QWidget *parent, int n_alines, int ny, int view_depth, unsigned int n_repeat, float msec_fwhm, float line_period, float spatial_fwhm, float dimz, float dimx, int factor) :
     QLabel(parent), p_ny(ny), p_factor(factor), p_n_repeat(n_repeat), f_fft(n_repeat,factor), p_n_alines(n_alines), p_view_depth(view_depth)
@@ -294,8 +294,13 @@ void ImageViewer::updateView()
         for(int i=0; i<n_angios;i++)
         {
             p_mutex.lock();
-            f_fft.get_angio(&p_data_buffer[i*p_n_alines*2048*p_n_repeat], p_image.bits(),p_image_threshold, p_hanning_threshold,p_angio_algo);
+            f_fft.get_angio(&p_data_buffer[i*p_n_alines*2048*p_n_repeat], &p_angio ,p_image_threshold, p_hanning_threshold,p_angio_algo);
             p_mutex.unlock();
+
+            float l_max = af::max<float>(p_angio);
+            float l_min = af::min<float>(p_angio);
+            p_angio=255.0*(p_angio-l_min)/(l_max-l_min);
+            p_angio.as(u8).host(p_image.bits());
             // Push current angio
             rect.setRect(0,0,p_view_depth,p_n_alines);
             tmp = p_image.copy(rect);
@@ -306,7 +311,7 @@ void ImageViewer::updateView()
             {
                 // Here we have to account for potential skips by providing index
                 int frame_number = p_frame_number - n_angios + i;
-                p_angio_view->put(tmp.bits(), frame_number);
+                p_angio_view->put(p_angio, frame_number);
             }
         }
     }

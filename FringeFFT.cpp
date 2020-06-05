@@ -86,7 +86,7 @@ void FringeFFT::interp_and_do_fft(unsigned short* in_fringe,unsigned char* out_s
     p_norm_signal.as(u8).host(out_signal);
 }
 
-void FringeFFT::get_angio(unsigned short* in_fringe,unsigned char* out_data, float p_image_threshold, float p_hanning_threshold, int angio_algo)
+void FringeFFT::get_angio(unsigned short* in_fringe,af::array* out_data, float p_image_threshold, float p_hanning_threshold, int angio_algo)
 {
     // Interpolation by sparse matrix multiplication
     af::dim4 dims(2048,p_nx,1,1);
@@ -156,11 +156,7 @@ void FringeFFT::get_angio(unsigned short* in_fringe,unsigned char* out_data, flo
         p_norm_signal=af::log(af::var(p_angio_stack,0,2)+p_image_threshold);
     }
     }
-
-    float l_max = af::max<float>(p_norm_signal);
-    float l_min = af::min<float>(p_norm_signal);
-    p_norm_signal=255.0*(p_norm_signal-l_min)/(l_max-l_min);
-    p_norm_signal.as(u8).host(out_data);
+    *out_data = p_norm_signal;
     return;
 }
 

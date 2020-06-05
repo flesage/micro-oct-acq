@@ -10,7 +10,7 @@ AngioViewer3DForm::AngioViewer3DForm(QWidget *parent,int nx, int ny, int nz) :
 {
     ui->setupUi(this);
     ui->horizontalSlider_zpos->setRange(0,p_nz-1);
-    p_angio=new unsigned char[p_nx*p_ny*p_nz];
+    p_angio=af::array(p_nz,p_nx,p_ny,f32);
     p_current_slice = new unsigned char[p_nx*p_ny];
     p_average = new int[ny];
     p_tmp_avg = new unsigned char[p_nx*p_nz];
@@ -18,9 +18,6 @@ AngioViewer3DForm::AngioViewer3DForm(QWidget *parent,int nx, int ny, int nz) :
     p_current_frame=0;
     p_current_depth=0;
     for(int i=0;i<p_ny;i++) p_average[i]=0;
-    for( int i=0;i<p_nx*p_ny*p_nz;i++){
-        p_angio[i]=0;
-    }
     connect(ui->horizontalSlider_zpos, &QSlider::valueChanged, this, &AngioViewer3DForm::changeDepth );
     connect(ui->lineEdit_sliceThickness,SIGNAL(returnPressed()),this,SLOT(changeSliceThickness()));
     ui->label_angioview->installEventFilter( this );
@@ -34,7 +31,6 @@ AngioViewer3DForm::AngioViewer3DForm(QWidget *parent,int nx, int ny, int nz) :
 AngioViewer3DForm::~AngioViewer3DForm()
 {
     delete [] p_current_slice;
-    delete [] p_angio;
     delete [] p_average;
     delete [] p_tmp_avg;
     delete ui;
@@ -76,18 +72,14 @@ bool AngioViewer3DForm::eventFilter( QObject* watched, QEvent* event ) {
 }
 
 
-void AngioViewer3DForm::put(unsigned char* data, unsigned int frame_number)
+void AngioViewer3DForm::put(const af::array& data, unsigned int frame_number)
 {
     p_current_frame = (frame_number)%p_ny;
     p_average[p_current_frame]+=1;
     // Copy current angio
-    memcpy(p_tmp_avg,data,p_nx*p_nz*sizeof(unsigned char));
-    // Running average to previous angio
-    for(int i=0;i<p_nx*p_nz;i++)
-    {
-        p_angio[p_current_frame*p_nz*p_nx+i]=(char) ((1.0*p_tmp_avg[i])/p_average[p_current_frame]
-             + p_angio[p_current_frame*p_nz*p_nx+i]*(p_average[p_current_frame]-1.0)/p_average[p_current_frame]);
-    }
+    p_angio(af::span,af::span,p_current_frame)=data/p_average[p_current_frame]+
+            p_angio(af::span,af::span,p_current_frame)*(p_average[p_current_frame]-1.0)/p_average[p_current_frame];
+
     updateView();
 }
 
@@ -103,7 +95,7 @@ void AngioViewer3DForm::changeSliceThickness()
 
 void AngioViewer3DForm::updateView()
 {
-    // Critical section
+    // Take MIP
     int n_slices;
     if(p_current_depth+p_slice_thickness>p_nz-1)
     {
@@ -113,18 +105,15 @@ void AngioViewer3DForm::updateView()
     {
         n_slices=p_slice_thickness;
     }
-
-    for(int j =0; j<p_ny; j++){
-        for(int i=0; i<p_nx; i++){
-            float mip=0.0;
-            for(int k=0;k<n_slices;k++)
-            {
-                mip+=p_angio[p_current_depth+k+p_nz*i+p_nz*p_nx*j];
-            }
-            p_current_slice[i+p_nx*j]=(unsigned char) (mip/n_slices);
-        }
-    }
-    memcpy(p_image.bits(),p_current_slice,p_nx*p_ny*sizeof(unsigned char));
+    // Now filter the mip
+    af::array g = af::gaussianKernel(3, 3, 0, 0);
+    af::array mip=af::mean(p_angio(af::seq(p_current_depth,p_current_depth+n_slices-1),af::span,af::span),0);
+    mip=af::convolve2(mip,g);
+    //af::array mip=af::convolve(g,af::mean(p_angio(af::seq(p_current_depth,p_current_depth+n_slices-1),af::span,af::span),0));
+    float l_max = af::max<float>(mip);
+    float l_min = af::min<float>(mip);
+    mip=255.0*(mip-l_min)/(l_max-l_min);
+    mip.as(u8).host(p_image.bits());
     QImage tmp = p_image.convertToFormat(QImage::Format_ARGB32);
 
     pix = QPixmap::fromImage(tmp);

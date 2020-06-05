@@ -7,6 +7,7 @@
 #include "FringeFFT.h"
 #include "fwhmviewer.h"
 #include "angioviewer3dform.h"
+#include "arrayfire.h"
 
 class QScrollBar;
 
@@ -76,6 +77,7 @@ private:
     int p_stop_line;
     unsigned int p_frame_number;
     int p_ny;
+    af::array p_angio;
 };
 
 #endif // ImageViewer_H

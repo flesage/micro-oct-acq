@@ -7,6 +7,7 @@
 #include <QPixmap>
 #include <QMouseEvent>
 #include <QEvent>
+#include "arrayfire.h"
 
 namespace Ui {
 class AngioViewer3DForm;
@@ -19,7 +20,7 @@ class AngioViewer3DForm : public QWidget
 public:
     explicit AngioViewer3DForm(QWidget *parent = nullptr, int nx=512, int ny=512, int nz=512);
     ~AngioViewer3DForm();
-    void put(unsigned char* angio_data, unsigned int frame_number);
+    void put(const af::array& angio_data, unsigned int frame_number);
     bool eventFilter( QObject* watched, QEvent* event );
 
 public slots:
@@ -31,7 +32,7 @@ signals:
     void sig_updateLineScanPos(int,int,int,int);
 private:
     Ui::AngioViewer3DForm *ui;
-    unsigned char* p_angio;
+    af::array p_angio;
     unsigned char* p_current_slice;
     unsigned char* p_tmp_avg;
     unsigned int p_current_frame;
