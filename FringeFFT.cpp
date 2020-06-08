@@ -130,7 +130,7 @@ void FringeFFT::get_angio(unsigned short* in_fringe,af::array* out_data, float p
     }
     case 1:
     {
-        for(unsigned int i=0 ; i<(p_n_repeat-1); i++)
+        for(unsigned int i=0 ; i<(p_n_repeat); i++)
         {
             if(i>0)
             {
