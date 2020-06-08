@@ -18,7 +18,7 @@ class AngioViewer3DForm : public QWidget
     Q_OBJECT
 
 public:
-    explicit AngioViewer3DForm(QWidget *parent = nullptr, int nx=512, int ny=512, int nz=512);
+    explicit AngioViewer3DForm(QWidget *parent = nullptr, int nx=512, int n_extra = 40, int ny=512, int nz=512);
     ~AngioViewer3DForm();
     void put(const af::array& angio_data, unsigned int frame_number);
     bool eventFilter( QObject* watched, QEvent* event );
@@ -44,6 +44,7 @@ private:
     int p_nz;
     int p_slice_thickness;
     int* p_average;
+    int p_offset;
     int p_start_x;
     int p_start_y;
     int p_stop_x;

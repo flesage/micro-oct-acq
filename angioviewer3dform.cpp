@@ -4,7 +4,7 @@
 #include "angioviewer3dform.h"
 #include "ui_angioviewer3dform.h"
 
-AngioViewer3DForm::AngioViewer3DForm(QWidget *parent,int nx, int ny, int nz) :
+AngioViewer3DForm::AngioViewer3DForm(QWidget *parent,int nx, int n_extra, int ny, int nz) :
     QWidget(parent),
     ui(new Ui::AngioViewer3DForm), p_nx(nx), p_ny(ny), p_nz(nz), p_slice_thickness(5)
 {
@@ -21,6 +21,7 @@ AngioViewer3DForm::AngioViewer3DForm(QWidget *parent,int nx, int ny, int nz) :
     connect(ui->horizontalSlider_zpos, &QSlider::valueChanged, this, &AngioViewer3DForm::changeDepth );
     connect(ui->lineEdit_sliceThickness,SIGNAL(returnPressed()),this,SLOT(changeSliceThickness()));
     ui->label_angioview->installEventFilter( this );
+    p_offset=n_extra;
     p_start_x=0;
     p_stop_x=0;
     p_start_y=0;
@@ -65,7 +66,18 @@ bool AngioViewer3DForm::eventFilter( QObject* watched, QEvent* event ) {
     {
         p_stop_x=(int) (1.0*me->x()/ui->label_angioview->size().width()*p_nx);
         p_stop_y=(int) (1.0*me->y()/ui->label_angioview->size().height()*p_ny);
-        emit sig_updateLineScanPos(p_start_x,p_start_y,p_stop_x,p_stop_y);
+        int p_stop_x_tmp = p_nx-p_stop_x+p_offset;
+        int p_start_x_tmp = p_nx-p_start_x+p_offset;
+
+
+        emit sig_updateLineScanPos(p_start_x_tmp,p_start_y,p_stop_x_tmp,p_stop_y);
+        std::cout<<"-----------"<<std::endl;
+        std::cout<<"p_start_x: "<<p_start_x_tmp<<std::endl;
+        std::cout<<"p_start_y: "<<p_start_y<<std::endl;
+        std::cout<<"p_stop_x: "<<p_stop_x_tmp<<std::endl;
+        std::cout<<"p_stop_y: "<<p_stop_y<<std::endl;
+        std::cout<<"-----------"<<std::endl;
+
     }
     updateView();
     return false;

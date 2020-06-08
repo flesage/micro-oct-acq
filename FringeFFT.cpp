@@ -103,7 +103,6 @@ void FringeFFT::get_angio(unsigned short* in_fringe,af::array* out_data, float p
     p_signal = af::fftR2C<1>(p_interpfringe, dims);
     p_signal = af::abs(p_signal.rows(1,af::end));
     p_angio_stack=af::moddims(p_signal,p_nz/2,p_nx,p_n_repeat);
-    std::cout << "angioalgo ..." <<p_n_repeat << std::endl;
     switch(angio_algo)
     {
     case 0:

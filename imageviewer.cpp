@@ -7,7 +7,7 @@
 #include <QPainter>
 #include "arrayfire.h"
 
-ImageViewer::ImageViewer(QWidget *parent, int n_alines, int ny, int view_depth, unsigned int n_repeat, float msec_fwhm, float line_period, float spatial_fwhm, float dimz, float dimx, int factor) :
+ImageViewer::ImageViewer(QWidget *parent, int n_alines, int n_extra, int ny, int view_depth, unsigned int n_repeat, float msec_fwhm, float line_period, float spatial_fwhm, float dimz, float dimx, int factor) :
     QLabel(parent), p_ny(ny), p_factor(factor), p_n_repeat(n_repeat), f_fft(n_repeat,factor), p_n_alines(n_alines), p_view_depth(view_depth)
 {
     p_current_viewmode = FRINGE;
@@ -23,7 +23,7 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, int ny, int view_depth, 
     p_doppler_image = QImage(LINE_ARRAY_SIZE/2,p_n_alines-1,QImage::Format_Indexed8);
     p_fwhm_view = new FWHMViewer(0,p_view_depth);
     p_phase_view = new FWHMViewer(0,LINE_ARRAY_SIZE);
-    p_angio_view = new AngioViewer3DForm(0,n_alines, p_ny, p_view_depth);
+    p_angio_view = new AngioViewer3DForm(0,n_alines, n_extra, p_ny, p_view_depth);
     connect(p_angio_view,SIGNAL(sig_updateLineScanPos(int,int,int,int)),this,SLOT(updateLineScanPos(int,int,int,int)));
 
     p_line_status = false;
