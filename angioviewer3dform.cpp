@@ -66,8 +66,8 @@ bool AngioViewer3DForm::eventFilter( QObject* watched, QEvent* event ) {
     {
         p_stop_x=(int) (1.0*me->x()/ui->label_angioview->size().width()*p_nx);
         p_stop_y=(int) (1.0*me->y()/ui->label_angioview->size().height()*p_ny);
-        int p_stop_x_tmp = p_nx-p_stop_x+p_offset;
-        int p_start_x_tmp = p_nx-p_start_x+p_offset;
+        int p_stop_x_tmp = p_stop_x-0.25*p_offset;
+        int p_start_x_tmp = p_start_x-0.25*p_offset;
 
 
         emit sig_updateLineScanPos(p_start_x_tmp,p_start_y,p_stop_x_tmp,p_stop_y);
