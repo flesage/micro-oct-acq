@@ -103,30 +103,30 @@ void FringeFFT::get_angio(unsigned short* in_fringe,af::array* out_data, float p
     p_signal = af::fftR2C<1>(p_interpfringe, dims);
     p_signal = af::abs(p_signal.rows(1,af::end));
     p_angio_stack=af::moddims(p_signal,p_nz/2,p_nx,p_n_repeat);
+    std::cout << "angioalgo ..." <<p_n_repeat << std::endl;
     switch(angio_algo)
     {
     case 0:
     {
-        for(unsigned int i=0 ; i<(p_n_repeat-1); i++)
+        for(unsigned int i=0 ; i<(p_n_repeat); i++)
         {
             if(i>0)
             {
                 if(i==1)
                 {
-                    p_angio=af::abs(af::abs(p_angio_stack(af::span,af::span,i+1))-af::abs(p_angio_stack(af::span,af::span,i)));
-                    p_struct=af::abs(af::abs(p_angio_stack(af::span,af::span,i+1))+af::abs(p_angio_stack(af::span,af::span,i)));
+                    std::cout << "1..." << std::endl;
+                    p_angio=af::abs(af::abs(p_angio_stack(af::span,af::span,i))-af::abs(p_angio_stack(af::span,af::span,i-1)));
                     p_angio=p_angio/(p_n_repeat-1);
-                    p_struct=p_struct/(p_n_repeat-1);
 
                 } else
                 {
-                    p_angio=p_angio+(af::abs(af::abs(p_angio_stack(af::span,af::span,i+1))-af::abs(p_angio_stack(af::span,af::span,i))))/(p_n_repeat-1);
-                    p_struct=p_struct+(af::abs(af::abs(p_angio_stack(af::span,af::span,i+1))+af::abs(p_angio_stack(af::span,af::span,i))))/(p_n_repeat-1);
+                    p_angio=p_angio+(af::abs(af::abs(p_angio_stack(af::span,af::span,i))-af::abs(p_angio_stack(af::span,af::span,i-1))))/(p_n_repeat-1);
                 }
             }
         }
-        p_norm_signal=(p_angio)/(p_struct+(p_image_threshold*100));
-        p_norm_signal=meanShift(p_norm_signal, .5, .5, 1);
+        //p_norm_signal=(p_angio);//(p_struct+(p_image_threshold*100));
+        p_norm_signal=meanShift(p_angio, .5, .5, 1);
+        break;
     }
     case 1:
     {
@@ -136,24 +136,30 @@ void FringeFFT::get_angio(unsigned short* in_fringe,af::array* out_data, float p
             {
                 if(i==1)
                 {
-                    p_angio=af::abs((p_angio_stack(af::span,af::span,i+1))-(p_angio_stack(af::span,af::span,i)));
-                    p_struct=af::abs((p_angio_stack(af::span,af::span,i+1))+(p_angio_stack(af::span,af::span,i)));
+                    p_angio=af::abs((p_angio_stack(af::span,af::span,i))-(p_angio_stack(af::span,af::span,i-1)));
                     p_angio=p_angio/(p_n_repeat-1);
-                    p_struct=p_struct/(p_n_repeat-1);
 
                 } else
                 {
-                    p_angio=p_angio+(af::abs(af::abs(p_angio_stack(af::span,af::span,i+1))-af::abs(p_angio_stack(af::span,af::span,i))))/(p_n_repeat-1);
-                    p_struct=p_struct+(af::abs(af::abs(p_angio_stack(af::span,af::span,i+1))+af::abs(p_angio_stack(af::span,af::span,i))))/(p_n_repeat-1);
+                    p_angio=p_angio+(af::abs(af::abs(p_angio_stack(af::span,af::span,i))-af::abs(p_angio_stack(af::span,af::span,i-1))))/(p_n_repeat-1);
                 }
             }
         }
-        p_norm_signal=(p_angio)/(p_struct+(p_image_threshold*100));
-        p_norm_signal=meanShift(p_norm_signal, .5, .5, 1);
+        //p_norm_signal=(p_angio);//(p_struct+(p_image_threshold*100));
+        p_norm_signal=meanShift(p_angio, .5, .5, 1);
+        break;
     }
     case 2:
     {
         p_norm_signal=af::log(af::var(p_angio_stack,0,2)+p_image_threshold);
+        break;
+    }
+    case 3:
+    {
+        p_norm_signal=20*af::log(af::mean(p_angio_stack,2)+p_image_threshold);
+        p_norm_signal=meanShift(p_norm_signal, .5, .5, 1);
+
+        break;
     }
     }
     *out_data = p_norm_signal;

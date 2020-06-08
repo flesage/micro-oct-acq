@@ -118,7 +118,8 @@ void AngioViewer3DForm::updateView()
 
     pix = QPixmap::fromImage(tmp);
     QPainter painter(&pix);
-    QPen pen(Qt::red);
+    QPen pen(Qt::yellow,3);
+    painter.setPen(pen);
     painter.drawLine(p_start_x,p_start_y,p_stop_x, p_stop_y);
     // Set as pixmap
     ui->label_angioview->setPixmap(pix.scaled(ui->label_angioview->size(),

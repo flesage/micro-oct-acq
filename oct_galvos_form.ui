@@ -1023,6 +1023,11 @@
                <string>Variance</string>
               </property>
              </item>
+             <item>
+              <property name="text">
+               <string>Structure</string>
+              </property>
+             </item>
             </widget>
            </item>
           </layout>
