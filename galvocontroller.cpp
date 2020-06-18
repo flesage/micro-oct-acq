@@ -381,20 +381,20 @@ void GalvoController::updateInfo(void)
     float lat_sampling=width/nx;
     float interFrameTime=1/line_rate*1000;
     QString tmp;
-    tmp.sprintf("Current time per pixel: \t %10.2f us\n",time_per_pix);
+    tmp.sprintf("Current time per pix.:\t%5.2f us\n",time_per_pix);
     text = text+tmp;
-    tmp.sprintf("Current exposure: \t %10.2f us\n",exposure);
+    tmp.sprintf("Current exposure:\t%5.2f us\n",exposure);
     text=text+tmp;
-    tmp.sprintf("Beam speed in x: \t %10.2f mm/sec\n",speed_x);
+    tmp.sprintf("Beam speed in x:\t%5.2f mm/sec\n",speed_x);
     text=text+tmp;
-    tmp.sprintf("Lateral sampling in x: \t %10.3f um/pix\n",lat_sampling);
+    tmp.sprintf("Lateral sampling in x:\t%5.3f um/pix\n",lat_sampling);
     text=text+tmp;
-    tmp.sprintf("Inter B-scan time in x: \t %10.3f ms\n",interFrameTime);
+    tmp.sprintf("Inter B-scan time in x:\t%5.3f ms\n",interFrameTime);
     text=text+tmp;
 
     if (time_per_pix < 0.9*exposure)
     {
-        tmp.sprintf("WARNING: INTEGRATION TIME HIGHER THAN TIME PER PIXEL!!!\n");
+        tmp.sprintf("WARNING: \nINTEGRATION TIME HIGHER THAN TIME\nPER PIXEL!!!\n");
         text=text+tmp;
     }
     ui->label_info->setText(text);
@@ -600,6 +600,9 @@ void GalvoController::startScan()
         break;
     case 5:
         fobj=4.5;
+        break;
+    case 6:
+        fobj=54.0;
         break;
     default:
         break;
