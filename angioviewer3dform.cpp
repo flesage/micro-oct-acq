@@ -83,7 +83,6 @@ bool AngioViewer3DForm::eventFilter( QObject* watched, QEvent* event ) {
     return false;
 }
 
-
 void AngioViewer3DForm::put(const af::array& data, unsigned int frame_number)
 {
     p_current_frame = (frame_number)%p_ny;
@@ -121,7 +120,6 @@ void AngioViewer3DForm::updateView()
     af::array g = af::gaussianKernel(3, 3, 0, 0);
     af::array mip=af::mean(p_angio(af::seq(p_current_depth,p_current_depth+n_slices-1),af::span,af::span),0);
     mip=af::convolve2(mip,g);
-    //af::array mip=af::convolve(g,af::mean(p_angio(af::seq(p_current_depth,p_current_depth+n_slices-1),af::span,af::span),0));
     float l_max = af::max<float>(mip);
     float l_min = af::min<float>(mip);
     mip=255.0*(mip-l_min)/(l_max-l_min);

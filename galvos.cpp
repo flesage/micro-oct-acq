@@ -271,24 +271,19 @@ void Galvos::setLineRamp(float x0,float y0,float xe,float ye,int npts,int n_line
     QVector<double> um_ramp_x((p_nx+n_extra)*p_ny);
     QVector<double> um_ramp_y((p_nx+n_extra)*p_ny);
 
-    for(int j=0;j<p_ny;j+=2)
+    for(int j=0;j<p_ny;j++)
     {
         // ramp
         int ind=j*(p_nx+n_extra);
-        int ind2=(j+1)*(p_nx+n_extra);
         for(int i=0;i<p_nx;i++)
         {
             um_ramp_x[ind+i]=x0+i*(xe-x0)/(p_nx-1);
             um_ramp_y[ind+i]=y0+i*(ye-y0)/(p_nx-1);
-            um_ramp_x[ind2+i]=xe+i*(x0-xe)/(p_nx-1);
-            um_ramp_y[ind2+i]=ye+i*(y0-ye)/(p_nx-1);
         }
         for(int i=p_nx;i<p_nx+n_extra;i++)
         {
-            um_ramp_x[ind+i]=xe;
-            um_ramp_y[ind+i]=ye;
-            um_ramp_x[ind2+i]=x0;
-            um_ramp_y[ind2+i]=y0;
+            um_ramp_x[ind+i]=xe+(i-p_nx)*(x0-xe)/(n_extra-1);
+            um_ramp_y[ind+i]=ye+(i-p_nx)*(y0-ye)/(n_extra-1);
         }
     }
     p_volt_ramp_x = p_converter.voltX(um_ramp_x);
