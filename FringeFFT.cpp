@@ -113,7 +113,6 @@ void FringeFFT::get_angio(unsigned short* in_fringe,af::array* out_data, float p
             {
                 if(i==1)
                 {
-                    std::cout << "1..." << std::endl;
                     p_angio=af::abs(af::abs(p_angio_stack(af::span,af::span,i))-af::abs(p_angio_stack(af::span,af::span,i-1)));
                     p_angio=p_angio/(p_n_repeat-1);
 
@@ -123,7 +122,6 @@ void FringeFFT::get_angio(unsigned short* in_fringe,af::array* out_data, float p
                 }
             }
         }
-        //p_norm_signal=(p_angio);//(p_struct+(p_image_threshold*100));
         p_norm_signal=meanShift(p_angio, 1, 1, 1);
         break;
     }
