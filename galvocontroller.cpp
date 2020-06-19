@@ -44,6 +44,7 @@ GalvoController::GalvoController() :
     p_stop_line_x = 0;
     p_start_line_y = 0;
     p_stop_line_y = 0;
+    p_line_length = 0.0;
 
     motors = new MotorClass();
 
@@ -87,6 +88,7 @@ GalvoController::GalvoController() :
 
 
     connect(ui->comboBox_scantype,SIGNAL(activated(const QString&)),this,SLOT(scanTypeChosen(const QString&)));
+    connect(ui->comboBox_scantype,SIGNAL(currentIndexChanged(const QString&)),this,SLOT(scanTypeChosen(const QString&)));
 
     connect(ui->pushButton_start,SIGNAL(clicked()),this,SLOT(startScan()));
     connect(ui->pushButton_stop,SIGNAL(clicked()),this,SLOT(stopScan()));
@@ -97,12 +99,10 @@ GalvoController::GalvoController() :
     connect(ui->pushButton_up,SIGNAL(clicked()),this,SLOT(moveUp()));
     connect(ui->pushButton_left,SIGNAL(clicked()),this,SLOT(moveLeft()));
     connect(ui->pushButton_readOffsetFile,SIGNAL(clicked()),this,SLOT(readOffset()));
-    //connect(ui->horizontalScrollBar_offsetX,SIGNAL(valueChanged(int)),this,SLOT(updateOffset()));
-    //connect(ui->horizontalScrollBar_offsetY,SIGNAL(valueChanged(int)),this,SLOT(updateOffset()));
+
     connect(ui->horizontalScrollBar_offsetX,SIGNAL(valueChanged(int)),this,SLOT(updateOffsetViewerX()));
     connect(ui->horizontalScrollBar_offsetY,SIGNAL(valueChanged(int)),this,SLOT(updateOffsetViewerY()));
-    //connect(ui->horizontalScrollBar_coeffY,SIGNAL(valueChanged(int)),this,SLOT(updateOffset()));
-    //connect(ui->horizontalScrollBar_coeffX,SIGNAL(valueChanged(int)),this,SLOT(updateOffset()));
+
     connect(ui->pushButton_loadCoeff,SIGNAL(clicked()),this,SLOT(readCoeffTxt()));
     connect(ui->pushButton_saveCoeff,SIGNAL(clicked()),this,SLOT(writeCoeffTxt()));
 
@@ -144,10 +144,6 @@ GalvoController::GalvoController() :
     connect(ui->pushButton_readOffsetFile,SIGNAL(clicked()),this,SLOT(updateCenterLineEdit()));
 
     readCoeffTxt();
-    //updateOffsetViewerX();
-    //updateOffsetViewerY();
-    //updateCoeffViewerX();
-    //updateCoeffViewerY();
     updateCenterLineEdit();
     flagMotor=0;
 }
@@ -167,11 +163,66 @@ void GalvoController::setLineScanPos(int start_x, int start_y, int stop_x, int s
     if(stop_x > nx) stop_x = nx;
     if(start_x > nx) start_x = nx;
 
-    p_start_line_x = (1.0*start_x-nx/2.0)*width/nx;
-    p_stop_line_x = (1.0*stop_x-nx/2.0)*width/nx;
-    p_start_line_y = (1.0*start_y-ny/2.0)*height/ny;
-    p_stop_line_y = (1.0*stop_y-ny/2.0)*height/ny;
-    //std::cerr << p_start_line_x << " " << p_start_line_y << " " << p_stop_line_x << " " << p_stop_line_y << std::endl;
+    float ratio_x=width/nx;
+    float ratio_y=height/ny;
+
+    p_start_line_x = (1.0*start_x-nx/2.0)*ratio_x;
+    p_stop_line_x = (1.0*stop_x-nx/2.0)*ratio_x;
+    p_start_line_y = (1.0*start_y-ny/2.0)*ratio_y;
+    p_stop_line_y = (1.0*stop_y-ny/2.0)*ratio_y;
+
+    p_line_length=sqrt(pow((p_stop_line_x-p_start_line_x),2)+pow((p_stop_line_y-p_start_line_y),2));
+
+    std::cout<<"----------"<<std::endl;
+    std::cout<<"p_line_length: "<<p_line_length<<std::endl;
+    std::cout<<"-   -   -"<<std::endl;
+    std::cout<<"p_start_line_y: "<<p_start_line_y<<std::endl;
+    std::cout<<"p_stop_line_y: "<<p_stop_line_y<<std::endl;
+    std::cout<<"p_start_line_x: "<<p_start_line_x<<std::endl;
+    std::cout<<"p_stop_line_x: "<<p_stop_line_x<<std::endl;
+    std::cout<<"----------"<<std::endl;
+
+    updateInfo();
+    return;
+}
+
+
+
+
+void GalvoController::setFixedLengthLineScanPos()
+{
+    float linecenter_x = (p_stop_line_x + p_start_line_x)/2.0;
+    float linecenter_y = (p_stop_line_y + p_start_line_y)/2.0;
+
+    QString line_length_cmd_str=ui->lineEdit_width->text();
+    float line_length_cmd=line_length_cmd_str.toDouble();
+
+    float ratio_linelength = line_length_cmd/p_line_length;
+
+    float new_start_line_x = (p_start_line_x - linecenter_x) * ratio_linelength + linecenter_x;
+    float new_stop_line_x = (p_stop_line_x - linecenter_x) * ratio_linelength + linecenter_x;
+    float new_start_line_y = (p_start_line_y - linecenter_y) * ratio_linelength + linecenter_y;
+    float new_stop_line_y = (p_stop_line_y - linecenter_y) * ratio_linelength + linecenter_y;
+
+    float new_line_length=sqrt(pow((new_stop_line_x-new_start_line_x),2)+pow((new_stop_line_y-new_start_line_y),2));
+
+    std::cout<<"----------"<<std::endl;
+    std::cout<<"p_line_length: "<<p_line_length<<std::endl;
+    std::cout<<"new_line_length: "<<new_line_length<<std::endl;
+    std::cout<<"line_length_cmd: "<<line_length_cmd<<std::endl;
+    std::cout<<"-   -   -"<<std::endl;
+    std::cout<<"new_start_line_x: "<<new_start_line_x<<"\t new_start_line_y: "<<new_start_line_y<<std::endl;
+    std::cout<<"new_stop_line_x: "<<new_stop_line_x<<"\t new_stop_line_y: "<<new_stop_line_y<<std::endl;
+    std::cout<<"p_start_line_x: "<<p_start_line_x<<"\t p_start_line_y: "<<p_start_line_y<<std::endl;
+    std::cout<<"p_stop_line_x: "<<p_stop_line_x<<"\t p_stop_line_y: "<<p_stop_line_y<<std::endl;
+    std::cout<<"----------"<<std::endl;
+
+    p_start_line_x = new_start_line_x;
+    p_stop_line_x = new_stop_line_x;
+    p_start_line_y = new_start_line_y;
+    p_stop_line_y = new_stop_line_y;
+    p_line_length=sqrt(pow((p_stop_line_x-p_start_line_x),2)+pow((p_stop_line_y-p_start_line_y),2));
+
     return;
 }
 
@@ -311,6 +362,7 @@ void GalvoController::setDefaultScan(void)
     int scantype = p_settings.value(chosen_scan+"/scantype").toInt();
     int aline_repeat = p_settings.value(chosen_scan+"/aline_repeat",1).toInt();
 
+
     ui->lineEdit_nx->setText(QString::number(nx));
     ui->lineEdit_ny->setText(QString::number(ny));
     ui->lineEdit_width->setText(QString::number(width));
@@ -381,20 +433,25 @@ void GalvoController::updateInfo(void)
     float lat_sampling=width/nx;
     float interFrameTime=1/line_rate*1000;
     QString tmp;
-    tmp.sprintf("Current time per pixel: \t %10.2f us\n",time_per_pix);
+    tmp.sprintf("Current time per pix.:\t%5.2f us\n",time_per_pix);
     text = text+tmp;
-    tmp.sprintf("Current exposure: \t %10.2f us\n",exposure);
+    tmp.sprintf("Current exposure:\t%5.2f us\n",exposure);
     text=text+tmp;
-    tmp.sprintf("Beam speed in x: \t %10.2f mm/sec\n",speed_x);
+    tmp.sprintf("Beam speed in x:\t%5.2f mm/sec\n",speed_x);
     text=text+tmp;
-    tmp.sprintf("Lateral sampling in x: \t %10.3f um/pix\n",lat_sampling);
+    tmp.sprintf("Lateral sampling in x:\t%5.3f um/pix\n",lat_sampling);
     text=text+tmp;
-    tmp.sprintf("Inter B-scan time in x: \t %10.3f ms\n",interFrameTime);
+    tmp.sprintf("Inter B-scan time in x:\t%5.3f ms\n",interFrameTime);
     text=text+tmp;
+    tmp.sprintf("Linelength:\t\t%5.3f um\n",p_line_length);
+    text=text+tmp;
+
+
+
 
     if (time_per_pix < 0.9*exposure)
     {
-        tmp.sprintf("WARNING: INTEGRATION TIME HIGHER THAN TIME PER PIXEL!!!\n");
+        tmp.sprintf("WARNING: \nINTEGRATION TIME HIGHER THAN TIME\nPER PIXEL!!!\n");
         text=text+tmp;
     }
     ui->label_info->setText(text);
@@ -402,20 +459,37 @@ void GalvoController::updateInfo(void)
 
 void GalvoController::scanTypeChosen(const QString& text)
 {
-    if (text=="Sawtooth")
+    if (text=="SawTooth")
     {
         ui->label_nx->setText("Nx");
         ui->label_ny->setText("Ny");
+        ui->label_ny->setText("Ny");
+        ui->label_width->setText("Width (um)");
+        ui->label_height->setEnabled(true);
+        ui->lineEdit_height->setEnabled(true);
+        ui->checkBox_adjustLength->setChecked(false);
+        ui->checkBox_adjustLength->setEnabled(false);
     }
     else if (text=="Triangular")
     {
         ui->label_nx->setText("Nx");
         ui->label_ny->setText("Ny");
+        ui->checkBox_adjustLength->setChecked(false);
+        ui->checkBox_adjustLength->setEnabled(false);
+        ui->label_width->setText("Width (um)");
+        ui->label_height->setEnabled(true);
+        ui->lineEdit_height->setEnabled(true);
     }
     else if (text=="Line")
     {
         ui->label_nx->setText("N points");
         ui->label_ny->setText("N repeat");
+        ui->checkBox_adjustLength->setChecked(true);
+        ui->checkBox_adjustLength->setEnabled(true);
+        ui->label_width->setText("Length (um)");
+        ui->label_height->setEnabled(false);
+        ui->lineEdit_height->setEnabled(false);
+
     }
 }
 
@@ -458,10 +532,7 @@ void GalvoController::checkPath()
     bool folderFlag = true;
     int counter=1;
     bool overwriteFlag=ui->checkBox_overwrite->checkState();
-    bool updateLSnumberFlag=ui->checkBox_updateLSnumber->checkState();
-    bool RBCflag=((newfolderName=="RBCpassage_1_5_ms")||(newfolderName=="CapVel"));
-    bool updateLSFlag=(updateLSnumberFlag && RBCflag);
-    std::cout<<"LS flag: "<<updateLSnumberFlag<< "RBC flag: "<< RBCflag<<" flag: "<< RBCflag<<std::endl;
+    bool updateLSFlag=ui->checkBox_updateLSnumber->checkState();
 
     if (!overwriteFlag)
     {
@@ -482,7 +553,9 @@ void GalvoController::checkPath()
                     folderFlag=false;
                     std::cout<<"in line update"<<std::endl;
                     p_line_number_str = readLineNumber();
-                    newfolderName = folderName+"_"+p_line_number_str;
+                    QString linenumber;
+                    linenumber.sprintf("%03d", p_line_number_str.toInt());
+                    newfolderName = folderName+"_"+linenumber;
                     ui->lineEdit_datasetname->setText(newfolderName);
                 }
                 else
@@ -501,29 +574,10 @@ void GalvoController::automaticCentering()
     bool centreAutoFlag=ui->checkBox_centreAuto->checkState();
     if(centreAutoFlag)
     {
-        QString folderName = ui->comboBox_scanlist->currentText();
-        if (folderName=="RBCpassage_1_5_ms")
-        {
-            std::cout<<"RBC passage: aligning on 2P linescan"<<std::endl;
-            readOffset();
-        }
-        else if(folderName=="angio_40reps_150Hz")
-        {
-            goHome();
-            std::cout<<"40 reps: going Home centered with 2P"<<std::endl;
-            p_center_x=readOffsetX();
-            p_center_y=readOffsetY();
-            p_galvos.move(p_center_x,p_center_y);
-        }
-        else
-        {
-            std::cout<<"Other mode selected: aligning on 2P linescan"<<std::endl;
-            readOffset();
-        }
+        readOffset();
     }
     else
     {
-        std::cout<<"Going home:"<<std::endl;
         goHome();
     }
     updateCenterLineEdit();
@@ -601,6 +655,9 @@ void GalvoController::startScan()
     case 5:
         fobj=4.5;
         break;
+    case 6:
+        fobj=54.0;
+        break;
     default:
         break;
     }
@@ -630,6 +687,15 @@ void GalvoController::startScan()
         p_stop_line=ui->lineEdit_stopLine->text().toInt();
     }
 
+    if (ui->checkBox_adjustLength->isChecked())
+    {
+        std::cout<<"Setting fixed length..."<<std::endl;
+        setFixedLengthLineScanPos();
+        std::cout<<"...done!"<<std::endl;
+
+    }
+    updateInfo();
+    qApp->processEvents();
 
     if (ui->checkBox_save->isChecked())
     {
@@ -648,12 +714,20 @@ void GalvoController::startScan()
         p_ai_data_saver->setDatasetPath(p_save_dir.absolutePath());
 
 
+
         QString info;
         QString tmp;
         info.sprintf("nx: %d\n",nx);
         info=info+tmp.sprintf("ny: %d\n",ny);
         info=info+tmp.sprintf("n_repeat: %d\n",n_repeat);
-        info=info+tmp.sprintf("width: %f\n",width);
+        if (ui->comboBox_scantype->currentText() == "Line")
+        {
+                info=info+tmp.sprintf("width: %f\n",p_line_length);
+        }
+        else
+        {
+            info=info+tmp.sprintf("width: %f\n",width);
+        }
         info=info+tmp.sprintf("height: %f\n",height);
         info=info+tmp.sprintf("n_extra: %d\n",n_extra);
         info=info+tmp.sprintf("line_rate: %f\n",line_rate);
@@ -739,8 +813,6 @@ void GalvoController::startScan()
     {
         view_timer->start(30);
     }
-    std::cout<<"flagMotor:"<<std::endl;
-
     std::cout<<"flagMotor:"<<flagMotor<<std::endl;
 
 
@@ -848,27 +920,28 @@ void GalvoController::stopScan()
 
 void GalvoController::moveUp(void)
 {
-    p_center_y-=10;
+    p_center_y-=1;
     p_galvos.move(p_center_x,p_center_y);
+    updateCenterLineEdit();
 }
 
 void GalvoController::moveDown(void)
 {
-    p_center_y+=10;
+    p_center_y+=1;
     p_galvos.move(p_center_x,p_center_y);
     updateCenterLineEdit();
 }
 
 void GalvoController::moveRight(void)
 {
-    p_center_x-=10;
+    p_center_x-=1;
     p_galvos.move(p_center_x,p_center_y);
     updateCenterLineEdit();
 }
 
 void GalvoController::moveLeft(void)
 {
-    p_center_x+=10;
+    p_center_x+=1;
     p_galvos.move(p_center_x,p_center_y);
     updateCenterLineEdit();
 }
@@ -897,7 +970,6 @@ void GalvoController::writeCoeffTxt(void)
 
 void GalvoController::readCoeffTxt(void)
 {
-    std::cout<<"in readcoeffTxt"<<std::endl;
     QFile file("C:/git-projects/micro-oct-acq/coefficientsOCT.txt");
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
             return;
@@ -905,37 +977,27 @@ void GalvoController::readCoeffTxt(void)
     QString line = in.readLine();
     file.close();
     QStringList fields = line.split("/");
-
-    std::cout<<"in readcoeffTxt"<<std::endl;
-
-
     p_offset_x=fields.at(6).toFloat();
     p_coeff_x=fields.at(7).toFloat();
     p_coeff_x_quad=fields.at(8).toFloat();
     p_coeff_xy=fields.at(9).toFloat();
     p_coeff_xy_quad=fields.at(10).toFloat();
-    std::cout<<"in readcoeffTxt"<<std::endl;
     p_coeff_xxy=fields.at(11).toFloat();
 
     p_offset_y=fields.at(0).toFloat();
     p_coeff_yx=fields.at(1).toFloat();
     p_coeff_yx_quad=fields.at(2).toFloat();
     p_coeff_y=fields.at(3).toFloat();
-    std::cout<<"in readcoeffTxt"<<std::endl;
-
     p_coeff_y_quad=fields.at(4).toFloat();
     p_coeff_yyx=fields.at(5).toFloat();
 
-    std::cout<<"in readcoeffTxt"<<std::endl;
-    QFile fileCoeff("C:/git-projects/micro-oct-acq/userCoefficients.txt");
+    QFile fileCoeff("C:\git-projects\micro-oct-acq-angiolive/userCoefficients.txt");
     if (!fileCoeff.open(QIODevice::ReadOnly | QIODevice::Text))
             return;
     QTextStream inCoeff(&fileCoeff);
     QString lineCoeff = inCoeff.readLine();
     fileCoeff.close();
     QStringList fieldsCoeff = lineCoeff.split("/");
-
-    std::cout<<"in readcoeffTxt 2"<<std::endl;
 
     p_offset_x_added=fieldsCoeff.at(0).toFloat();
     p_offset_y_added=fieldsCoeff.at(1).toFloat();
@@ -947,18 +1009,12 @@ void GalvoController::readCoeffTxt(void)
 
     updateOffsetViewerX();
     updateOffsetViewerY();
-    std::cout<<"readcoeffTxt done!"<<std::endl;
 }
 
 void GalvoController::readOffset(void)
 {
     p_galvos.move(0,0);
-    // Could be changed to f
-    //QString fileName = QFileDialog::getOpenFileName(this,
-        //tr("Open Galvo Offset File"), QDir::homePath() , tr("Text Files (*.txt)"));
 
-    //std::cerr << fileName.toUtf8().constData() << std::endl;
-    //QFile file(fileName);
     QFile file("C:/git-projects/multiphoton/coordinates.txt");
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
             return;
@@ -972,22 +1028,18 @@ void GalvoController::readOffset(void)
 
     ui->lineEdit_readOffsetX->setText(QString::number(p_center_x));
     ui->lineEdit_readOffsetY->setText(QString::number(p_center_y));
-    std::cout << "1a. p_center_x: " << p_center_x << "/ p_center_y: " << p_center_y << std::endl;
 
     ui->lineEdit_readLineNumber->setText(QString::number(p_line_number));
-    std::cout << "1b. p_offset_y_added: " << p_offset_x_added << "/ p_offset_y_added: " << p_offset_y_added << std::endl;
-    std::cout << "1c. p_offset_y: " << p_offset_y << "/ p_offset_x: " << p_offset_x << std::endl;
 
     float p_center_y_mod=(p_offset_x+p_offset_x_added)+p_center_x*p_coeff_x+p_center_x*p_coeff_x_quad+p_center_y*p_coeff_xy+p_center_y*p_coeff_xy_quad+p_coeff_xxy*p_center_y*p_center_x;
-
     float p_center_x_mod=(p_offset_y+p_offset_y_added)+p_center_x*p_coeff_yx+p_center_x*p_coeff_yx_quad+p_coeff_y*p_center_y+p_center_y*p_coeff_y_quad+p_coeff_yyx*p_center_y*p_center_x;
 
     p_center_y=p_center_x_mod;
     p_center_x=-p_center_y_mod;
 
-
-    std::cout << "2. p_center_x: " << p_center_x << "/ p_center_y: " << p_center_y << std::endl;
     p_galvos.move(p_center_x,p_center_y);
+
+
 }
 
 void GalvoController::updateOffset(void)

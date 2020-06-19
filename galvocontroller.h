@@ -75,6 +75,8 @@ private slots:
     void automaticCentering(void);
     QString readLineNumber(void);
     void setLineScanPos(int start_x, int start_y, int stop_x, int stop_y);
+    void setFixedLengthLineScanPos(void);
+
 private:
     Ui::OCTGalvosForm *ui;
     QString dataDir;
@@ -101,6 +103,7 @@ private:
     float p_stop_line_x;
     float p_start_line_y;
     float p_stop_line_y;
+    float p_line_length;
     QString p_line_number_str;
     Galvos p_galvos;
 #ifndef SIMULATION
