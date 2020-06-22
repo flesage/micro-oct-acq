@@ -46,6 +46,9 @@ GalvoController::GalvoController() :
     p_stop_line_y = 0;
     p_line_length = 0.0;
 
+    p_start_viewline = ui->lineEdit_startLine->text().toInt();
+    p_stop_viewline = ui->lineEdit_stopLine->text().toInt();
+
     motors = new MotorClass();
 
     double radians_per_volt = 2*3.14159265359/(360*0.8);
@@ -85,7 +88,9 @@ GalvoController::GalvoController() :
     connect(ui->pushButton_piezoJog,SIGNAL(clicked()),this,SLOT(jogPiezo()));
     connect(ui->pushButton_piezoStop,SIGNAL(clicked()),this,SLOT(stopPiezo()));
 
-
+    connect(ui->lineEdit_startLine,SIGNAL(editingFinished()),this,SLOT(slot_updateViewLinePositions()));
+    connect(ui->lineEdit_stopLine,SIGNAL(editingFinished()),this,SLOT(slot_updateViewLinePositions()));
+    connect(ui->checkBox_view_line,SIGNAL(clicked(bool)),this,SLOT(slot_updateViewLinePositions()));
 
     connect(ui->comboBox_scantype,SIGNAL(activated(const QString&)),this,SLOT(scanTypeChosen(const QString&)));
     connect(ui->comboBox_scantype,SIGNAL(currentIndexChanged(const QString&)),this,SLOT(scanTypeChosen(const QString&)));
@@ -606,8 +611,7 @@ void GalvoController::startScan()
     double f1=50.0;
     double f2=100.0;
     bool show_line_flag=ui->checkBox_view_line->isChecked();
-    int p_start_line=0;
-    int p_stop_line=0;
+
 
     switch(telescope)
     {
@@ -683,8 +687,8 @@ void GalvoController::startScan()
     if (show_line_flag)
     {
         std::cout<<"show flag!"<<std::endl;
-        p_start_line=ui->lineEdit_startLine->text().toInt();
-        p_stop_line=ui->lineEdit_stopLine->text().toInt();
+        p_start_viewline=ui->lineEdit_startLine->text().toInt();
+        p_stop_viewline=ui->lineEdit_stopLine->text().toInt();
     }
 
     if (ui->checkBox_adjustLength->isChecked())
@@ -741,12 +745,6 @@ void GalvoController::startScan()
         info=info+tmp.sprintf("coeff_x: %f\n",p_coeff_x);
         info=info+tmp.sprintf("coeff_y: %f\n",p_coeff_y);
 
-        if (show_line_flag)
-        {
-            std::cout<<"show flag!  - in save"<<std::endl;
-            info=info+tmp.sprintf("start_line: %d\n",p_start_line);
-            info=info+tmp.sprintf("stop_line: %d\n",p_stop_line);
-        }
         p_data_saver->addInfo(info);
         connect(p_data_saver,SIGNAL(available(int)),ui->lcdNumber_saveqsize,SLOT(display(int)));
         connect(p_data_saver,SIGNAL(filenumber(int)),this,SLOT(displayFileNumber(int)));
@@ -781,10 +779,13 @@ void GalvoController::startScan()
         p_image_view->updateHanningThreshold(ui->lineEdit_hanningeps->text().toFloat());
         p_image_view->updateImageThreshold(ui->lineEdit_logeps->text().toFloat());
         p_image_view->updateAngioAlgo(ui->comboBox_angio->currentIndex());
-        p_image_view->checkLine(show_line_flag,p_start_line,p_stop_line);
+        p_image_view->checkLine(show_line_flag,p_start_viewline,p_stop_viewline);
+
         connect(view_timer,SIGNAL(timeout()),p_image_view,SLOT(updateView()));
         connect(this,SIGNAL(sig_updateHanningThreshold(float)),p_image_view,SLOT(updateHanningThreshold(float)));
         connect(this,SIGNAL(sig_updateImageThreshold(float)),p_image_view,SLOT(updateImageThreshold(float)));
+        connect(this,SIGNAL(sig_updateViewLinePositions(bool,int,int)),p_image_view,SLOT(updateViewLinePositions(bool,int,int)));
+
         connect(p_image_view,SIGNAL(sig_updateLineScanPos(int,int,int,int)),this,SLOT(setLineScanPos(int,int,int,int)));
         if(ui->checkBox_placeImage->isChecked())
             p_image_view->move(200,150);
@@ -872,6 +873,19 @@ void GalvoController::stopScan()
 
     if(p_data_saver)
     {
+        bool show_line_flag=ui->checkBox_view_line->isChecked();
+        if (show_line_flag)
+        {
+            QString info;
+            QString tmp;
+            info.sprintf("start_line: %d\n",p_start_viewline);
+            info=info+tmp.sprintf("stop_line: %d\n",p_stop_viewline);
+            p_data_saver->addInfo(info);
+            p_data_saver->writeInfoFile();
+        }
+
+
+
         p_data_saver->stopSaving();
         p_ai_data_saver->stopSaving();
     }
@@ -1114,4 +1128,12 @@ QString GalvoController::readLineNumber(void)
 {
     p_line_number_str=ui->lineEdit_readLineNumber->text();
     return p_line_number_str;
+}
+
+void GalvoController::slot_updateViewLinePositions(void)
+{
+    p_start_viewline = ui->lineEdit_startLine->text().toInt();
+    p_stop_viewline = ui->lineEdit_stopLine->text().toInt();
+    bool show_line_flag=ui->checkBox_view_line->isChecked();
+    emit sig_updateViewLinePositions(show_line_flag,p_start_viewline,p_stop_viewline);
 }

@@ -27,8 +27,8 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, int n_extra, int ny, int
     connect(p_angio_view,SIGNAL(sig_updateLineScanPos(int,int,int,int)),this,SLOT(updateLineScanPos(int,int,int,int)));
 
     p_line_status = false;
-    p_start_line = 250;
-    p_stop_line = 500;
+    p_start_line = 0;
+    p_stop_line = 10;
     p_frame_number = 0;
 
     pix = QPixmap::fromImage(p_fringe_image);
@@ -357,3 +357,11 @@ void ImageViewer::checkLine(bool lineStatus, int startLine, int stopLine)
     p_start_line=startLine;
     p_stop_line=stopLine;
 }
+
+void ImageViewer::updateViewLinePositions(bool lineStatus, int startLine, int stopLine)
+{
+    p_line_status=lineStatus;
+    p_start_line=startLine;
+    p_stop_line=stopLine;
+}
+

@@ -32,6 +32,8 @@ public:
 signals:
     void sig_updateImageThreshold(float);
     void sig_updateHanningThreshold(float);
+    void sig_updateViewLinePositions(bool,int,int);
+
 private slots:
     void updateSpeedPiezo(void);
     void turnPiezoOn(void);
@@ -76,6 +78,7 @@ private slots:
     QString readLineNumber(void);
     void setLineScanPos(int start_x, int start_y, int stop_x, int stop_y);
     void setFixedLengthLineScanPos(void);
+    void slot_updateViewLinePositions(void);
 
 private:
     Ui::OCTGalvosForm *ui;
@@ -104,6 +107,8 @@ private:
     float p_start_line_y;
     float p_stop_line_y;
     float p_line_length;
+    int p_start_viewline;
+    int p_stop_viewline;
     QString p_line_number_str;
     Galvos p_galvos;
 #ifndef SIMULATION

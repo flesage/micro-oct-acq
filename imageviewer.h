@@ -34,6 +34,7 @@ public:
 signals:
     void sig_updateImageThreshold(float);
     void sig_updateLineScanPos(int,int,int,int);
+
 public slots:
     void updateView();
     void resizeEvent(QResizeEvent *);
@@ -44,6 +45,7 @@ public slots:
     void setCurrentViewModeStruct();
     void checkLine(bool,int,int);
     void updateLineScanPos(int start_x, int start_y, int stop_x, int stop_y);
+    void updateViewLinePositions(bool, int, int);
 
 protected:
     virtual void  keyPressEvent(QKeyEvent *event);
