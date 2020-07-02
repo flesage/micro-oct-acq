@@ -18,7 +18,7 @@ public:
     void init( int nz, int nx, float dimz, float dimx);
     void set_disp_comp_vect(float* disp_comp_vector);
     void interp_and_do_fft(unsigned short* in_fringe,unsigned char* out_data, float p_image_threshold, float p_hanning_threshold);
-    void get_angio(unsigned short* in_fringe,af::array* out_data, float p_image_threshold, float p_hanning_threshold, int angio_algo);
+    void get_angio(unsigned short* in_fringe,af::array* out_data, float p_image_threshold, float p_hanning_threshold);
     void compute_hilbert(unsigned short* in_fringe,unsigned char* out_data, float p_hanning_threshold);
     void init_doppler(float msec_fwhm, float line_period, float spatial_fwhm_um);
     void PutDopplerHPFilterOnGPU(float sigma, float lineperiod);
@@ -26,6 +26,7 @@ public:
 	void read_interp_matrix();
     void pre_compute_positions(int n_ang_pts, int n_radial_pts);
     void get_radial_img(unsigned short* in_fringe, float* out_image);
+    void setAngioAlgo(int angio_algo);
 private:
     af::array unwrap(const af::array& angle);
     af::array laplacian(const af::array& arr, bool inverse);
@@ -33,6 +34,7 @@ private:
     af::array idct1(const af::array& arr);
     int p_nz;
     int p_nx;
+    int p_angio_algo;
     unsigned int p_n_repeat;
     int p_factor;
     float p_dimx;

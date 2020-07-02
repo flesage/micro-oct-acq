@@ -39,6 +39,7 @@ void FringeFFT::init(int nz, int nx, float dimz, float dimx)
     p_struct=af::array(p_nz/2,p_nx,f32);
     p_angio_stack=af::array(p_nz/2,p_nx,p_n_repeat,f32);
     p_norm_signal=af::constant(0.0,p_nz,p_nx,f32);
+    p_angio_algo=0;
 
     double* tmp=new double[p_nz];
     FILE* fp=fopen("C:\\Users\\Public\\Documents\\filter.dat","rb");
@@ -86,7 +87,12 @@ void FringeFFT::interp_and_do_fft(unsigned short* in_fringe,unsigned char* out_s
     p_norm_signal.as(u8).host(out_signal);
 }
 
-void FringeFFT::get_angio(unsigned short* in_fringe,af::array* out_data, float p_image_threshold, float p_hanning_threshold, int angio_algo)
+void FringeFFT::setAngioAlgo(int angio_algo)
+{
+    p_angio_algo=angio_algo;
+}
+
+void FringeFFT::get_angio(unsigned short* in_fringe,af::array* out_data, float p_image_threshold, float p_hanning_threshold)
 {
     // Interpolation by sparse matrix multiplication
     af::dim4 dims(2048,p_nx,1,1);
@@ -103,7 +109,8 @@ void FringeFFT::get_angio(unsigned short* in_fringe,af::array* out_data, float p
     p_signal = af::fftR2C<1>(p_interpfringe, dims);
     p_signal = af::abs(p_signal.rows(1,af::end));
     p_angio_stack=af::moddims(p_signal,p_nz/2,p_nx,p_n_repeat);
-    switch(angio_algo)
+
+    switch(p_angio_algo)
     {
     case 0:
     {

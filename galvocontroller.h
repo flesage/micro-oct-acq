@@ -33,6 +33,8 @@ signals:
     void sig_updateImageThreshold(float);
     void sig_updateHanningThreshold(float);
     void sig_updateViewLinePositions(bool,int,int);
+    void sig_updateAveragingFlag(bool);
+    void sig_updateAveragingAlgo(int);
 
 private slots:
     void updateSpeedPiezo(void);
@@ -79,6 +81,8 @@ private slots:
     void setLineScanPos(int start_x, int start_y, int stop_x, int stop_y);
     void setFixedLengthLineScanPos(void);
     void slot_updateViewLinePositions(void);
+    void slot_updateAverageAngiogram(void);
+    void slot_updateAngiogramAlgo(void);
 
 private:
     Ui::OCTGalvosForm *ui;
