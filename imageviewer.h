@@ -34,6 +34,7 @@ public:
 signals:
     void sig_updateImageThreshold(float);
     void sig_updateLineScanPos(int,int,int,int);
+    void sig_updateAverageAngio(bool);
 
 public slots:
     void updateView();
@@ -46,6 +47,7 @@ public slots:
     void checkLine(bool,int,int);
     void updateLineScanPos(int start_x, int start_y, int stop_x, int stop_y);
     void updateViewLinePositions(bool, int, int);
+    void updateAngioAverageFlag(bool);
 
 protected:
     virtual void  keyPressEvent(QKeyEvent *event);
@@ -80,6 +82,7 @@ private:
     unsigned int p_frame_number;
     int p_ny;
     af::array p_angio;
+    bool p_angio_averageFlag;
 };
 
 #endif // ImageViewer_H

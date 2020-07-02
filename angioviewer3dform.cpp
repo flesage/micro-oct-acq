@@ -27,6 +27,7 @@ AngioViewer3DForm::AngioViewer3DForm(QWidget *parent,int nx, int n_extra, int ny
     p_start_y=0;
     p_stop_y=0;
     p_show_line = true;
+    p_average_on = false;
 }
 
 AngioViewer3DForm::~AngioViewer3DForm()
@@ -83,14 +84,26 @@ bool AngioViewer3DForm::eventFilter( QObject* watched, QEvent* event ) {
     return false;
 }
 
+void AngioViewer3DForm::setAverageFlag(bool flag)
+{
+    p_average_on = flag;
+}
+
 void AngioViewer3DForm::put(const af::array& data, unsigned int frame_number)
 {
+    //p_average_on=getAverageFlag();
     p_current_frame = (frame_number)%p_ny;
     p_average[p_current_frame]+=1;
     // Copy current angio
-    p_angio(af::span,af::span,p_current_frame)=data/p_average[p_current_frame]+
-            p_angio(af::span,af::span,p_current_frame)*(p_average[p_current_frame]-1.0)/p_average[p_current_frame];
-
+    if (p_average_on)
+    {
+            p_angio(af::span,af::span,p_current_frame)=data/p_average[p_current_frame]+
+                    p_angio(af::span,af::span,p_current_frame)*(p_average[p_current_frame]-1.0)/p_average[p_current_frame];
+    }
+    else
+    {
+            p_angio(af::span,af::span,p_current_frame)=data;
+    }
     updateView();
 }
 

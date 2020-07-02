@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>680</width>
-    <height>955</height>
+    <height>965</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -2818,6 +2818,33 @@
      </item>
      <item>
       <layout class="QGridLayout" name="gridLayout_6">
+       <item row="1" column="1">
+        <widget class="QCheckBox" name="checkBox_do_mosaic">
+         <property name="minimumSize">
+          <size>
+           <width>60</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Do Mosaic</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="2">
+        <widget class="QCheckBox" name="checkBox_view_line">
+         <property name="text">
+          <string>View Line</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="2">
+        <widget class="QCheckBox" name="checkBox_speckle_mod">
+         <property name="text">
+          <string>Speckle Mod.</string>
+         </property>
+        </widget>
+       </item>
        <item row="0" column="1">
         <widget class="QCheckBox" name="checkBox_fringe">
          <property name="minimumSize">
@@ -2875,30 +2902,10 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="1">
-        <widget class="QCheckBox" name="checkBox_do_mosaic">
-         <property name="minimumSize">
-          <size>
-           <width>60</width>
-           <height>0</height>
-          </size>
-         </property>
+       <item row="2" column="2">
+        <widget class="QCheckBox" name="checkBox_averageFrames">
          <property name="text">
-          <string>Do Mosaic</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="2">
-        <widget class="QCheckBox" name="checkBox_view_line">
-         <property name="text">
-          <string>View Line</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="2">
-        <widget class="QCheckBox" name="checkBox_speckle_mod">
-         <property name="text">
-          <string>Speckle Mod.</string>
+          <string>Average frames?</string>
          </property>
         </widget>
        </item>

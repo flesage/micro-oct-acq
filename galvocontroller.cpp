@@ -113,6 +113,10 @@ GalvoController::GalvoController() :
 
     connect(ui->lineEdit_datasetname,SIGNAL(editingFinished(void)),this,SLOT(checkPath()));
 
+    connect(ui->checkBox_averageFrames,SIGNAL(clicked(bool)),this,SLOT(slot_updateAverageAngiogram()));
+
+    connect(ui->comboBox_angio,SIGNAL(currentIndexChanged(int)),this,SLOT(slot_updateAngiogramAlgo()));
+
 
 
     connect(ui->checkBox_motorport,SIGNAL(clicked(bool)),this,SLOT(slot_openMotorPort(bool)));
@@ -745,6 +749,10 @@ void GalvoController::startScan()
         info=info+tmp.sprintf("coeff_x: %f\n",p_coeff_x);
         info=info+tmp.sprintf("coeff_y: %f\n",p_coeff_y);
 
+        QString objective = ui->comboBox_objective->currentText();
+        info=info+tmp.sprintf("objective: %s\n",objective.toUtf8().constData());
+
+
         p_data_saver->addInfo(info);
         connect(p_data_saver,SIGNAL(available(int)),ui->lcdNumber_saveqsize,SLOT(display(int)));
         connect(p_data_saver,SIGNAL(filenumber(int)),this,SLOT(displayFileNumber(int)));
@@ -780,8 +788,15 @@ void GalvoController::startScan()
         p_image_view->updateImageThreshold(ui->lineEdit_logeps->text().toFloat());
         p_image_view->updateAngioAlgo(ui->comboBox_angio->currentIndex());
         p_image_view->checkLine(show_line_flag,p_start_viewline,p_stop_viewline);
+        bool averageAngioFlag=ui->checkBox_averageFrames->isChecked();
+        p_image_view->updateAngioAverageFlag(averageAngioFlag);
 
         connect(view_timer,SIGNAL(timeout()),p_image_view,SLOT(updateView()));
+        connect(this,SIGNAL(sig_updateAveragingFlag(bool)),p_image_view,SLOT(updateAngioAverageFlag(bool)));
+        connect(this,SIGNAL(sig_updateAveragingAlgo(int)),p_image_view,SLOT(updateAngioAlgo(int)));
+
+
+
         connect(this,SIGNAL(sig_updateHanningThreshold(float)),p_image_view,SLOT(updateHanningThreshold(float)));
         connect(this,SIGNAL(sig_updateImageThreshold(float)),p_image_view,SLOT(updateImageThreshold(float)));
         connect(this,SIGNAL(sig_updateViewLinePositions(bool,int,int)),p_image_view,SLOT(updateViewLinePositions(bool,int,int)));
@@ -1136,4 +1151,16 @@ void GalvoController::slot_updateViewLinePositions(void)
     p_stop_viewline = ui->lineEdit_stopLine->text().toInt();
     bool show_line_flag=ui->checkBox_view_line->isChecked();
     emit sig_updateViewLinePositions(show_line_flag,p_start_viewline,p_stop_viewline);
+}
+
+void GalvoController::slot_updateAverageAngiogram(void)
+{
+    bool averageAngioFlag=ui->checkBox_averageFrames->isChecked();
+    emit sig_updateAveragingFlag(averageAngioFlag);
+}
+
+void GalvoController::slot_updateAngiogramAlgo(void)
+{
+    int angioAlgo=ui->comboBox_angio->currentIndex();
+    emit sig_updateAveragingAlgo(angioAlgo);
 }

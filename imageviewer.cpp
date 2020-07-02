@@ -25,6 +25,13 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, int n_extra, int ny, int
     p_phase_view = new FWHMViewer(0,LINE_ARRAY_SIZE);
     p_angio_view = new AngioViewer3DForm(0,n_alines, n_extra, p_ny, p_view_depth);
     connect(p_angio_view,SIGNAL(sig_updateLineScanPos(int,int,int,int)),this,SLOT(updateLineScanPos(int,int,int,int)));
+    connect(this,SIGNAL(sig_updateAverageAngio(bool)),p_angio_view,SLOT(setAverageFlag(bool)));
+
+    p_angio_averageFlag = false;
+    p_angio_view->setAverageFlag(p_angio_averageFlag);
+
+
+
 
     p_line_status = false;
     p_start_line = 0;
@@ -50,6 +57,8 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, int n_extra, int ny, int
     p_doppler_image.setColorTable(dop_color_table);
 }
 
+
+
 ImageViewer::~ImageViewer()
 {
     delete [] p_data_buffer;
@@ -65,6 +74,13 @@ void ImageViewer::updateLineScanPos(int start_x, int start_y, int stop_x, int st
 {
     emit sig_updateLineScanPos(start_x,start_y,stop_x,stop_y);
 }
+
+void ImageViewer::updateAngioAverageFlag(bool new_value)
+{
+    p_angio_averageFlag = new_value;
+    emit sig_updateAverageAngio(p_angio_averageFlag);
+}
+
 
 void ImageViewer::updateImageThreshold(float new_value)
 {
@@ -117,6 +133,7 @@ void  ImageViewer::keyPressEvent(QKeyEvent *event)
     case Qt::Key_A:
     {
         event->accept();
+        p_angio_view->setAverageFlag(p_angio_averageFlag);
         p_current_viewmode=ANGIO;
         p_fwhm_view->hide();
         p_phase_view->hide();
@@ -291,10 +308,12 @@ void ImageViewer::updateView()
         // call returns an angio frame. However sometimes if very fast, we could have more than p_n_repeat
         // frames, so we need to loop to not lose frames
         int n_angios = p_factor/p_n_repeat;
+        //std::cout<<"imageviewer: "<<p_angio_algo<<std::endl;
+        f_fft.setAngioAlgo(p_angio_algo);
         for(int i=0; i<n_angios;i++)
         {
             p_mutex.lock();
-            f_fft.get_angio(&p_data_buffer[i*p_n_alines*2048*p_n_repeat], &p_angio ,p_image_threshold, p_hanning_threshold,p_angio_algo);
+            f_fft.get_angio(&p_data_buffer[i*p_n_alines*2048*p_n_repeat], &p_angio ,p_image_threshold, p_hanning_threshold);
             p_mutex.unlock();
 
             float l_max = af::max<float>(p_angio);
