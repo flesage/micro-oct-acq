@@ -64,11 +64,6 @@ void Galvos::config()
 
         //DAQmxErrChk(DAQmxCfgSampClkTiming(p_task_handle,NULL,p_daq_freq,DAQmx_Val_Rising,DAQmx_Val_ContSamps,int(p_n_pts_frame)));
         //DAQmxErrChk(DAQmxConnectTerms("/Dev1/ao/SampleClock",tmp.toUtf8().constData(),DAQmx_Val_DoNotInvertPolarity));
-
-
-        //    if self.ai_task is not None:
-        //        self.ai_task.config(int(self.n_pts_frame),self.daq_freq)
-        //        self.ai_task.CfgDigEdgeStartTrig (posixpath.join(self.device,"ao/StartTrigger"), DAQmx_Val_Falling)
     }
     catch(DAQException e)
     {

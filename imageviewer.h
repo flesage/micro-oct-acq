@@ -31,6 +31,7 @@ public:
     virtual int heightForWidth( int width ) const;
     virtual QSize sizeHint() const;
     void put(unsigned short* frame);
+    void set_disp_comp_vect(float* disp_comp_vector);
 signals:
     void sig_updateImageThreshold(float);
     void sig_updateLineScanPos(int,int,int,int);

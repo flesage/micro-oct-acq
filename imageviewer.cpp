@@ -61,6 +61,11 @@ ImageViewer::~ImageViewer()
     delete p_angio_view;
 }
 
+void ImageViewer::set_disp_comp_vect(float* disp_comp_vector)
+{
+    f_fft.set_disp_comp_vect(disp_comp_vector);
+}
+
 void ImageViewer::updateLineScanPos(int start_x, int start_y, int stop_x, int stop_y)
 {
     emit sig_updateLineScanPos(start_x,start_y,stop_x,stop_y);

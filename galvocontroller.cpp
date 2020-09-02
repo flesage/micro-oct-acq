@@ -7,6 +7,7 @@
 #include <QTimer>
 #include <QStringList>
 #include <QTextStream>
+#include <QMessageBox>
 #include "ui_oct_galvos_form.h"
 #include "config.h"
 #include <QApplication>
@@ -18,6 +19,8 @@ GalvoController::GalvoController() :
     p_ai(0), p_ai_data_saver(0)
 {
     ui->setupUi(this);
+    p_finite_acquisition = false;
+    p_acq_index = 0;
     p_center_x=0.0;
     p_center_y=0.0;
     p_offset_x=0.0;
@@ -65,7 +68,7 @@ GalvoController::GalvoController() :
     QIntValidator* validator2=new QIntValidator(2,200,this);
     ui->lineEdit_extrapoints->setValidator(validator2);
     QIntValidator* validator3=new QIntValidator(1,128,this);
-    ui->lineEdit_fastaxisrepeat->setValidator(validator3);    
+    ui->lineEdit_fastaxisrepeat->setValidator(validator3);
     QIntValidator* validator4=new QIntValidator(1,1000,this);
     ui->lineEdit_aline_repeat->setValidator(validator4);
     QIntValidator* validator5=new QIntValidator(10,2048,this);
@@ -146,10 +149,42 @@ GalvoController::GalvoController() :
     readCoeffTxt();
     updateCenterLineEdit();
     flagMotor=0;
+
+    double* tmp=new double[LINE_ARRAY_SIZE];
+    FILE* fp=fopen("C:\\Users\\Public\\Documents\\dispersion_compensation_10x.dat","rb");
+    if(fp == 0)
+    {
+        std::cerr << "No Dispersion Compensation File Found for 10x Objective" << std::endl;
+        p_disp_comp_vec_10x=0;
+    }
+    else
+    {
+        p_disp_comp_vec_10x=new float[LINE_ARRAY_SIZE];
+        fread(tmp,sizeof(double),LINE_ARRAY_SIZE,fp);
+        for(int i=0;i<LINE_ARRAY_SIZE;i++) p_disp_comp_vec_10x[i]=(float) tmp[i];
+        fclose(fp);
+    }
+    fp=fopen("C:\\Users\\Public\\Documents\\dispersion_compensation_25x.dat","rb");
+    if(fp == 0)
+    {
+        std::cerr << "No Dispersion Compensation File Found for 25x Objective" << std::endl;
+        p_disp_comp_vec_25x=0;
+    }
+    else
+    {
+        p_disp_comp_vec_25x=new float[LINE_ARRAY_SIZE];
+        fread(tmp,sizeof(double),LINE_ARRAY_SIZE,fp);
+        for(int i=0;i<LINE_ARRAY_SIZE;i++) p_disp_comp_vec_25x[i]=(float) tmp[i];
+        fclose(fp);
+    }
+    delete [] tmp;
+    std::cerr << "Vecteurs de dispersion en memoire." <<std::endl;
 }
 
 GalvoController::~GalvoController()
 {
+    delete [] p_disp_comp_vec_10x;
+    delete [] p_disp_comp_vec_25x;
     delete motors;
     delete ui;
 }
@@ -306,43 +341,71 @@ void GalvoController::slot_openMotorPort(bool flag)
 void GalvoController::slot_doMosaic()
 {
     // Need to check motors open
-    int nx = ui->lineEdit_mosaic_nx->text().toInt();
-    int ny = ui->lineEdit_mosaic_ny->text().toInt();
-    int overlap_x = ui->lineEdit_mosaic_offset_x->text().toInt();
-    int overlap_y = ui->lineEdit_mosaic_offset_y->text().toInt();
-    for(int i=0; i<=nx; i++)
+    if(ui->checkBox_motorport->isChecked())
     {
-        for(int j=0; j<=ny; j++)
+        int nx = ui->lineEdit_mosaic_nx->text().toInt();
+        int ny = ui->lineEdit_mosaic_ny->text().toInt();
+        int overlap_x = ui->lineEdit_mosaic_offset_x->text().toInt();
+        int overlap_y = ui->lineEdit_mosaic_offset_y->text().toInt();
+        for(int i=0; i<=nx; i++)
         {
-            // Move motors
-            // Set new datapathname
-            // Do acquisition
+            for(int j=0; j<=ny; j++)
+            {
+                // Move motors
+                // Set new datapathname
+                // Do acquisition
+            }
         }
+    }
+    else
+    {
+        QMessageBox msgBox;
+        msgBox.setText("Open the motor port prior to doing a mozaic.");
+        msgBox.exec();
     }
 }
 
 void GalvoController::slot_doStack()
 {
-    // Need to check motors open
-    // Need to check motors open
-    int nz = ui->lineEdit_stack_nz->text().toInt();
-    int step_z = ui->lineEdit_stack_step_z->text().toFloat();
-    int start_z = ui->lineEdit_stack_start_offset_z->text().toInt();
-    for(int i=0; i<=nz; i++)
+    if(ui->checkBox_motorport->isChecked())
     {
-        // Move motors
-        motors->move_az(step_z);
+        if(p_acq_index == 0)
+        {
+            p_finite_acquisition = true;
+            p_datasetname = ui->lineEdit_datasetname->text();
+            int start_z = ui->lineEdit_stack_start_offset_z->text().toInt();
+            motors->move_az(start_z);
             // Set new datapathname
+            QString stack_name =p_datasetname + QString("_stack_%1").arg(p_acq_index);
+            ui->lineEdit_datasetname->setText(stack_name);
             // Do acquisition
+            startScan();
+        }
+        else
+        {
+            int step_z = ui->lineEdit_stack_step_z->text().toFloat();
+            motors->move_az(step_z);
+            // Set new datapathname
+            QString stack_name =p_datasetname + QString("_stack_%1").arg(p_acq_index);
+            ui->lineEdit_datasetname->setText(stack_name);
+            // Do acquisition
+            startScan();
+        }
+    }
+    else
+    {
+        QMessageBox msgBox;
+        msgBox.setText("Open the motor port prior to doing a z stack.");
+        msgBox.exec();
     }
 }
 
 void GalvoController::setSaveDir()
 {
     dataDir = QFileDialog::getExistingDirectory(this, tr("choose Directory"),
-                                                    p_save_dir.absolutePath(),
-                                                    QFileDialog::ShowDirsOnly
-                                                    | QFileDialog::DontResolveSymlinks);
+                                                p_save_dir.absolutePath(),
+                                                QFileDialog::ShowDirsOnly
+                                                | QFileDialog::DontResolveSymlinks);
     p_save_dir.setPath(dataDir);
     ui->label_directory->setText(p_save_dir.absolutePath());
     ui->lineEdit_datasetname->setEnabled(true);
@@ -522,7 +585,7 @@ void GalvoController::checkPath()
     if(autoFillFlag)
     {
         folderName = ui->comboBox_scanlist->currentText();
-    } 
+    }
 
 
 
@@ -700,10 +763,16 @@ void GalvoController::startScan()
     if (ui->checkBox_save->isChecked())
     {
         p_block_size = (int) ((512.0*256.0)/nx/factor);
+        int n_alines_in_one_volume = (nx+n_extra)*(ny*n_repeat)*aline_repeat;
 
-        p_data_saver = new DataSaver((nx+n_extra)*factor,p_block_size);
+        p_data_saver = new DataSaver((nx+n_extra)*factor,p_block_size,n_alines_in_one_volume);
         p_data_saver->setDatasetName(ui->lineEdit_datasetname->text());
         p_data_saver->setDatasetPath(p_save_dir.absolutePath());
+        if(p_finite_acquisition)
+        {
+            connect(p_data_saver,SIGNAL(volume_done()),this,SLOT(stopScan()));
+        }
+
         // AI
         if(p_ai != 0) delete p_ai;
 
@@ -722,7 +791,7 @@ void GalvoController::startScan()
         info=info+tmp.sprintf("n_repeat: %d\n",n_repeat);
         if (ui->comboBox_scantype->currentText() == "Line")
         {
-                info=info+tmp.sprintf("width: %f\n",p_line_length);
+            info=info+tmp.sprintf("width: %f\n",p_line_length);
         }
         else
         {
@@ -782,6 +851,9 @@ void GalvoController::startScan()
         p_image_view->updateImageThreshold(ui->lineEdit_logeps->text().toFloat());
         p_image_view->updateAngioAlgo(ui->comboBox_angio->currentIndex());
         p_image_view->checkLine(show_line_flag,p_start_line,p_stop_line);
+        int dispersion = ui->comboBox_dispersion->currentIndex();
+        if(dispersion == 2 && p_disp_comp_vec_10x != 0) p_image_view->set_disp_comp_vect(p_disp_comp_vec_10x);
+        if(dispersion == 4 && p_disp_comp_vec_25x != 0) p_image_view->set_disp_comp_vect(p_disp_comp_vec_25x);
         connect(view_timer,SIGNAL(timeout()),p_image_view,SLOT(updateView()));
         connect(this,SIGNAL(sig_updateHanningThreshold(float)),p_image_view,SLOT(updateHanningThreshold(float)));
         connect(this,SIGNAL(sig_updateImageThreshold(float)),p_image_view,SLOT(updateImageThreshold(float)));
@@ -813,13 +885,11 @@ void GalvoController::startScan()
     {
         view_timer->start(30);
     }
-    std::cout<<"flagMotor:"<<flagMotor<<std::endl;
 
 
     if (ui->checkBox_speckle_mod->isChecked() && flagMotor)
     {
         motors->PiezoStartJog();
-        std::cout<<"starting piezo"<<std::endl;
     }
 
 
@@ -867,7 +937,6 @@ void GalvoController::stopScan()
     if (ui->checkBox_speckle_mod->isChecked() && flagMotor)
     {
         motors->PiezoStopJog();
-        std::cout<<"stopping piezo"<<std::endl;
     }
 
     if(p_data_saver)
@@ -914,8 +983,24 @@ void GalvoController::stopScan()
     // Stop galvos, close camera
     p_galvos.stopTask();
     p_camera->Close();
-    ui->pushButton_start->setEnabled(true);
-    ui->pushButton_stop->setEnabled(false);
+    if(!p_finite_acquisition)
+    {
+        ui->pushButton_start->setEnabled(true);
+        ui->pushButton_stop->setEnabled(false);
+    }
+    else
+    {
+        p_acq_index ++;
+        if( p_acq_index < ui->lineEdit_stack_nz->text().toInt())
+        {
+            slot_doStack();
+        }
+        else
+        {
+            p_acq_index = 0;
+            p_finite_acquisition = false;
+        }
+    }
 }
 
 void GalvoController::moveUp(void)
@@ -960,7 +1045,7 @@ void GalvoController::writeCoeffTxt(void)
     std::cout<<"in readcoeffTxt"<<std::endl;
     QFile file("C:/git-projects/micro-oct-acq/userCoefficients.txt");
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-            return;
+        return;
     QTextStream out(&file);
     p_offset_x_added=readOffsetX();
     p_offset_y_added=readOffsetY();
@@ -972,7 +1057,7 @@ void GalvoController::readCoeffTxt(void)
 {
     QFile file("C:/git-projects/micro-oct-acq/coefficientsOCT.txt");
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-            return;
+        return;
     QTextStream in(&file);
     QString line = in.readLine();
     file.close();
@@ -993,7 +1078,7 @@ void GalvoController::readCoeffTxt(void)
 
     QFile fileCoeff("C:\git-projects\micro-oct-acq-angiolive/userCoefficients.txt");
     if (!fileCoeff.open(QIODevice::ReadOnly | QIODevice::Text))
-            return;
+        return;
     QTextStream inCoeff(&fileCoeff);
     QString lineCoeff = inCoeff.readLine();
     fileCoeff.close();
@@ -1017,7 +1102,7 @@ void GalvoController::readOffset(void)
 
     QFile file("C:/git-projects/multiphoton/coordinates.txt");
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-            return;
+        return;
     QTextStream in(&file);
     QString line = in.readLine();
     file.close();
@@ -1047,7 +1132,7 @@ void GalvoController::updateOffset(void)
     p_galvos.move(0,0);
     QFile file("C:/git-projects/multiphoton/coordinates.txt");
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-            return;
+        return;
     QTextStream in(&file);
     QString line = in.readLine();
     file.close();

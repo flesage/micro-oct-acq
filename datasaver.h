@@ -10,7 +10,7 @@ class DataSaver : public QThread
 {
     Q_OBJECT
 public:
-    DataSaver(int n_alines = 100, int save_block_size=512);
+    DataSaver(int n_alines = 100, int save_block_size=512, int n_alines_in_one_volume = 0);
     virtual ~DataSaver();
     void setDatasetName(QString name);
     void setDatasetPath(QString path);
@@ -23,13 +23,16 @@ public:
 signals:
     void available(int);
     void filenumber(int);
+    void volume_done();
 private:
+    int p_n_alines;
     QString p_dataset_name;
     QString p_path_name;
     QString p_info_txt;
     int p_save_block_size;
     int p_frame_size;
     int p_buffer_size;
+    int p_n_alines_in_one_volume;
     unsigned short int* p_data_buffer;
     unsigned int p_current_pos;
     QMutex p_mutex;

@@ -27,6 +27,7 @@ public:
     void startTask();
     void stopTask();
     void clearTask();
+
 private:
     void run();
 

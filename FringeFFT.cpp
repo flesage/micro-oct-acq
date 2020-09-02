@@ -51,14 +51,23 @@ void FringeFFT::init(int nz, int nx, float dimz, float dimx)
     fclose(fp);
     float* filter = new float[p_nz];
     for(int i=0;i<p_nz;i++) filter[i]=(float) tmp[i];
-    p_hann_dispcomp = af::array(p_nz,1,filter,afHost);
+    p_hann_dispcomp = af::complex(af::array(p_nz,1,filter,afHost));
     delete [] filter;
     delete [] tmp;
 }
 
 void FringeFFT::set_disp_comp_vect(float* disp_comp_vector)
 {
+    // Should be more careful since 2 calls could modify this wrongly but
+    // the ImageViewer is restarted on each acquisition, so this is only called once.
+    // Correct when cleaning.
+    af::cfloat h_unit = {0, 1};  // Host side
+    af::array unit_j = af::constant(h_unit, 1, c32);
+    af::array phase = af::complex(af::array(p_nz,1,disp_comp_vector,afHost));
+    std::cerr << "Here: " << p_nz << std::endl;
 
+    p_hann_dispcomp *= af::exp(-unit_j*phase);
+    std::cerr << "Vecteur de compensation fait pour calcul sur gpu" << std::endl;
 }
 
 void FringeFFT::interp_and_do_fft(unsigned short* in_fringe,unsigned char* out_signal, float p_image_threshold, float p_hanning_threshold)

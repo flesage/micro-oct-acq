@@ -6,7 +6,6 @@
 #include <QSettings>
 #include <QStringList>
 #include <QTimer>
-
 #include "galvos.h"
 #include "camera.h"
 #include "softwarecamera.h"
@@ -106,6 +105,9 @@ private:
     float p_line_length;
     QString p_line_number_str;
     Galvos p_galvos;
+    bool p_finite_acquisition;
+    int p_acq_index;
+    QString p_datasetname;
 #ifndef SIMULATION
     Camera* p_camera;
 #else
@@ -123,7 +125,8 @@ private:
     int p_block_size;
     MotorClass* motors;
     bool flagMotor;
-
+    float* p_disp_comp_vec_10x;
+    float* p_disp_comp_vec_25x;
 };
 
 
