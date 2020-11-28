@@ -313,14 +313,13 @@ void ImageViewer::updateView()
         // call returns an angio frame. However sometimes if very fast, we could have more than p_n_repeat
         // frames, so we need to loop to not lose frames
         int n_angios = p_factor/p_n_repeat;
-        //std::cout<<"imageviewer: "<<p_angio_algo<<std::endl;
         f_fft.setAngioAlgo(p_angio_algo);
+
         for(int i=0; i<n_angios;i++)
         {
             p_mutex.lock();
             f_fft.get_angio(&p_data_buffer[i*p_n_alines*2048*p_n_repeat], &p_angio ,p_image_threshold, p_hanning_threshold);
             p_mutex.unlock();
-
             float l_max = af::max<float>(p_angio);
             float l_min = af::min<float>(p_angio);
             p_angio=255.0*(p_angio-l_min)/(l_max-l_min);

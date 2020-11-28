@@ -33,7 +33,7 @@ void FWHMViewer::paintEvent(QPaintEvent *event)
     // Compute max and its pos
     unsigned char max = 0;
     int pos;
-    for (int i=0; i<p_data_size; i+=1)
+    for (unsigned int i=0; i<p_data_size; i+=1)
     {
         if(p_aline[i]>max)
         {
@@ -43,7 +43,7 @@ void FWHMViewer::paintEvent(QPaintEvent *event)
     }
     // Compute FWHM
     int fwhm_min, fwhm_max;
-    for (int i=pos; i<p_data_size; i+=1)
+    for (unsigned int i=pos; i<p_data_size; i+=1)
     {
         if(p_aline[i]<max/2)
         {
@@ -65,7 +65,7 @@ void FWHMViewer::paintEvent(QPaintEvent *event)
     painter.setRenderHint(QPainter::Antialiasing);
     painter.setPen(linePen);
     painter.fillRect(event->rect(), background);
-    for (int i=0; i<p_data_size; i+=1)
+    for (unsigned int i=0; i<p_data_size; i+=1)
     {
         painter.drawLine((int)(i*x_scale),(int) ((256-p_aline[i])*y_scale),(int)((i+1)*x_scale),(int) ((256-p_aline[i+1])*y_scale));
     }

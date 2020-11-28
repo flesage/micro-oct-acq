@@ -52,7 +52,9 @@ void FringeFFT::init(int nz, int nx, float dimz, float dimx)
     fclose(fp);
     float* filter = new float[p_nz];
     for(int i=0;i<p_nz;i++) filter[i]=(float) tmp[i];
-    p_hann_dispcomp = af::complex(af::array(p_nz,1,filter,afHost));
+    //p_hann_dispcomp = af::complex(af::array(p_nz,1,filter,afHost));
+    p_hann_dispcomp = af::array(p_nz,1,filter,afHost);
+
     delete [] filter;
     delete [] tmp;
 }
@@ -226,6 +228,7 @@ void FringeFFT::init_doppler(float msec_fwhm, float line_period, float spatial_f
     p_phase=af::array(p_nz/2+1,p_nx-1,f32);
     p_spatial_fwhm_um = spatial_fwhm_um;
 }
+
 void FringeFFT::compute_doppler( unsigned short* in_fringe, unsigned char* out_doppler, float p_image_threshold, float p_hanning_threshold)
 {
     int n_gauss_x = (int) (p_spatial_fwhm_um/p_dimx);
@@ -251,7 +254,7 @@ void FringeFFT::compute_doppler( unsigned short* in_fringe, unsigned char* out_d
     // thus this needs to always be called after interp_an_do_fft.
     p_filt_signal=convolve(p_signal,p_hp_filter);
     //p_filt_signal = p_signal;
-    float speed_factor=1313*1e-6/(4*PI*p_line_period*1.33);
+    float speed_factor=float(1313*1e-6/(4*PI*p_line_period*1.33));
     p_phase=speed_factor*arg(p_filt_signal.cols(1,af::end)*conjg(p_filt_signal.cols(0,af::end-1)));
     p_phase = convolve(p_phase,af::gaussianKernel(n_gauss_z,n_gauss_x));
     float l_max = af::max<float>(p_phase);
@@ -388,7 +391,7 @@ af::array FringeFFT::dct1(const af::array& arr)
     h_unit.imag = 1.0;
     //af::array unit = af::constant(h_unit, 1, c32);
 
-    int N = arr.dims(0);
+    int N = (int) arr.dims(0);
     af::array out=arr.copy();
     out = 2 * af::real(af::exp(-0.5*h_unit*af::Pi/N*af::range(arr.dims(),0,arr.type())) *
                        af::fft(af::join(0,arr(af::seq(0,N-1,2),af::span),af::flip(arr(af::seq(1,N-1,2),af::span),0))) );
@@ -404,7 +407,7 @@ af::array FringeFFT::idct1(const af::array& arr)
     h_unit.real = 0.0;
     h_unit.imag = 1.0;
     //af::array unit = af::constant(h_unit, 1, c32);
-    int N = arr.dims(0);
+    int N = (int) arr.dims(0);
     af::array tmp = arr.copy();
     af::array offset = af::tile(tmp(0,af::span),N);
     tmp(0,af::span) = 0.;

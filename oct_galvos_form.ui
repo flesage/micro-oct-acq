@@ -356,7 +356,7 @@
         </size>
        </property>
        <property name="currentIndex">
-        <number>2</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="tab_para">
         <attribute name="title">
@@ -2832,33 +2832,6 @@
      </item>
      <item>
       <layout class="QGridLayout" name="gridLayout_6">
-       <item row="1" column="1">
-        <widget class="QCheckBox" name="checkBox_do_mosaic">
-         <property name="minimumSize">
-          <size>
-           <width>60</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="text">
-          <string>Do Mosaic</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="2">
-        <widget class="QCheckBox" name="checkBox_view_line">
-         <property name="text">
-          <string>View Line</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="2">
-        <widget class="QCheckBox" name="checkBox_speckle_mod">
-         <property name="text">
-          <string>Speckle Mod.</string>
-         </property>
-        </widget>
-       </item>
        <item row="0" column="1">
         <widget class="QCheckBox" name="checkBox_fringe">
          <property name="minimumSize">
@@ -2878,6 +2851,13 @@
          </property>
          <property name="checked">
           <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="2">
+        <widget class="QCheckBox" name="checkBox_averageFrames">
+         <property name="text">
+          <string>Average frames?</string>
          </property>
         </widget>
        </item>
@@ -2903,23 +2883,10 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="0">
-        <widget class="QCheckBox" name="checkBox_do_stack">
-         <property name="minimumSize">
-          <size>
-           <width>60</width>
-           <height>0</height>
-          </size>
-         </property>
+       <item row="0" column="2">
+        <widget class="QCheckBox" name="checkBox_view_line">
          <property name="text">
-          <string>Do Stack</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="2">
-        <widget class="QCheckBox" name="checkBox_averageFrames">
-         <property name="text">
-          <string>Average frames?</string>
+          <string>View Line</string>
          </property>
         </widget>
        </item>

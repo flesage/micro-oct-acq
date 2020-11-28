@@ -276,10 +276,6 @@ void MotorClass::getSpeed(int speedval)
      QThread::sleep(0.1);
      piezo_port.write("1TS?\r");
 
-     char buffer[4];
-
-
-
      buffer2 = piezo_port.readAll();
      std::cout<<"done: "<<buffer2.constData()<<std::endl;
      QThread::sleep(0.5);
@@ -424,7 +420,6 @@ void MotorClass::PiezoStopJog()
         //        Wait until homing is done to return from this function to
         //        make sure we have accurate positioning
         //        Motor 1
-        int* piezodone = (int*) &buffer;
         piezo_port.write("1ST\r",5);
         piezo_port.flush();
         p_piezo_moving=0;

@@ -803,7 +803,6 @@ void GalvoController::startScan()
         std::cout<<"Setting fixed length..."<<std::endl;
         setFixedLengthLineScanPos();
         std::cout<<"...done!"<<std::endl;
-
     }
     updateInfo();
     qApp->processEvents();
@@ -950,13 +949,6 @@ void GalvoController::startScan()
         view_timer->start(30);
     }
 
-
-    if (ui->checkBox_speckle_mod->isChecked() && flagMotor)
-    {
-        motors->PiezoStartJog();
-    }
-
-
     // Set ramp
     if (ui->comboBox_scantype->currentText() == "SawTooth")
     {
@@ -995,13 +987,6 @@ void GalvoController::stopScan()
     // Saver stop
     // Needs to be stopped first due to potential deadlock, will
     // stop when next block size if filled.
-
-
-
-    if (ui->checkBox_speckle_mod->isChecked() && flagMotor)
-    {
-        motors->PiezoStopJog();
-    }
 
     if(p_data_saver)
     {

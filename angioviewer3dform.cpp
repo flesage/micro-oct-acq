@@ -95,7 +95,6 @@ void AngioViewer3DForm::setAverageFlag(bool flag)
 
 void AngioViewer3DForm::put(const af::array& data, unsigned int frame_number)
 {
-    //p_average_on=getAverageFlag();
     p_current_frame = (frame_number)%p_ny;
     p_average[p_current_frame]+=1;
     // Copy current angio
