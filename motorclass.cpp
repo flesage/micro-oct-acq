@@ -65,30 +65,30 @@ void MotorClass::Home()
         //        Motor 1
         int* done = (int*) &buffer;
         port.write("1OR0\r",5);
-        do
-        {
-            port.write("1MD?\r",5);
-            port.read(buffer,4);
-            QThread::sleep(0.2);
-        } while(!done);
+//        do
+//        {
+//            port.write("1MD?\r",5);
+//            port.read(buffer,4);
+//            QThread::sleep(0.2);
+//        } while(!done);
 
         *done=0;
-        port.write("2OR0\r",5);
-        do
-        {
-            port.write("2MD?\r",5);
-            port.read(buffer,4);
-            QThread::sleep(0.2);
-        } while(!done);
+       // port.write("2OR0\r",5);
+//        do
+//        {
+//            port.write("2MD?\r",5);
+//            port.read(buffer,4);
+//            QThread::sleep(0.2);
+//        } while(!done);
 
         *done=0;
-       port.write("3OR0\r",5);
-        do
-        {
-            port.write("3MD?\r",5);
-            port.read(buffer,4);
-            QThread::sleep(0.2);
-        } while(!done);
+       // port.write("3OR0\r",5);
+//        do
+//        {
+//            port.write("3MD?\r",5);
+//            port.read(buffer,4);
+//            QThread::sleep(0.2);
+//        } while(!done);
     }
 
 }
@@ -101,13 +101,14 @@ void MotorClass::move_dx(float dist)
         QString tmp;
         tmp.sprintf("1PR%.2f\r",dist);
         port.write(tmp.toUtf8());
-        char data=0;
-        do
-        {
-            QThread::sleep(0.1);
-            port.write("1MD?\r",5);
-            port.read(&data,1);
-        } while(!data);
+//        char data=0;
+//        do
+//        {
+//            QThread::sleep(0.1);
+//            port.write("1MD?\r",5);
+//            port.read(&data,1);
+
+//        } while(!data);
     }
 }
 
@@ -119,13 +120,13 @@ void MotorClass::move_dy(float dist)
         QString tmp;
         tmp.sprintf("2PR%.2f\r",dist);
         port.write(tmp.toUtf8());
-        char data=0;
+/*        char data=0;
         do
         {
             QThread::sleep(0.1);
             port.write("2MD?\r",5);
             port.read(&data,1);
-        } while(!data);
+        } while(!data)*/;
     }
 }
 
@@ -137,13 +138,13 @@ void MotorClass::move_dz(float dist)
         QString tmp;
         tmp.sprintf("3PR%.2f\r",dist);
         port.write(tmp.toUtf8());
-        char data=0;
-        do
-        {
-            QThread::sleep(0.1);
-            port.write("3MD?\r",5);
-            port.read(&data,1);
-        } while(!data);
+//        char data=0;
+//        do
+//        {
+//            QThread::sleep(0.1);
+//            port.write("3MD?\r",5);
+//            port.read(&data,1);
+//        } while(!data);
     }
 }
 

@@ -28,6 +28,7 @@ public slots:
     void changeDepth(int value);
     void changeSliceThickness();
     void resizeEvent(QResizeEvent *);
+    void setAverageFlag(bool flag);
 signals:
     void sig_updateLineScanPos(int,int,int,int);
 private:
@@ -50,6 +51,7 @@ private:
     int p_stop_x;
     int p_stop_y;
     bool p_show_line;
+    bool p_average_on;
 };
 
 #endif // ANGIOVIEWER3DFORM_H

@@ -31,6 +31,10 @@ public:
 signals:
     void sig_updateImageThreshold(float);
     void sig_updateHanningThreshold(float);
+    void sig_updateViewLinePositions(bool,int,int);
+    void sig_updateAveragingFlag(bool);
+    void sig_updateAveragingAlgo(int);
+
 private slots:
     void updateSpeedPiezo(void);
     void turnPiezoOn(void);
@@ -50,6 +54,13 @@ private slots:
     void moveDown(void);
     void moveRight(void);
     void moveLeft(void);
+    void moveMotorUp(void);
+    void moveMotorDown(void);
+    void moveMotorYP(void);
+    void moveMotorYM(void);
+    void moveMotorXP(void);
+    void moveMotorXM(void);
+    void goMotorHome(void);
     void readCoeffTxt(void);
     void writeCoeffTxt(void);
     void readOffset(void);
@@ -75,6 +86,9 @@ private slots:
     QString readLineNumber(void);
     void setLineScanPos(int start_x, int start_y, int stop_x, int stop_y);
     void setFixedLengthLineScanPos(void);
+    void slot_updateViewLinePositions(void);
+    void slot_updateAverageAngiogram(void);
+    void slot_updateAngiogramAlgo(void);
 
 private:
     Ui::OCTGalvosForm *ui;
@@ -103,6 +117,8 @@ private:
     float p_start_line_y;
     float p_stop_line_y;
     float p_line_length;
+    int p_start_viewline;
+    int p_stop_viewline;
     QString p_line_number_str;
     Galvos p_galvos;
     bool p_finite_acquisition;

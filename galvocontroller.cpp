@@ -49,6 +49,9 @@ GalvoController::GalvoController() :
     p_stop_line_y = 0;
     p_line_length = 0.0;
 
+    p_start_viewline = ui->lineEdit_startLine->text().toInt();
+    p_stop_viewline = ui->lineEdit_stopLine->text().toInt();
+
     motors = new MotorClass();
 
     double radians_per_volt = 2*3.14159265359/(360*0.8);
@@ -88,7 +91,9 @@ GalvoController::GalvoController() :
     connect(ui->pushButton_piezoJog,SIGNAL(clicked()),this,SLOT(jogPiezo()));
     connect(ui->pushButton_piezoStop,SIGNAL(clicked()),this,SLOT(stopPiezo()));
 
-
+    connect(ui->lineEdit_startLine,SIGNAL(editingFinished()),this,SLOT(slot_updateViewLinePositions()));
+    connect(ui->lineEdit_stopLine,SIGNAL(editingFinished()),this,SLOT(slot_updateViewLinePositions()));
+    connect(ui->checkBox_view_line,SIGNAL(clicked(bool)),this,SLOT(slot_updateViewLinePositions()));
 
     connect(ui->comboBox_scantype,SIGNAL(activated(const QString&)),this,SLOT(scanTypeChosen(const QString&)));
     connect(ui->comboBox_scantype,SIGNAL(currentIndexChanged(const QString&)),this,SLOT(scanTypeChosen(const QString&)));
@@ -103,6 +108,14 @@ GalvoController::GalvoController() :
     connect(ui->pushButton_left,SIGNAL(clicked()),this,SLOT(moveLeft()));
     connect(ui->pushButton_readOffsetFile,SIGNAL(clicked()),this,SLOT(readOffset()));
 
+    connect(ui->pushButton_motor_home,SIGNAL(clicked()),this,SLOT(goMotorHome()));
+    connect(ui->pushButton_motor_down,SIGNAL(clicked()),this,SLOT(moveMotorDown()));
+    connect(ui->pushButton_motor_up,SIGNAL(clicked()),this,SLOT(moveMotorUp()));
+    connect(ui->pushButton_motor_ym,SIGNAL(clicked()),this,SLOT(moveMotorYM()));
+    connect(ui->pushButton_motor_yp,SIGNAL(clicked()),this,SLOT(moveMotorYP()));
+    connect(ui->pushButton_motor_xp,SIGNAL(clicked()),this,SLOT(moveMotorXP()));
+    connect(ui->pushButton_motor_xm,SIGNAL(clicked()),this,SLOT(moveMotorXM()));
+
     connect(ui->horizontalScrollBar_offsetX,SIGNAL(valueChanged(int)),this,SLOT(updateOffsetViewerX()));
     connect(ui->horizontalScrollBar_offsetY,SIGNAL(valueChanged(int)),this,SLOT(updateOffsetViewerY()));
 
@@ -110,6 +123,10 @@ GalvoController::GalvoController() :
     connect(ui->pushButton_saveCoeff,SIGNAL(clicked()),this,SLOT(writeCoeffTxt()));
 
     connect(ui->lineEdit_datasetname,SIGNAL(editingFinished(void)),this,SLOT(checkPath()));
+
+    connect(ui->checkBox_averageFrames,SIGNAL(clicked(bool)),this,SLOT(slot_updateAverageAngiogram()));
+
+    connect(ui->comboBox_angio,SIGNAL(currentIndexChanged(int)),this,SLOT(slot_updateAngiogramAlgo()));
 
 
 
@@ -183,6 +200,7 @@ GalvoController::GalvoController() :
 
 GalvoController::~GalvoController()
 {
+    slot_openMotorPort(false);
     delete [] p_disp_comp_vec_10x;
     delete [] p_disp_comp_vec_25x;
     delete motors;
@@ -330,9 +348,25 @@ void GalvoController::slot_openMotorPort(bool flag)
     if(flag)
     {
         motors->OpenPort();
+        ui->pushButton_motor_down->setEnabled(true);
+        ui->pushButton_motor_up->setEnabled(true);
+        ui->pushButton_motor_yp->setEnabled(true);
+        ui->pushButton_motor_ym->setEnabled(true);
+        ui->pushButton_motor_xp->setEnabled(true);
+        ui->pushButton_motor_xm->setEnabled(true);
+        ui->pushButton_motor_home->setEnabled(true);
+
     }
     else
     {
+        ui->pushButton_motor_down->setEnabled(false);
+        ui->pushButton_motor_up->setEnabled(false);
+        ui->pushButton_motor_yp->setEnabled(false);
+        ui->pushButton_motor_ym->setEnabled(false);
+        ui->pushButton_motor_xp->setEnabled(false);
+        ui->pushButton_motor_xm->setEnabled(false);
+        ui->pushButton_motor_home->setEnabled(false);
+
         motors->ClosePort();
     }
 
@@ -373,8 +407,6 @@ void GalvoController::slot_doStack()
         {
             p_finite_acquisition = true;
             p_datasetname = ui->lineEdit_datasetname->text();
-            int start_z = ui->lineEdit_stack_start_offset_z->text().toInt();
-            motors->move_az(start_z);
             // Set new datapathname
             QString stack_name =p_datasetname + QString("_stack_%1").arg(p_acq_index);
             ui->lineEdit_datasetname->setText(stack_name);
@@ -384,7 +416,7 @@ void GalvoController::slot_doStack()
         else
         {
             int step_z = ui->lineEdit_stack_step_z->text().toFloat();
-            motors->move_az(step_z);
+            motors->move_dz(-step_z/1000);
             // Set new datapathname
             QString stack_name =p_datasetname + QString("_stack_%1").arg(p_acq_index);
             ui->lineEdit_datasetname->setText(stack_name);
@@ -669,8 +701,7 @@ void GalvoController::startScan()
     double f1=50.0;
     double f2=100.0;
     bool show_line_flag=ui->checkBox_view_line->isChecked();
-    int p_start_line=0;
-    int p_stop_line=0;
+
 
     switch(telescope)
     {
@@ -746,8 +777,8 @@ void GalvoController::startScan()
     if (show_line_flag)
     {
         std::cout<<"show flag!"<<std::endl;
-        p_start_line=ui->lineEdit_startLine->text().toInt();
-        p_stop_line=ui->lineEdit_stopLine->text().toInt();
+        p_start_viewline=ui->lineEdit_startLine->text().toInt();
+        p_stop_viewline=ui->lineEdit_stopLine->text().toInt();
     }
 
     if (ui->checkBox_adjustLength->isChecked())
@@ -810,12 +841,10 @@ void GalvoController::startScan()
         info=info+tmp.sprintf("coeff_x: %f\n",p_coeff_x);
         info=info+tmp.sprintf("coeff_y: %f\n",p_coeff_y);
 
-        if (show_line_flag)
-        {
-            std::cout<<"show flag!  - in save"<<std::endl;
-            info=info+tmp.sprintf("start_line: %d\n",p_start_line);
-            info=info+tmp.sprintf("stop_line: %d\n",p_stop_line);
-        }
+        QString objective = ui->comboBox_objective->currentText();
+        info=info+tmp.sprintf("objective: %s\n",objective.toUtf8().constData());
+
+
         p_data_saver->addInfo(info);
         connect(p_data_saver,SIGNAL(available(int)),ui->lcdNumber_saveqsize,SLOT(display(int)));
         connect(p_data_saver,SIGNAL(filenumber(int)),this,SLOT(displayFileNumber(int)));
@@ -850,13 +879,22 @@ void GalvoController::startScan()
         p_image_view->updateHanningThreshold(ui->lineEdit_hanningeps->text().toFloat());
         p_image_view->updateImageThreshold(ui->lineEdit_logeps->text().toFloat());
         p_image_view->updateAngioAlgo(ui->comboBox_angio->currentIndex());
-        p_image_view->checkLine(show_line_flag,p_start_line,p_stop_line);
+        p_image_view->checkLine(show_line_flag,p_start_viewline,p_stop_viewline);
         int dispersion = ui->comboBox_dispersion->currentIndex();
         if(dispersion == 2 && p_disp_comp_vec_10x != 0) p_image_view->set_disp_comp_vect(p_disp_comp_vec_10x);
         if(dispersion == 4 && p_disp_comp_vec_25x != 0) p_image_view->set_disp_comp_vect(p_disp_comp_vec_25x);
+        bool averageAngioFlag=ui->checkBox_averageFrames->isChecked();
+        p_image_view->updateAngioAverageFlag(averageAngioFlag);
         connect(view_timer,SIGNAL(timeout()),p_image_view,SLOT(updateView()));
+        connect(this,SIGNAL(sig_updateAveragingFlag(bool)),p_image_view,SLOT(updateAngioAverageFlag(bool)));
+        connect(this,SIGNAL(sig_updateAveragingAlgo(int)),p_image_view,SLOT(updateAngioAlgo(int)));
+
+
+
         connect(this,SIGNAL(sig_updateHanningThreshold(float)),p_image_view,SLOT(updateHanningThreshold(float)));
         connect(this,SIGNAL(sig_updateImageThreshold(float)),p_image_view,SLOT(updateImageThreshold(float)));
+        connect(this,SIGNAL(sig_updateViewLinePositions(bool,int,int)),p_image_view,SLOT(updateViewLinePositions(bool,int,int)));
+
         connect(p_image_view,SIGNAL(sig_updateLineScanPos(int,int,int,int)),this,SLOT(setLineScanPos(int,int,int,int)));
         if(ui->checkBox_placeImage->isChecked())
             p_image_view->move(200,150);
@@ -941,6 +979,19 @@ void GalvoController::stopScan()
 
     if(p_data_saver)
     {
+        bool show_line_flag=ui->checkBox_view_line->isChecked();
+        if (show_line_flag)
+        {
+            QString info;
+            QString tmp;
+            info.sprintf("start_line: %d\n",p_start_viewline);
+            info=info+tmp.sprintf("stop_line: %d\n",p_stop_viewline);
+            p_data_saver->addInfo(info);
+            p_data_saver->writeInfoFile();
+        }
+
+
+
         p_data_saver->stopSaving();
         p_ai_data_saver->stopSaving();
     }
@@ -993,12 +1044,15 @@ void GalvoController::stopScan()
         p_acq_index ++;
         if( p_acq_index < ui->lineEdit_stack_nz->text().toInt())
         {
+            QThread::sleep(2);
             slot_doStack();
         }
         else
         {
             p_acq_index = 0;
             p_finite_acquisition = false;
+            ui->pushButton_start->setEnabled(true);
+            ui->pushButton_stop->setEnabled(false);
         }
     }
 }
@@ -1038,6 +1092,48 @@ void GalvoController::goHome(void)
     p_galvos.move(p_center_x,p_center_y);
     std::cout << "p_center_x: " << p_center_x << "/ p_center_y: " << p_center_y << std::endl;
     updateCenterLineEdit();
+}
+
+void GalvoController::moveMotorUp(void)
+{
+    float step_um = ui->lineEdit_motor_step_size->text().toFloat();
+    motors->move_dz(step_um/1000);
+}
+
+void GalvoController::moveMotorDown(void)
+{
+    float step_um = ui->lineEdit_motor_step_size->text().toFloat();
+    motors->move_dz(-step_um/1000);
+}
+
+void GalvoController::moveMotorYP(void)
+{
+    float step_um = ui->lineEdit_motor_step_size->text().toFloat();
+    motors->move_dy(step_um/1000);
+}
+
+void GalvoController::moveMotorYM(void)
+{
+    float step_um = ui->lineEdit_motor_step_size->text().toFloat();
+    motors->move_dy(-step_um/1000);
+}
+
+void GalvoController::moveMotorXP(void)
+{
+    float step_um = ui->lineEdit_motor_step_size->text().toFloat();
+    motors->move_dx(step_um/1000);
+}
+
+void GalvoController::moveMotorXM(void)
+{
+    float step_um = ui->lineEdit_motor_step_size->text().toFloat();
+    motors->move_dx(-step_um/1000);
+
+}
+
+void GalvoController::goMotorHome(void)
+{
+    motors->Home();
 }
 
 void GalvoController::writeCoeffTxt(void)
@@ -1199,4 +1295,24 @@ QString GalvoController::readLineNumber(void)
 {
     p_line_number_str=ui->lineEdit_readLineNumber->text();
     return p_line_number_str;
+}
+
+void GalvoController::slot_updateViewLinePositions(void)
+{
+    p_start_viewline = ui->lineEdit_startLine->text().toInt();
+    p_stop_viewline = ui->lineEdit_stopLine->text().toInt();
+    bool show_line_flag=ui->checkBox_view_line->isChecked();
+    emit sig_updateViewLinePositions(show_line_flag,p_start_viewline,p_stop_viewline);
+}
+
+void GalvoController::slot_updateAverageAngiogram(void)
+{
+    bool averageAngioFlag=ui->checkBox_averageFrames->isChecked();
+    emit sig_updateAveragingFlag(averageAngioFlag);
+}
+
+void GalvoController::slot_updateAngiogramAlgo(void)
+{
+    int angioAlgo=ui->comboBox_angio->currentIndex();
+    emit sig_updateAveragingAlgo(angioAlgo);
 }

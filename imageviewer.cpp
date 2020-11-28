@@ -10,7 +10,7 @@
 ImageViewer::ImageViewer(QWidget *parent, int n_alines, int n_extra, int ny, int view_depth, unsigned int n_repeat, float msec_fwhm, float line_period, float spatial_fwhm, float dimz, float dimx, int factor) :
     QLabel(parent), p_ny(ny), p_factor(factor), p_n_repeat(n_repeat), f_fft(n_repeat,factor), p_n_alines(n_alines), p_view_depth(view_depth)
 {
-    p_current_viewmode = FRINGE;
+    p_current_viewmode = STRUCT;
     is_focus_line = false;
     is_optimization = false;
     p_image_threshold =0.001f;
@@ -25,10 +25,17 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, int n_extra, int ny, int
     p_phase_view = new FWHMViewer(0,LINE_ARRAY_SIZE);
     p_angio_view = new AngioViewer3DForm(0,n_alines, n_extra, p_ny, p_view_depth);
     connect(p_angio_view,SIGNAL(sig_updateLineScanPos(int,int,int,int)),this,SLOT(updateLineScanPos(int,int,int,int)));
+    connect(this,SIGNAL(sig_updateAverageAngio(bool)),p_angio_view,SLOT(setAverageFlag(bool)));
+
+    p_angio_averageFlag = false;
+    p_angio_view->setAverageFlag(p_angio_averageFlag);
+
+
+
 
     p_line_status = false;
-    p_start_line = 250;
-    p_stop_line = 500;
+    p_start_line = 0;
+    p_stop_line = 10;
     p_frame_number = 0;
 
     pix = QPixmap::fromImage(p_fringe_image);
@@ -50,6 +57,8 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, int n_extra, int ny, int
     p_doppler_image.setColorTable(dop_color_table);
 }
 
+
+
 ImageViewer::~ImageViewer()
 {
     delete [] p_data_buffer;
@@ -70,6 +79,13 @@ void ImageViewer::updateLineScanPos(int start_x, int start_y, int stop_x, int st
 {
     emit sig_updateLineScanPos(start_x,start_y,stop_x,stop_y);
 }
+
+void ImageViewer::updateAngioAverageFlag(bool new_value)
+{
+    p_angio_averageFlag = new_value;
+    emit sig_updateAverageAngio(p_angio_averageFlag);
+}
+
 
 void ImageViewer::updateImageThreshold(float new_value)
 {
@@ -122,6 +138,7 @@ void  ImageViewer::keyPressEvent(QKeyEvent *event)
     case Qt::Key_A:
     {
         event->accept();
+        p_angio_view->setAverageFlag(p_angio_averageFlag);
         p_current_viewmode=ANGIO;
         p_fwhm_view->hide();
         p_phase_view->hide();
@@ -296,10 +313,12 @@ void ImageViewer::updateView()
         // call returns an angio frame. However sometimes if very fast, we could have more than p_n_repeat
         // frames, so we need to loop to not lose frames
         int n_angios = p_factor/p_n_repeat;
+        //std::cout<<"imageviewer: "<<p_angio_algo<<std::endl;
+        f_fft.setAngioAlgo(p_angio_algo);
         for(int i=0; i<n_angios;i++)
         {
             p_mutex.lock();
-            f_fft.get_angio(&p_data_buffer[i*p_n_alines*2048*p_n_repeat], &p_angio ,p_image_threshold, p_hanning_threshold,p_angio_algo);
+            f_fft.get_angio(&p_data_buffer[i*p_n_alines*2048*p_n_repeat], &p_angio ,p_image_threshold, p_hanning_threshold);
             p_mutex.unlock();
 
             float l_max = af::max<float>(p_angio);
@@ -362,3 +381,11 @@ void ImageViewer::checkLine(bool lineStatus, int startLine, int stopLine)
     p_start_line=startLine;
     p_stop_line=stopLine;
 }
+
+void ImageViewer::updateViewLinePositions(bool lineStatus, int startLine, int stopLine)
+{
+    p_line_status=lineStatus;
+    p_start_line=startLine;
+    p_stop_line=stopLine;
+}
+

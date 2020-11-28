@@ -1,6 +1,7 @@
 #include "datasaver.h"
 #include <stdio.h>
 #include <QDir>
+#include <QCoreApplication>
 #include <iostream>
 
 DataSaver::DataSaver(int n_alines, int save_block_size, int n_alines_in_one_volume) : p_n_alines(n_alines), p_save_block_size(save_block_size),
@@ -103,10 +104,11 @@ void DataSaver::run()
         fflush(fp);
         p_free_spots.release();
         n_alines_current_vol = n_alines_current_vol + p_n_alines;
-        if(n_alines_current_vol > p_n_alines_in_one_volume)
+        if(n_alines_current_vol >= p_n_alines_in_one_volume)
         {
             n_alines_current_vol -= p_n_alines_in_one_volume;
             emit volume_done();
+            QCoreApplication::processEvents();
         }
         index++;
 
