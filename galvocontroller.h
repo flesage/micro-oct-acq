@@ -89,6 +89,7 @@ private slots:
     void slot_updateViewLinePositions(void);
     void slot_updateAverageAngiogram(void);
     void slot_updateAngiogramAlgo(void);
+    void setCenterFromLineScan(void);
 
 private:
     Ui::OCTGalvosForm *ui;
