@@ -60,7 +60,7 @@ GalvoController::GalvoController() :
     unit_converter.setScale(scale_um_per_volt,scale_um_per_volt);
     p_galvos.setUnitConverter(unit_converter);
 
-    QIntValidator* validator=new QIntValidator(1,3000,this);
+    QIntValidator* validator=new QIntValidator(1,4096,this);
     ui->lineEdit_nx->setValidator(validator);
     ui->lineEdit_ny->setValidator(validator);
     ui->lineEdit_width->setValidator(validator);
@@ -233,6 +233,16 @@ void GalvoController::setFixedLengthLineScanPos()
     p_line_length=sqrt(pow((p_stop_line_x-p_start_line_x),2)+pow((p_stop_line_y-p_start_line_y),2));
 
     return;
+}
+
+void GalvoController::setCenterFromLineScan()
+{
+    p_center_x = (p_stop_line_x + p_start_line_x)/2.0;
+    p_center_y = (p_stop_line_y + p_start_line_y)/2.0;
+
+    p_galvos.move(p_center_x,p_center_y);
+
+    std::cout<<"centers: "<<p_center_x<<"/"<<p_center_y<<std::endl;
 }
 
 void GalvoController::updateSpeedPiezo()
@@ -581,14 +591,21 @@ void GalvoController::checkPath()
 void GalvoController::automaticCentering()
 {
     bool centreAutoFlag=ui->checkBox_centreAuto->checkState();
+    bool centreAutoFlagLS=ui->checkBox_centerLS->checkState();
+
     if(centreAutoFlag)
     {
         readOffset();
+    }
+    else if(centreAutoFlagLS)
+    {
+        setCenterFromLineScan();
     }
     else
     {
         goHome();
     }
+
     updateCenterLineEdit();
 }
 
@@ -751,6 +768,15 @@ void GalvoController::startScan()
 
         QString objective = ui->comboBox_objective->currentText();
         info=info+tmp.sprintf("objective: %s\n",objective.toUtf8().constData());
+
+        if (ui->checkBox_adjustLength->isChecked())
+        {
+            info=info+tmp.sprintf("start_line_x: %f\n",p_start_line_x);
+            info=info+tmp.sprintf("stop_line_x: %f\n",p_stop_line_x);
+            info=info+tmp.sprintf("start_line_y: %f\n",p_start_line_y);
+            info=info+tmp.sprintf("stop_line_y: %f\n",p_stop_line_y);
+            info=info+tmp.sprintf("line_length: %f\n",p_line_length);
+        }
 
 
         p_data_saver->addInfo(info);

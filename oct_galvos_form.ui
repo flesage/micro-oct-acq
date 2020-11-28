@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>680</width>
-    <height>965</height>
+    <height>992</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -1272,37 +1272,37 @@
                </property>
                <item>
                 <property name="text">
-                 <string>Thor. 5x</string>
+                 <string>Thor.5x</string>
                 </property>
                </item>
                <item>
                 <property name="text">
-                 <string>Thor. 10x</string>
+                 <string>Thor.10x</string>
                 </property>
                </item>
                <item>
                 <property name="text">
-                 <string>Mitu. 10x</string>
+                 <string>Mitu.10x</string>
                 </property>
                </item>
                <item>
                 <property name="text">
-                 <string>Olym. 20x</string>
+                 <string>Olym.20x</string>
                 </property>
                </item>
                <item>
                 <property name="text">
-                 <string>Olym. 25x</string>
+                 <string>Olym.25x</string>
                 </property>
                </item>
                <item>
                 <property name="text">
-                 <string>Olym. 40x</string>
+                 <string>Olym.40x</string>
                 </property>
                </item>
                <item>
                 <property name="text">
-                 <string>Thor. 3x</string>
+                 <string>Thor.3x</string>
                 </property>
                </item>
               </widget>
@@ -3414,19 +3414,6 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="0">
-          <widget class="QCheckBox" name="checkBox_centreAuto">
-           <property name="maximumSize">
-            <size>
-             <width>100</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>Centre?</string>
-           </property>
-          </widget>
-         </item>
          <item row="0" column="0">
           <widget class="QCheckBox" name="checkBox_save">
            <property name="minimumSize">
@@ -3494,6 +3481,38 @@
          </property>
          <property name="text">
           <string>Add TPEF linescan number</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="checkBox_centerLS">
+         <property name="minimumSize">
+          <size>
+           <width>80</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>200</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Center From Line in Live Angio</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="checkBox_centreAuto">
+         <property name="maximumSize">
+          <size>
+           <width>200</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Centre From 2P interface</string>
          </property>
         </widget>
        </item>

@@ -77,6 +77,10 @@ bool AngioViewer3DForm::eventFilter( QObject* watched, QEvent* event ) {
         std::cout<<"p_start_y: "<<p_start_y<<std::endl;
         std::cout<<"p_stop_x: "<<p_stop_x_tmp<<std::endl;
         std::cout<<"p_stop_y: "<<p_stop_y<<std::endl;
+        float center_x=(p_start_x_tmp+p_stop_x_tmp)/2.0;
+        float center_y=(p_start_y+p_stop_y)/2.0;
+        std::cout<<"in angioviewer: centers: "<<center_x<<"/"<<center_y<<std::endl;
+
         std::cout<<"-----------"<<std::endl;
 
     }
