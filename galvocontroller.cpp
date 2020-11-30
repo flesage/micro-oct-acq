@@ -700,6 +700,7 @@ void GalvoController::startScan()
     checkPath();
     automaticCentering();
     qApp->processEvents();
+
     // Read values
     int nx = ui->lineEdit_nx->text().toInt();
     int ny = ui->lineEdit_ny->text().toInt();
@@ -718,8 +719,16 @@ void GalvoController::startScan()
     double f1=50.0;
     double f2=100.0;
     bool show_line_flag=ui->checkBox_view_line->isChecked();
+    bool finite_acq_flag=ui->checkBox_finite_acq->isChecked();
 
-
+    // Only go here on first call if we do multiple volumes
+    if (finite_acq_flag && !p_finite_acquisition)
+    {
+        int n_volumes = ui->lineEdit_nvol->text().toInt();
+        p_finite_acquisition = finite_acq_flag;
+        p_acq_index = 0;
+        ui->lineEdit_stack_nz->setText(QString::number(1));
+    }
     switch(telescope)
     {
     case 0:
