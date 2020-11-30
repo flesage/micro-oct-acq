@@ -20,6 +20,7 @@ GalvoController::GalvoController() :
 {
     ui->setupUi(this);
     p_finite_acquisition = false;
+    p_stack_acquisition = false;
     p_acq_index = 0;
     p_center_x=0.0;
     p_center_y=0.0;
@@ -195,7 +196,6 @@ GalvoController::GalvoController() :
         fclose(fp);
     }
     delete [] tmp;
-    std::cerr << "Vecteurs de dispersion en memoire." <<std::endl;
 }
 
 GalvoController::~GalvoController()
@@ -415,7 +415,7 @@ void GalvoController::slot_doStack()
     {
         if(p_acq_index == 0)
         {
-            p_finite_acquisition = true;
+            p_stack_acquisition = true;
             p_datasetname = ui->lineEdit_datasetname->text();
             // Set new datapathname
             QString stack_name =p_datasetname + QString("_stack_%1").arg(p_acq_index);
@@ -466,6 +466,8 @@ void GalvoController::setDefaultScan(void)
     float exposure = p_settings.value(chosen_scan+"/exposure").toFloat();
     int scantype = p_settings.value(chosen_scan+"/scantype").toInt();
     int aline_repeat = p_settings.value(chosen_scan+"/aline_repeat",1).toInt();
+    bool finite = p_settings.value(chosen_scan+"/finite_acq",true).toBool();
+    int n_volumes = p_settings.value(chosen_scan+"/n_volumes",1).toInt();
 
 
     ui->lineEdit_nx->setText(QString::number(nx));
@@ -478,6 +480,8 @@ void GalvoController::setDefaultScan(void)
     ui->lineEdit_exposure->setText(QString::number(exposure));
     ui->lineEdit_aline_repeat->setText(QString::number(aline_repeat));
     ui->comboBox_scantype->setCurrentIndex(scantype);
+    ui->lineEdit_nvol->setText(QString::number(n_volumes));
+    ui->checkBox_finite_acq->setChecked(finite);
     updateInfo();
 }
 
@@ -493,6 +497,8 @@ void GalvoController::addDefaultScan(void)
     float exposure = ui->lineEdit_exposure->text().toFloat();
     int scantype = ui->comboBox_scantype->currentIndex();
     int aline_repeat = ui->lineEdit_aline_repeat->text().toInt();
+    bool finite = ui->checkBox_finite_acq->isChecked();
+    int n_volumes = ui->lineEdit_nvol->text().toInt();
 
     // Add item to combobox
     if (!ui->lineEdit_scanname->text().isEmpty())
@@ -509,6 +515,8 @@ void GalvoController::addDefaultScan(void)
         p_settings.setValue(new_scan+"/exposure",exposure);
         p_settings.setValue(new_scan+"/scantype",scantype);
         p_settings.setValue(new_scan+"/aline_repeat",aline_repeat);
+        p_settings.setValue(new_scan+"/finite_acq",finite);
+        p_settings.setValue(new_scan+"/n_volumes",n_volumes);
         p_saved_scans.append(new_scan);
         p_settings.setValue("default_scans",p_saved_scans);
     }
@@ -722,12 +730,10 @@ void GalvoController::startScan()
     bool finite_acq_flag=ui->checkBox_finite_acq->isChecked();
 
     // Only go here on first call if we do multiple volumes
-    if (finite_acq_flag && !p_finite_acquisition)
+    if (finite_acq_flag)
     {
-        int n_volumes = ui->lineEdit_nvol->text().toInt();
-        p_finite_acquisition = finite_acq_flag;
-        p_acq_index = 0;
-        ui->lineEdit_stack_nz->setText(QString::number(1));
+        p_n_volumes = ui->lineEdit_nvol->text().toInt();
+        p_finite_acquisition = true;
     }
     switch(telescope)
     {
@@ -793,11 +799,17 @@ void GalvoController::startScan()
     }
     // Set Camera
     if (p_camera != NULL) delete p_camera;
+    unsigned int n_frames_in_one_volume = (ny*n_repeat)*aline_repeat/factor;
+
 #ifndef SIMULATION
-    p_camera=new Camera((nx+n_extra)*factor,exposure);
+    p_camera=new Camera((nx+n_extra)*factor,exposure,n_frames_in_one_volume);
 #else
-    p_camera=new SoftwareCamera((nx+n_extra)*factor,exposure);
+    p_camera=new SoftwareCamera((nx+n_extra)*factor,exposure,n_frames_in_one_volume);
 #endif
+    if(p_finite_acquisition || p_stack_acquisition)
+    {
+        connect(p_camera,SIGNAL(volume_done()),this,SLOT(stopFiniteScan()));
+    }
 
     // If we are saving, setup for it
     if (show_line_flag)
@@ -819,15 +831,10 @@ void GalvoController::startScan()
     if (ui->checkBox_save->isChecked())
     {
         p_block_size = (int) ((512.0*256.0)/nx/factor);
-        int n_alines_in_one_volume = (nx+n_extra)*(ny*n_repeat)*aline_repeat;
 
-        p_data_saver = new DataSaver((nx+n_extra)*factor,p_block_size,n_alines_in_one_volume);
+        p_data_saver = new DataSaver((nx+n_extra)*factor,p_block_size);
         p_data_saver->setDatasetName(ui->lineEdit_datasetname->text());
         p_data_saver->setDatasetPath(p_save_dir.absolutePath());
-        if(p_finite_acquisition)
-        {
-            connect(p_data_saver,SIGNAL(volume_done()),this,SLOT(stopScan()));
-        }
 
         // AI
         if(p_ai != 0) delete p_ai;
@@ -991,6 +998,31 @@ void GalvoController::displayFileNumber(int block_number)
     return;
 }
 
+void GalvoController::stopFiniteScan()
+{
+    if(p_stack_acquisition)
+    {
+        if(p_finite_acquisition)
+        {
+            p_n_volumes--;
+            if(p_n_volumes == 0) stopScan();
+        }
+        else
+        {
+            stopScan();
+        }
+        return;
+    }
+    else
+    {
+        if(p_finite_acquisition)
+        {
+            p_n_volumes--;
+            if(p_n_volumes == 0) stopScan();
+        }
+    }
+}
+
 void GalvoController::stopScan()
 {
     // Saver stop
@@ -1054,7 +1086,7 @@ void GalvoController::stopScan()
     // Stop galvos, close camera
     p_galvos.stopTask();
     p_camera->Close();
-    if(!p_finite_acquisition)
+    if(!p_stack_acquisition)
     {
         ui->pushButton_start->setEnabled(true);
         ui->pushButton_stop->setEnabled(false);
@@ -1070,7 +1102,7 @@ void GalvoController::stopScan()
         else
         {
             p_acq_index = 0;
-            p_finite_acquisition = false;
+            p_stack_acquisition = false;
             ui->pushButton_start->setEnabled(true);
             ui->pushButton_stop->setEnabled(false);
         }

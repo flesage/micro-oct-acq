@@ -1,11 +1,9 @@
 #include "datasaver.h"
 #include <stdio.h>
 #include <QDir>
-#include <QCoreApplication>
 #include <iostream>
 
-DataSaver::DataSaver(int n_alines, int save_block_size, int n_alines_in_one_volume) : p_n_alines(n_alines), p_save_block_size(save_block_size),
-    p_n_alines_in_one_volume(n_alines_in_one_volume),
+DataSaver::DataSaver(int n_alines, int save_block_size) : p_n_alines(n_alines), p_save_block_size(save_block_size),
     p_free_spots(2*p_save_block_size), p_used_spots(0), p_current_pos(0)
 
 {
@@ -82,7 +80,6 @@ void DataSaver::run()
     parent_dir.setPath(QDir::cleanPath(p_path_name + QDir::separator() + p_dataset_name));
     FILE* fp = 0;
     QString tmp;
-    int n_alines_current_vol=0;
     unsigned int file_num = 0;
     unsigned int index = 0;
     while (true)
@@ -103,13 +100,6 @@ void DataSaver::run()
         fwrite(&p_data_buffer[(index % p_buffer_size)*p_frame_size], sizeof(unsigned short), p_frame_size, fp);
         fflush(fp);
         p_free_spots.release();
-        n_alines_current_vol = n_alines_current_vol + p_n_alines;
-        if(n_alines_current_vol >= p_n_alines_in_one_volume)
-        {
-            n_alines_current_vol -= p_n_alines_in_one_volume;
-            emit volume_done();
-            QCoreApplication::processEvents();
-        }
         index++;
 
         p_mutex.lock();

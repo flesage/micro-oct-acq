@@ -10,7 +10,7 @@ class SoftwareCamera : public QThread
 {
     Q_OBJECT
 public:
-    SoftwareCamera(int n_lines, float exposure);
+    SoftwareCamera(int n_lines, float exposure, unsigned int n_frames_per_volume);
     virtual ~SoftwareCamera();
     void Open();
     void Close();
@@ -23,7 +23,8 @@ public:
     void setFringeViewer(FringeViewer* ptr);
     void setImageViewer(ImageViewer* ptr);
     void setDataSaver(DataSaver* ptr);
-
+signals:
+    void volume_done();
 private:
     int p_n_lines;
     float p_exposure;
@@ -34,6 +35,7 @@ private:
     FringeViewer* fv_ptr;
     ImageViewer* imv_ptr;
     DataSaver* dsaver_ptr;
+    unsigned int p_n_frames_per_volume;
 };
 
 #endif // SoftwareCamera_H

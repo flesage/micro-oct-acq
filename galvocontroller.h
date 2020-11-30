@@ -50,6 +50,7 @@ private slots:
     void scanTypeChosen(const QString& text);
     void startScan(void);
     void stopScan(void);
+    void stopFiniteScan(void);
     void moveUp(void);
     void moveDown(void);
     void moveRight(void);
@@ -123,7 +124,9 @@ private:
     QString p_line_number_str;
     Galvos p_galvos;
     bool p_finite_acquisition;
+    bool p_stack_acquisition;
     int p_acq_index;
+    int p_n_volumes;
     QString p_datasetname;
 #ifndef SIMULATION
     Camera* p_camera;

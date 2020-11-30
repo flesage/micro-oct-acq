@@ -1,12 +1,14 @@
 #include "camera.h"
 #include "imaqexception.h"
 #include <iostream>
+#include <QCoreApplication>
+
 USER_FUNC  niimaquDisable32bitPhysMemLimitEnforcement(SESSION_ID boardid);
 
 #define errChk(fCall) if (p_error = (fCall), p_error < 0) {throw IMAQException(p_error);} else
 
 
-Camera::Camera(int n_lines, float exposure)
+Camera::Camera(int n_lines, float exposure, unsigned int n_frames_per_volume)
 {
     p_n_lines = n_lines;
     p_exposure = exposure;
@@ -14,6 +16,8 @@ Camera::Camera(int n_lines, float exposure)
     fv_ptr = 0;
     imv_ptr = 0;
     dsaver_ptr=0;
+    p_n_frames_per_volume=n_frames_per_volume;
+
 }
 
 void Camera::setFringeViewer(FringeViewer *ptr)
@@ -52,6 +56,7 @@ void Camera::SetCameraNumeric(const char* attribute, double value)
         std::cerr << tmp << std::endl;
     }
 }
+
 void Camera::Open()
 {
     // OPEN A COMMUNICATION CHANNEL WITH THE CAMERA
@@ -152,6 +157,7 @@ void Camera::Stop()
 
 void Camera::run()
 {
+    unsigned int n_frames_read=0;
 #ifndef SIMULATION
 
     static int currBufNum = 0;
@@ -205,6 +211,12 @@ void Camera::run()
         }
         // Needs to be fast
         p_mutex.lock();
+        n_frames_read++;
+        if(n_frames_read % p_n_frames_per_volume==0)
+        {
+            emit volume_done();
+            QCoreApplication::processEvents();
+        }
 
         if(!p_started)
         {

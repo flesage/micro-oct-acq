@@ -1,7 +1,9 @@
 #include <iostream>
+#include <QCoreApplication>
+
 #include "softwarecamera.h"
 
-SoftwareCamera::SoftwareCamera(int n_lines, float exposure)
+SoftwareCamera::SoftwareCamera(int n_lines, float exposure, unsigned int n_frames_per_volume)
 {
     p_n_lines = n_lines;
     p_exposure = exposure;
@@ -10,6 +12,8 @@ SoftwareCamera::SoftwareCamera(int n_lines, float exposure)
     imv_ptr = 0;
     dsaver_ptr=0;
     p_current_copied_buffer = 0;
+    p_n_frames_per_volume=n_frames_per_volume;
+
 }
 
 SoftwareCamera::~SoftwareCamera()
@@ -79,6 +83,7 @@ void SoftwareCamera::Stop()
 
 void SoftwareCamera::run()
 {
+    unsigned int n_frames_read=0;
     unsigned long frame_time = (unsigned long) ((p_exposure*p_n_lines)/1000);
     int a = 0;
     while(true)
@@ -105,6 +110,12 @@ void SoftwareCamera::run()
             dsaver_ptr->put((unsigned short*) p_current_copied_buffer);
         }
         // Needs to be fast
+        n_frames_read++;
+        if(n_frames_read % p_n_frames_per_volume==0)
+        {
+            emit volume_done();
+            QCoreApplication::processEvents();
+        }
 
         msleep(frame_time);
         p_mutex.lock();

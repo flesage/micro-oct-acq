@@ -15,7 +15,7 @@ class Camera : public QThread
 {
     Q_OBJECT
 public:
-    Camera(int n_lines, float exposure);
+    Camera(int n_lines, float exposure, unsigned int n_frames_per_volume);
     void Open();
     void Close();
     void ConfigureForSingleGrab();
@@ -27,6 +27,9 @@ public:
     void setFringeViewer(FringeViewer* ptr);
     void setImageViewer(ImageViewer* ptr);
     void setDataSaver(DataSaver* ptr);
+signals:
+    void volume_done();
+
 private:
     SESSION_ID sid;
     INTERFACE_ID iid;
@@ -42,6 +45,7 @@ private:
     FringeViewer* fv_ptr;
     ImageViewer* imv_ptr;
     DataSaver* dsaver_ptr;
+    unsigned int p_n_frames_per_volume;
 };
 
 #endif // CAMERA_H

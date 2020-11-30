@@ -2891,7 +2891,11 @@
         </widget>
        </item>
        <item row="1" column="2">
-        <widget class="QLineEdit" name="lineEdit_nvol"/>
+        <widget class="QLineEdit" name="lineEdit_nvol">
+         <property name="text">
+          <string>1</string>
+         </property>
+        </widget>
        </item>
        <item row="1" column="1">
         <widget class="QLabel" name="label_50">
