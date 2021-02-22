@@ -425,8 +425,8 @@ void GalvoController::slot_doStack()
         }
         else
         {
-            int step_z = ui->lineEdit_stack_step_z->text().toFloat();
-            motors->move_dz(-step_z/1000);
+            float step_z = ui->lineEdit_stack_step_z->text().toFloat();
+            motors->move_dz(-step_z/1000.);
             // Set new datapathname
             QString stack_name =p_datasetname + QString("_stack_%1").arg(p_acq_index);
             ui->lineEdit_datasetname->setText(stack_name);
@@ -800,6 +800,7 @@ void GalvoController::startScan()
     // Set Camera
     if (p_camera != NULL) delete p_camera;
     unsigned int n_frames_in_one_volume = (ny*n_repeat)*aline_repeat/factor;
+    if(n_frames_in_one_volume == 0) n_frames_in_one_volume =1;
 
 #ifndef SIMULATION
     p_camera=new Camera((nx+n_extra)*factor,exposure,n_frames_in_one_volume);

@@ -212,7 +212,7 @@ void Camera::run()
         // Needs to be fast
         p_mutex.lock();
         n_frames_read++;
-        if(n_frames_read % p_n_frames_per_volume==0)
+        if((n_frames_read % p_n_frames_per_volume)==0)
         {
             emit volume_done();
             QCoreApplication::processEvents();
