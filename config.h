@@ -1,14 +1,14 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define GALVOS_DEV "/Dev4"
+#define GALVOS_DEV "/Dev1"
 #define GALVOS_AOX "ao0"
 #define GALVOS_AOY "ao1"
 
 #define CAMERA_CLOCK "ctr0"
 #define CAMERA_CLOCK_PFI "PFI12"
 
-#define AICHANNELS "/Dev4/ai0:1"
+#define AICHANNELS "/Dev1/ai0:1"
 #define AIAOSAMPRATE 10000
 #define N_AI_CHANNELS 2
 

@@ -432,7 +432,7 @@
                 </size>
                </property>
                <property name="text">
-                <string>250</string>
+                <string>800</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -1222,17 +1222,17 @@
                </property>
                <item>
                 <property name="text">
+                 <string>Telescope: 50-100mm</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
                  <string>Telescope: 54-300mm</string>
                 </property>
                </item>
                <item>
                 <property name="text">
                  <string>Telescope: 36-18mm</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Telescope: 50-100mm</string>
                 </property>
                </item>
                <item>
@@ -1268,7 +1268,7 @@
                 </size>
                </property>
                <property name="currentIndex">
-                <number>2</number>
+                <number>0</number>
                </property>
                <item>
                 <property name="text">

@@ -8,6 +8,12 @@
 #include "fwhmviewer.h"
 #include "angioviewer3dform.h"
 #include "arrayfire.h"
+#include <iostream>
+#include <sstream>
+#include <fstream>
+#include "asdkDM.h"
+
+using namespace acs;
 
 class QScrollBar;
 
@@ -84,6 +90,18 @@ private:
     int p_ny;
     af::array p_angio;
     bool p_angio_averageFlag;
+
+    DM *dm;
+    int nbAct;
+    std::ifstream dm_file;
+    float Z2C[ 96 ][ 97 ];
+    Scalar *dm_data;
+    double max_intensity;
+    double old_intensity;
+    double c[ 6 ];
+    double c_max[ 6 ];
+    int c_idx;
+    void moveDM( int z_mode, double amp );
 };
 
 #endif // ImageViewer_H

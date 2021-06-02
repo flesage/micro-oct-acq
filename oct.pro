@@ -18,10 +18,12 @@ DEFINES += NOMINMAX
 INCLUDEPATH += "C:\Program Files (x86)\National Instruments\NI-DAQ\DAQmx ANSI C Dev\include"
 INCLUDEPATH += "C:\Program Files (x86)\National Instruments\NI-IMAQ\Include"
 INCLUDEPATH += "C:\Program Files\ArrayFire\v3\include"
+INCLUDEPATH += "C:\Program Files\Alpao\SDK\include"
 
 LIBS += -L"C:\Program Files\ArrayFire\v3\lib" -lafopencl
 LIBS += -L"C:\Program Files (x86)\National Instruments\Shared\ExternalCompilerSupport\C\lib64\msvc" -lNIDAQmx
 LIBS += -L"C:\Program Files (x86)\National Instruments\NI-IMAQ\Lib\MSVC" -limaq
+LIBS += -L"C:\Program Files\Alpao\SDK\Lib\x64" -lasdk
 
 SOURCES += main.cpp \
     angioviewer3dform.cpp \
