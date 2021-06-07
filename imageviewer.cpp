@@ -6,15 +6,10 @@
 #include <cmath>
 #include <QPainter>
 #include "arrayfire.h"
-#include <fstream>
-#include <sstream>
-#include "asdkDM.h"
 
-using namespace std;
-using namespace acs;
-
-ImageViewer::ImageViewer(QWidget *parent, int n_alines, int n_extra, int ny, int view_depth, unsigned int n_repeat, float msec_fwhm, float line_period, float spatial_fwhm, float dimz, float dimx, int factor) :
-    QLabel(parent), p_ny(ny), p_factor(factor), p_n_repeat(n_repeat), f_fft(n_repeat,factor), p_n_alines(n_alines), p_view_depth(view_depth)
+ImageViewer::ImageViewer(QWidget *parent, int n_alines, int n_extra, int ny, int view_depth, unsigned int n_repeat, float msec_fwhm, float line_period, float spatial_fwhm,
+                         float dimz, float dimx, int factor, DM* in_dm, float** in_zern, int in_n_act ) :
+    QLabel(parent), p_ny(ny), p_factor(factor), p_n_repeat(n_repeat), f_fft(n_repeat,factor), p_n_alines(n_alines), p_n_extra(n_extra), p_view_depth(view_depth), dm(in_dm), Z2C(in_zern), nbAct(in_n_act)
 {
     p_current_viewmode = STRUCT;
     is_focus_line = false;
@@ -63,37 +58,6 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, int n_extra, int ny, int
     p_doppler_image.setColorTable(dop_color_table);
 
 
-
-
-    // Open the mirror and set to zero
-    std::string serialName ( "BAX351" );
-    dm = new DM( serialName.c_str() );
-    nbAct = ( int ) dm->Get( "NbOfActuator" );
-    dm->Reset();
-
-    // Open CSV file
-    dm_file.open( "C:/Program Files/Alpao/SDK/Config/BAX351-Z2C.csv" );
-    if ( !dm_file.is_open() )
-    {
-        std::cerr << "Unable to open CSV file." << std::endl;
-        exit( 1 );
-    }
-
-    // Access Zernike polynomials
-    std::string line, column;
-    int row = 0;
-    while ( std::getline( dm_file, line ) )
-    {
-        stringstream s( line );
-        int col = 0;
-        while ( std::getline( s, column, ',' ) )
-        {
-            Z2C[ row ][ col ] = std::stof( column );
-            col++;
-        }
-        row++;
-    }
-
     // Initialize dm_data
     dm_data = new Scalar[ 97 ];
     for ( int i = 0 ; i < nbAct ; i++ )
@@ -120,9 +84,6 @@ ImageViewer::~ImageViewer()
     p_angio_view->close();
     delete p_angio_view;
 
-    // Close file and release memory
-    dm_file.close();
-    delete dm;
     delete [] dm_data;
 }
 
@@ -418,174 +379,176 @@ void ImageViewer::updateView()
     QLabel::setPixmap(pix.scaled(this->size(),
                                  Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
 
-    // Get intensity of p_image
-    double new_intensity = 0;
-    for ( int i = 0 ; i < p_n_alines ; i++ )
-    {
-        for ( int k = p_start_line+1024*i ; k < p_stop_line+1024*i ; k++ )
-        {
-            new_intensity += p_image.bits()[ k ];
-        }
-    }
+    // Get metric of p_image
+    double metric = getMetric( 'I' );
 
-    if ( old_intensity < new_intensity && new_intensity > 1e+005 )
+    // Optimize DM
+    if ( old_metric < metric )
     {
         switch( c_idx )
         {
         case 0: // Defocus
         {
-            std::cerr << c_idx << ", " << c[ c_idx ] << ", " << new_intensity << std::endl;
-
-            if ( new_intensity > max_intensity )
+            if ( metric > max_metric )
             {
                 c_max[ c_idx ] = c[ c_idx ];
-                max_intensity = new_intensity;
+                max_metric = metric;
             }
 
             c[ c_idx ] += 0.1;
 
             if ( c[ c_idx ] >= 1 )
             {
-                moveDM( 2, c_max[ c_idx] );
+                moveDM( 2, c_max[ c_idx ] );
                 c_idx++;
             } else
             {
-                moveDM( 2, c[ c_idx] );
+                moveDM( 2, c[ c_idx ] );
             }
 
             break;
         }
         case 1: // Vertical astigmatism
         {
-            std::cerr << c_idx << ", " << c[ c_idx ] << ", " << new_intensity << std::endl;
-
-            if ( new_intensity > max_intensity )
+            if ( metric > max_metric )
             {
                 c_max[ c_idx ] = c[ c_idx ];
-                max_intensity = new_intensity;
+                max_metric = metric;
             }
 
             c[ c_idx ] += 0.1;
 
             if ( c[ c_idx ] >= 1 )
             {
-                moveDM( 3, c_max[ c_idx] );
+                moveDM( 3, c_max[ c_idx ] );
                 c_idx++;
             } else
             {
-                moveDM( 3, c[ c_idx] );
+                moveDM( 3, c[ c_idx ] );
             }
 
             break;
         }
         case 2: // Oblique astigmatism
         {
-            std::cerr << c_idx << ", " << c[ c_idx ] << ", " << new_intensity << std::endl;
-
-            if ( new_intensity > max_intensity )
+            if ( metric > max_metric )
             {
                 c_max[ c_idx ] = c[ c_idx ];
-                max_intensity = new_intensity;
+                max_metric = metric;
             }
 
             c[ c_idx ] += 0.1;
 
             if ( c[ c_idx ] >= 1)
             {
-                moveDM( 4, c_max[ c_idx] );
+                moveDM( 4, c_max[ c_idx ] );
                 c_idx++;
             } else
             {
-                moveDM( 4, c[ c_idx] );
+                moveDM( 4, c[ c_idx ] );
             }
 
             break;
         }
         case 3: // Spherical aberration
         {
-            std::cerr << c_idx << ", " << c[ c_idx ] << ", " << new_intensity << std::endl;
-
-            if ( new_intensity > max_intensity )
+            if ( metric > max_metric )
             {
                 c_max[ c_idx ] = c[ c_idx ];
-                max_intensity = new_intensity;
+                max_metric = metric;
             }
 
             c[ c_idx ] += 0.1;
 
             if ( c[ c_idx ] >= 1)
             {
-                moveDM( 7, c_max[ c_idx] );
+                moveDM( 7, c_max[ c_idx ] );
                 c_idx++;
             } else
             {
-                moveDM( 7, c[ c_idx] );
+                moveDM( 7, c[ c_idx ] );
             }
 
             break;
         }
         case 4: // Horizontal coma
         {
-            std::cerr << c_idx << ", " << c[ c_idx ] << ", " << new_intensity << std::endl;
-
-            if ( new_intensity > max_intensity )
+            if ( metric > max_metric )
             {
                 c_max[ c_idx ] = c[ c_idx ];
-                max_intensity = new_intensity;
+                max_metric = metric;
             }
 
             c[ c_idx ] += 0.1;
 
             if ( c[ c_idx ] >= 1)
             {
-                moveDM( 5, c_max[ c_idx] );
+                moveDM( 5, c_max[ c_idx ] );
                 c_idx++;
             } else
             {
-                moveDM( 5, c[ c_idx] );
+                moveDM( 5, c[ c_idx ] );
             }
 
             break;
         }
         case 5: // Vertical coma
         {
-            std::cerr << c_idx << ", " << c[ c_idx ] << ", " << new_intensity << std::endl;
-
-            if ( new_intensity > max_intensity )
+            if ( metric > max_metric )
             {
                 c_max[ c_idx ] = c[ c_idx ];
-                max_intensity = new_intensity;
+                max_metric = metric;
             }
 
             c[ c_idx ] += 0.1;
 
             if ( c[ c_idx ] >= 1)
             {
-                moveDM( 6, c_max[ c_idx] );
+                moveDM( 6, c_max[ c_idx ] );
                 c_idx++;
             } else
             {
-                moveDM( 6, c[ c_idx] );
+                moveDM( 6, c[ c_idx ] );
             }
 
             break;
         }
-        case 6: // c_max
+        case 6:
         {
-            std::cerr << "I_max, " << max_intensity << std::endl;
-            std::cerr << "C_max, " << c_max[ 0 ] << ", " << c_max[ 1 ] << ", " << c_max[ 2 ] << ", " << c_max[ 3 ] << ", " << c_max[ 4 ] << ", " << c_max[ 5 ] << std::endl;
-            c_idx = 0;
-            for( int i = 0 ; i < 6 ; i++ )
-            {
-                c[ i ] = -1.0;
-            }
-            break;
+            std::cerr << max_metric << ", " << c_max[ 0 ] << ", " << c_max[ 1 ] << ", " << c_max[ 2 ] << ", " << c_max[ 3 ] << ", " << c_max[ 4 ] << ", " << c_max[ 5 ] << std::endl;
+            c_idx++;
         }
         }
     }
 
-    // Set old_intensity
-    old_intensity = new_intensity;
+    // Set old_metric
+    old_metric = metric;
+}
+
+double ImageViewer::getMetric( char metric_name )
+{
+    double metric = 0;
+
+    switch( metric_name )
+    {
+    case 'I':
+    {
+        for ( int i = p_n_extra ; i < p_n_alines ; i++ )
+        {
+            for ( int k = p_start_line+1024*i ; k < p_stop_line+1024*i ; k++ )
+            {
+                metric += p_image.bits()[ k ];
+            }
+        }
+        break;
+    }
+    case 'O':
+    {
+        break;
+    }
+    }
+
+    return metric;
 }
 
 void ImageViewer::moveDM( int z_mode, double amp )

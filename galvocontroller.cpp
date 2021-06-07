@@ -196,10 +196,49 @@ GalvoController::GalvoController() :
         fclose(fp);
     }
     delete [] tmp;
+
+    // Open the mirror and set to zero
+    std::string serialName ( "BAX351" );
+    dm = new DM( serialName.c_str() );
+    nbAct = ( int ) dm->Get( "NbOfActuator" );
+    dm->Reset();
+
+    // Open CSV file
+    dm_file.open( "C:/Program Files/Alpao/SDK/Config/BAX351-Z2C.csv" );
+    if ( !dm_file.is_open() )
+    {
+        std::cerr << "Unable to open CSV file." << std::endl;
+        exit( 1 );
+    }
+
+    // Access Zernike polynomials
+    Z2C=new float*[96];
+    std::string line, column;
+    int row = 0;
+    while ( std::getline( dm_file, line ) )
+    {
+        std::stringstream s( line );
+        Z2C[row]=new float[97];
+        int col = 0;
+        while ( std::getline( s, column, ',' ) )
+        {
+            Z2C[ row ][ col ] = std::stof( column );
+            col++;
+        }
+        row++;
+    }
+    dm_file.close();
 }
 
 GalvoController::~GalvoController()
 {
+    delete dm;
+    for(unsigned int i=0;i<96;i++)
+    {
+        delete [] Z2C[i];
+    }
+    delete [] Z2C;
+
     slot_openMotorPort(false);
     delete [] p_disp_comp_vec_10x;
     delete [] p_disp_comp_vec_25x;
@@ -917,7 +956,7 @@ void GalvoController::startScan()
         float line_period = 1.0f/line_rate/(nx+n_extra);
         float dimx = width/nx;
         float dimz = 3.5;
-        p_image_view = new ImageViewer(0,nx+n_extra,n_extra,ny, view_depth,n_repeat, hpf_time_constant,line_period,spatial_kernel_size,dimz,dimx,factor);
+        p_image_view = new ImageViewer(0,nx+n_extra,n_extra,ny, view_depth,n_repeat, hpf_time_constant,line_period,spatial_kernel_size,dimz,dimx,factor,dm,Z2C,nbAct);
         p_image_view->updateHanningThreshold(ui->lineEdit_hanningeps->text().toFloat());
         p_image_view->updateImageThreshold(ui->lineEdit_logeps->text().toFloat());
         p_image_view->updateAngioAlgo(ui->comboBox_angio->currentIndex());

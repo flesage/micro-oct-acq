@@ -16,6 +16,12 @@
 #include "float64datasaver.h"
 #include "analoginput.h"
 #include "motorclass.h"
+#include <iostream>
+#include <sstream>
+#include <fstream>
+#include "asdkDM.h"
+
+using namespace acs;
 
 namespace Ui {
 class OCTGalvosForm;
@@ -147,6 +153,11 @@ private:
     bool flagMotor;
     float* p_disp_comp_vec_10x;
     float* p_disp_comp_vec_25x;
+
+    DM *dm;
+    int nbAct;
+    std::ifstream dm_file;
+    float** Z2C;
 };
 
 
