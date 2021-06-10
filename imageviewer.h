@@ -95,14 +95,15 @@ private:
     DM *dm;
     int nbAct;
     float** Z2C;
+    int z_idx;
+    int z_idx_max;
     Scalar *dm_data;
     double max_metric;
     double old_metric;
-    double c[ 6 ];
-    double c_max[ 6 ];
-    int c_idx;
-    double getMetric( char metric_name );
-    void moveDM( int z_mode, double amp );
+    double dm_c;
+    double dm_c_max;
+    double getMetric(int metric_number);
+    void moveDM(int z_poly, double amp);
 };
 
 #endif // ImageViewer_H

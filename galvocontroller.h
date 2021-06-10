@@ -158,6 +158,10 @@ private:
     int nbAct;
     std::ifstream dm_file;
     float** Z2C;
+    int z_mode_min; // Needs to be placed directly in the panel
+    int z_mode_max; // Needs to be placed directly in the panel
+    int z_idx;
+    int z_idx_max;
 };
 
 
