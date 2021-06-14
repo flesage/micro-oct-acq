@@ -69,8 +69,7 @@ void FWHMViewer::paintEvent(QPaintEvent *event)
     {
         painter.drawLine((int)(i*x_scale),(int) ((256-p_aline[i])*y_scale),(int)((i+1)*x_scale),(int) ((256-p_aline[i+1])*y_scale));
     }
-    QString str;
-    str.sprintf("%s %d", "FWHM: ", fwhm);
+    QString str=QString("FWHM: %1").arg(fwhm);
     painter.drawText(QPoint(10,10),str);
     painter.end();
 }

@@ -1,6 +1,6 @@
 #include "imageviewer.h"
 #include "config.h"
-#include <QMatrix>
+#include <QMatrix4x4>
 #include <QTime>
 #include <iostream>
 #include <cmath>
@@ -60,13 +60,13 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, int n_extra, int ny, int
 
     // Initialize dm_data
     dm_data = new Scalar[97];
-    for (unsigned int i = 0; i < nbAct; i++)
+    for (int i = 0; i < nbAct; i++)
     {
         dm_data[i] = 0;
     }
 
     // Initialize dm_c and dm_c_max
-    dm_c = -1;
+    dm_c = Z2C[z_idx][97];
     dm_c_max = 0;
 }
 
@@ -251,8 +251,8 @@ void ImageViewer::updateView()
     // We receive a uint16 image that we need to transform to uint8 for display
     int n_pts = p_n_alines * LINE_ARRAY_SIZE;
     QImage tmp;
-    QMatrix rm;
-    rm.rotate(90);
+    QTransform transform;
+    QTransform trans = transform.rotate(90);
     QRect rect;
 
     switch(p_current_viewmode)
@@ -276,7 +276,7 @@ void ImageViewer::updateView()
 
         p_mutex.unlock();
         pix = QPixmap::fromImage(p_fringe_image);
-        pix=pix.transformed(rm);
+        pix = pix.transformed(trans);
     }
         break;
     case DOPPLER:
@@ -287,7 +287,7 @@ void ImageViewer::updateView()
         rect.setRect(0,0,p_view_depth,p_n_alines-1);
         tmp = p_doppler_image.copy(rect);
         pix = QPixmap::fromImage(tmp);
-        pix=pix.transformed(rm);
+        pix = pix.transformed(trans);
     }
         break;
     case HILBERT:
@@ -297,7 +297,7 @@ void ImageViewer::updateView()
         rect.setRect(0,0,2048,p_n_alines);
         tmp = p_hilbert_image.copy(rect);
         pix = QPixmap::fromImage(tmp);
-        pix=pix.transformed(rm);
+        pix = pix.transformed(trans);
         if(is_optimization)
         {
             // Push middle line
@@ -312,7 +312,7 @@ void ImageViewer::updateView()
         rect.setRect(0,0,p_view_depth,p_n_alines);
         tmp = p_image.copy(rect);
         pix = QPixmap::fromImage(tmp);
-        pix=pix.transformed(rm);
+        pix = pix.transformed(trans);
         if(is_optimization)
         {
             // Push middle line
@@ -341,7 +341,7 @@ void ImageViewer::updateView()
             rect.setRect(0,0,p_view_depth,p_n_alines);
             tmp = p_image.copy(rect);
             pix = QPixmap::fromImage(tmp);
-            pix=pix.transformed(rm);
+            pix = pix.transformed(trans);
 
             if( p_ny > 1 )
             {
@@ -381,7 +381,7 @@ void ImageViewer::updateView()
     // Optimize DM
     if (z_idx <= z_idx_max)
     {
-        if (old_metric < metric)
+        if (metric < old_metric)
         {
             if (metric > max_metric)
             {
@@ -389,19 +389,21 @@ void ImageViewer::updateView()
                 max_metric = metric;
             }
 
-            dm_c += 0.1;
-
-            if (dm_c >= 1)
+            if (dm_c >= Z2C[z_idx][98])
             {
+                std::cerr << z_idx << " " << dm_c_max << " " << max_metric << std::endl << std::endl;
                 moveDM(z_idx, dm_c_max);
-                std::cerr << "Polynôme " << z_idx << ": " << dm_c_max << std::endl;
-                dm_c = -1;
                 z_idx++;
+                dm_c = Z2C[z_idx][97];
+                dm_c_max = 0;
+                max_metric = 0;
             } else
             {
-            moveDM(z_idx, dm_c);
+                std::cerr << z_idx << " " << dm_c << " " << metric << std::endl;
+                dm_c += (Z2C[z_idx][98]-Z2C[z_idx][97])/10;
+                moveDM(z_idx, dm_c);
             }
-        } 
+        }
     }
 
     // Set old_metric
@@ -415,9 +417,9 @@ double ImageViewer::getMetric(int metric_number)
     {
     case 0: // Summed intensity
     {
-        for (unsigned int i = p_n_extra; i < p_n_alines; i++)
+        for (int i = p_n_extra; i < p_n_alines; i++)
         {
-            for (unsigned int k = p_start_line+1024*i; k < p_stop_line+1024*i; k++)
+            for (int k = p_start_line+1024*i; k < p_stop_line+1024*i; k++)
             {
                 metric += p_image.bits()[k];
             }
@@ -427,9 +429,9 @@ double ImageViewer::getMetric(int metric_number)
     case 1: // 90% of max intensity
     {
         double max = 0;
-        for (unsigned int i = p_n_extra; i < p_n_alines; i++)
+        for (int i = p_n_extra; i < p_n_alines; i++)
         {
-            for (unsigned int k = p_start_line+1024*i; k < p_stop_line+1024*i; k++)
+            for (int k = p_start_line+1024*i; k < p_stop_line+1024*i; k++)
             {
                 if (p_image.bits()[k] > max)
                 {
@@ -437,11 +439,11 @@ double ImageViewer::getMetric(int metric_number)
                 }
             }
         }
-        for (unsigned int i = p_n_extra; i < p_n_alines; i++)
+        for (int i = p_n_extra; i < p_n_alines; i++)
         {
-            for (unsigned int k = p_start_line+1024*i; k < p_stop_line+1024*i; k++)
+            for (int k = p_start_line+1024*i; k < p_stop_line+1024*i; k++)
             {
-                if (metric > 0.9*max)
+                if (p_image.bits()[k] > 0.9*max)
                 {
                     metric += p_image.bits()[k];
                 }
@@ -457,14 +459,16 @@ void ImageViewer::moveDM(int z_poly, double amp)
 {
     if (dm->Check())
     {
-        for (unsigned int i = 0; i < nbAct; i++)
+
+        std::cerr << "dm.Check()" << std::endl;
+        for (int i = 0; i < nbAct; i++)
         {
             dm_data[i] = amp*Z2C[z_poly][i];
         }
 
         dm->Send(dm_data);
 
-        for (unsigned int i = 0; i < nbAct; i++)
+        for (int i = 0; i < nbAct; i++)
         {
             dm_data[i] = 0;
         }

@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui serialport
+QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -37,8 +37,7 @@ SOURCES += main.cpp \
     softwarecamera.cpp \
     analoginput.cpp \
     FringeFFT.cpp \
-    fwhmviewer.cpp \
-    motorclass.cpp
+    fwhmviewer.cpp
 
 HEADERS  += \
     angioviewer3dform.h \
@@ -57,8 +56,7 @@ HEADERS  += \
     analoginput.h \
     float64datasaver.h \
     FringeFFT.h \
-    fwhmviewer.h \
-    motorclass.h
+    fwhmviewer.h
 
 FORMS    += \
     angioviewer3dform.ui \

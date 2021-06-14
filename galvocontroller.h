@@ -15,7 +15,7 @@
 #include "datasaver.h"
 #include "float64datasaver.h"
 #include "analoginput.h"
-#include "motorclass.h"
+//#include "motorclass.h"
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -149,7 +149,7 @@ private:
     AnalogInput* p_ai;
     Float64DataSaver* p_ai_data_saver;
     int p_block_size;
-    MotorClass* motors;
+//    MotorClass* motors;
     bool flagMotor;
     float* p_disp_comp_vec_10x;
     float* p_disp_comp_vec_25x;
@@ -158,8 +158,6 @@ private:
     int nbAct;
     std::ifstream dm_file;
     float** Z2C;
-    int z_mode_min; // Needs to be placed directly in the panel
-    int z_mode_max; // Needs to be placed directly in the panel
     int z_idx;
     int z_idx_max;
 };

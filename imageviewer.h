@@ -32,7 +32,7 @@ class ImageViewer : public QLabel
     Q_OBJECT
 public:
     explicit ImageViewer(QWidget *parent = 0, int n_alines = 100, int n_extra = 40, int ny=1, int view_depth=512, unsigned int n_repeat=1, float msec_fwhm=0.0002, float spatial_fwhm=3.5,
-                         float line_period=0.01, float dimz=3.5, float dimx=3.5, int factor=1, DM* in_dm=0, float** in_zern=0, int in_n_act=0 );
+                         float line_period=0.01, float dimz=3.5, float dimx=3.5, int factor=1, DM* in_dm=0, float** in_zern=0, int in_n_act=0, int in_z_idx=1, int in_z_idx_max=5 );
     virtual ~ImageViewer();
     virtual int heightForWidth( int width ) const;
     virtual QSize sizeHint() const;
@@ -60,12 +60,14 @@ protected:
     virtual void  keyPressEvent(QKeyEvent *event);
 
 private:
-    FringeFFT f_fft;
+
     double scaleFactor;
     int p_n_alines;
+    int p_ny;
     int p_factor;
     int p_n_repeat;
     int p_n_extra;
+    FringeFFT f_fft;
     QImage p_image;
     QImage p_fringe_image;
     QImage p_hilbert_image;
@@ -88,13 +90,12 @@ private:
     int p_start_line;
     int p_stop_line;
     unsigned int p_frame_number;
-    int p_ny;
     af::array p_angio;
     bool p_angio_averageFlag;
 
     DM *dm;
-    int nbAct;
     float** Z2C;
+    int nbAct;
     int z_idx;
     int z_idx_max;
     Scalar *dm_data;

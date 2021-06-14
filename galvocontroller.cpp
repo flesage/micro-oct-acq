@@ -11,8 +11,7 @@
 #include "ui_oct_galvos_form.h"
 #include "config.h"
 #include <QApplication>
-#include "motorclass.h"
-#include "piezostage.h"
+//#include "piezostage.h"
 
 GalvoController::GalvoController() :
     ui(new Ui::OCTGalvosForm), p_galvos(GALVOS_DEV,GALVOS_AOX,GALVOS_AOY), p_settings("Polytechnique/LIOM","OCT"),
@@ -53,7 +52,7 @@ GalvoController::GalvoController() :
     p_start_viewline = ui->lineEdit_startLine->text().toInt();
     p_stop_viewline = ui->lineEdit_stopLine->text().toInt();
 
-    motors = new MotorClass();
+//    motors = new MotorClass();
 
     double radians_per_volt = 2*3.14159265359/(360*0.8);
     double f1=50.0;
@@ -218,22 +217,22 @@ GalvoController::GalvoController() :
     while (std::getline(dm_file, line))
     {
         std::stringstream s(line);
-        Z2C[row] = new float[97];
+        Z2C[row] = new float[99];
         int col = 0;
+        float min_val = 1e9;
+        float max_val = -1e9;
         while (std::getline(s, column, ','))
         {
             Z2C[row][col] = std::stof(column);
+            if(Z2C[row][col]>max_val) max_val=Z2C[row][col];
+            if(Z2C[row][col]<min_val) min_val=Z2C[row][col];
             col++;
         }
+        Z2C[row][97] = 1.0/min_val;
+        Z2C[row][98] = 1.0/max_val;
         row++;
     }
     dm_file.close();
-
-    // Initialize z_mode
-    z_mode_min = 1; // Needs to be placed directly in the panel
-    z_mode_max = 3; // Needs to be placed directly in the panel
-    z_idx = z_mode_min*(z_mode_min+1)/2-1;
-    z_idx_max = z_mode_max*(z_mode_max+1)/2-1+z_mode_max;
 }
 
 GalvoController::~GalvoController()
@@ -248,7 +247,7 @@ GalvoController::~GalvoController()
     slot_openMotorPort(false);
     delete [] p_disp_comp_vec_10x;
     delete [] p_disp_comp_vec_25x;
-    delete motors;
+//    delete motors;
     delete ui;
 }
 
@@ -337,41 +336,41 @@ void GalvoController::setCenterFromLineScan()
 void GalvoController::updateSpeedPiezo()
 {
     std::cout<<"piezo speed update"<<std::endl;
-    int speedValue = ui->spinBox_piezoSpeed->value();
-    motors->getSpeed(speedValue);
+//    int speedValue = ui->spinBox_piezoSpeed->value();
+//    motors->getSpeed(speedValue);
 }
 
 void GalvoController::jogPiezo()
 {
-    std::cout<<"piezo go!"<<std::endl;
-    motors->PiezoStartJog();
+//    std::cout<<"piezo go!"<<std::endl;
+//    motors->PiezoStartJog();
 }
 
 void GalvoController::stopPiezo()
 {
-    std::cout<<"piezo stop!"<<std::endl;
-    motors->PiezoStopJog();
+//    std::cout<<"piezo stop!"<<std::endl;
+//    motors->PiezoStopJog();
 }
 
 void GalvoController::turnPiezoOn()
 {
-    std::cout<<"piezo turning on"<<std::endl;
-    motors->PiezoOpenPort();
-    flagMotor=1;
+//    std::cout<<"piezo turning on"<<std::endl;
+//    motors->PiezoOpenPort();
+//    flagMotor=1;
 }
 
 void GalvoController::turnPiezoOff()
 {
-    std::cout<<"piezo turning off"<<std::endl;
-    motors->PiezoClosePort();
-    flagMotor=0;
+//    std::cout<<"piezo turning off"<<std::endl;
+//    motors->PiezoClosePort();
+//    flagMotor=0;
 
 }
 
 void GalvoController::homePiezo()
 {
-    std::cout<<"homing piezo"<<std::endl;
-    motors->PiezoHome();
+//    std::cout<<"homing piezo"<<std::endl;
+//    motors->PiezoHome();
 
 }
 
@@ -400,6 +399,7 @@ void GalvoController::invertAxes()
 
 void GalvoController::slot_openMotorPort(bool flag)
 {
+    /*
     if(flag)
     {
         motors->OpenPort();
@@ -424,7 +424,7 @@ void GalvoController::slot_openMotorPort(bool flag)
 
         motors->ClosePort();
     }
-
+*/
 }
 
 void GalvoController::slot_doMosaic()
@@ -456,6 +456,7 @@ void GalvoController::slot_doMosaic()
 
 void GalvoController::slot_doStack()
 {
+    /*
     if(ui->checkBox_motorport->isChecked())
     {
         if(p_acq_index == 0)
@@ -485,6 +486,7 @@ void GalvoController::slot_doStack()
         msgBox.setText("Open the motor port prior to doing a z stack.");
         msgBox.exec();
     }
+    */
 }
 
 void GalvoController::setSaveDir()
@@ -591,17 +593,17 @@ void GalvoController::updateInfo(void)
     float lat_sampling=width/nx;
     float interFrameTime=1/line_rate*1000;
     QString tmp;
-    tmp.sprintf("Current time per pix.:\t%5.2f us\n",time_per_pix);
+    //tmp.sprintf("Current time per pix.:\t%5.2f us\n",time_per_pix);
     text = text+tmp;
-    tmp.sprintf("Current exposure:\t%5.2f us\n",exposure);
+    //tmp.sprintf("Current exposure:\t%5.2f us\n",exposure);
     text=text+tmp;
-    tmp.sprintf("Beam speed in x:\t%5.2f mm/sec\n",speed_x);
+    //tmp.sprintf("Beam speed in x:\t%5.2f mm/sec\n",speed_x);
     text=text+tmp;
-    tmp.sprintf("Lateral sampling in x:\t%5.3f um/pix\n",lat_sampling);
+    //tmp.sprintf("Lateral sampling in x:\t%5.3f um/pix\n",lat_sampling);
     text=text+tmp;
-    tmp.sprintf("Inter B-scan time in x:\t%5.3f ms\n",interFrameTime);
+    //tmp.sprintf("Inter B-scan time in x:\t%5.3f ms\n",interFrameTime);
     text=text+tmp;
-    tmp.sprintf("Linelength:\t\t%5.3f um\n",p_line_length);
+    //tmp.sprintf("Linelength:\t\t%5.3f um\n",p_line_length);
     text=text+tmp;
 
 
@@ -609,7 +611,7 @@ void GalvoController::updateInfo(void)
 
     if (time_per_pix < 0.9*exposure)
     {
-        tmp.sprintf("WARNING: \nINTEGRATION TIME HIGHER THAN TIME\nPER PIXEL!!!\n");
+        tmp=QString("WARNING: \nINTEGRATION TIME HIGHER THAN TIME\nPER PIXEL!!!\n");
         text=text+tmp;
     }
     ui->label_info->setText(text);
@@ -698,8 +700,7 @@ void GalvoController::checkPath()
         {
             if (pathToData.exists())
             {
-                QString numberStr;
-                numberStr.sprintf("%03d", counter);
+                QString numberStr = QString("%1").arg(counter,3);
                 newfolderName = folderName+"_"+numberStr;
                 pathToData = QDir::cleanPath(dataDir + QDir::separator() + newfolderName +QDir::separator());
                 counter++;
@@ -711,8 +712,7 @@ void GalvoController::checkPath()
                     folderFlag=false;
                     std::cout<<"in line update"<<std::endl;
                     p_line_number_str = readLineNumber();
-                    QString linenumber;
-                    linenumber.sprintf("%03d", p_line_number_str.toInt());
+                    QString linenumber=QString("%1").arg(p_line_number_str.toInt(),3);
                     newfolderName = folderName+"_"+linenumber;
                     ui->lineEdit_datasetname->setText(newfolderName);
                 }
@@ -774,6 +774,11 @@ void GalvoController::startScan()
     bool show_line_flag=ui->checkBox_view_line->isChecked();
     bool finite_acq_flag=ui->checkBox_finite_acq->isChecked();
 
+    // Initialize z_mode
+    int z_mode_min = ui->lineEdit_dm_min->text().toInt();
+    int z_mode_max = ui->lineEdit_dm_max->text().toInt();
+    z_idx = z_mode_min*(z_mode_min+1)/2-1;
+    z_idx_max = z_mode_max*(z_mode_max+1)/2-1+z_mode_max;
     // Only go here on first call if we do multiple volumes
     if (finite_acq_flag)
     {
@@ -895,40 +900,40 @@ void GalvoController::startScan()
 
         QString info;
         QString tmp;
-        info.sprintf("nx: %d\n",nx);
-        info=info+tmp.sprintf("ny: %d\n",ny);
-        info=info+tmp.sprintf("n_repeat: %d\n",n_repeat);
+        info=QString("nx: %1\n").arg(nx);
+        info=info+QString("ny: %1\n").arg(ny);
+        info=info+QString("n_repeat: %1\n").arg(n_repeat);
         if (ui->comboBox_scantype->currentText() == "Line")
         {
-            info=info+tmp.sprintf("width: %f\n",p_line_length);
+            info=info+QString("width: %1\n").arg(p_line_length);
         }
         else
         {
-            info=info+tmp.sprintf("width: %f\n",width);
+            info=info+QString("width: %1\n").arg(width);
         }
-        info=info+tmp.sprintf("height: %f\n",height);
-        info=info+tmp.sprintf("n_extra: %d\n",n_extra);
-        info=info+tmp.sprintf("line_rate: %f\n",line_rate);
-        info=info+tmp.sprintf("exposure: %f\n",exposure);
-        info=info+tmp.sprintf("alinerepeat: %d\n",aline_repeat);
-        info=info+"scantype: "+ui->comboBox_scantype->currentText()+"\n";
-        info=info+tmp.sprintf("center_x: %f\n",p_center_x);
-        info=info+tmp.sprintf("center_y: %f\n",p_center_y);
-        info=info+tmp.sprintf("offset_x: %f\n",p_offset_x);
-        info=info+tmp.sprintf("offset_y: %f\n",p_offset_y);
-        info=info+tmp.sprintf("coeff_x: %f\n",p_coeff_x);
-        info=info+tmp.sprintf("coeff_y: %f\n",p_coeff_y);
+        info=info+QString("height: %1\n").arg(height);
+        info=info+QString("n_extra: %1\n").arg(n_extra);
+        info=info+QString("line_rate: %1\n").arg(line_rate);
+        info=info+QString("exposure: %1\n").arg(exposure);
+        info=info+QString("alinerepeat: %1\n").arg(aline_repeat);
+        info=info+QString("scantype: ")+ui->comboBox_scantype->currentText()+"\n";
+        info=info+QString("center_x: %1\n").arg(p_center_x);
+        info=info+QString("center_y: %1\n").arg(p_center_y);
+        info=info+QString("offset_x: %1\n").arg(p_offset_x);
+        info=info+QString("offset_y: %1\n").arg(p_offset_y);
+        info=info+QString("coeff_x: %1\n").arg(p_coeff_x);
+        info=info+QString("coeff_y: %1\n").arg(p_coeff_y);
 
         QString objective = ui->comboBox_objective->currentText();
-        info=info+tmp.sprintf("objective: %s\n",objective.toUtf8().constData());
+        info=info+QString("objective: %1\n").arg(objective.toUtf8().constData());
 
         if (ui->checkBox_adjustLength->isChecked())
         {
-            info=info+tmp.sprintf("start_line_x: %f\n",p_start_line_x);
-            info=info+tmp.sprintf("stop_line_x: %f\n",p_stop_line_x);
-            info=info+tmp.sprintf("start_line_y: %f\n",p_start_line_y);
-            info=info+tmp.sprintf("stop_line_y: %f\n",p_stop_line_y);
-            info=info+tmp.sprintf("line_length: %f\n",p_line_length);
+            info=info+QString("start_line_x: %1\n").arg(p_start_line_x);
+            info=info+QString("stop_line_x: %1\n").arg(p_stop_line_x);
+            info=info+QString("start_line_y: %1\n").arg(p_start_line_y);
+            info=info+QString("stop_line_y: %1\n").arg(p_stop_line_y);
+            info=info+QString("line_length: %1\n").arg(p_line_length);
         }
 
 
@@ -1080,10 +1085,8 @@ void GalvoController::stopScan()
         bool show_line_flag=ui->checkBox_view_line->isChecked();
         if (show_line_flag)
         {
-            QString info;
-            QString tmp;
-            info.sprintf("start_line: %d\n",p_start_viewline);
-            info=info+tmp.sprintf("stop_line: %d\n",p_stop_viewline);
+            QString info=QString("start_line: %1\n").arg(p_start_viewline);
+            info=info+QString("stop_line: %1\n").arg(p_stop_viewline);
             p_data_saver->addInfo(info);
             p_data_saver->writeInfoFile();
         }
@@ -1194,44 +1197,44 @@ void GalvoController::goHome(void)
 
 void GalvoController::moveMotorUp(void)
 {
-    float step_um = ui->lineEdit_motor_step_size->text().toFloat();
-    motors->move_dz(step_um/1000);
+    //float step_um = ui->lineEdit_motor_step_size->text().toFloat();
+    //motors->move_dz(step_um/1000);
 }
 
 void GalvoController::moveMotorDown(void)
 {
-    float step_um = ui->lineEdit_motor_step_size->text().toFloat();
-    motors->move_dz(-step_um/1000);
+    //float step_um = ui->lineEdit_motor_step_size->text().toFloat();
+    //motors->move_dz(-step_um/1000);
 }
 
 void GalvoController::moveMotorYP(void)
 {
-    float step_um = ui->lineEdit_motor_step_size->text().toFloat();
-    motors->move_dy(step_um/1000);
+    //float step_um = ui->lineEdit_motor_step_size->text().toFloat();
+    //motors->move_dy(step_um/1000);
 }
 
 void GalvoController::moveMotorYM(void)
 {
-    float step_um = ui->lineEdit_motor_step_size->text().toFloat();
-    motors->move_dy(-step_um/1000);
+    //float step_um = ui->lineEdit_motor_step_size->text().toFloat();
+    //motors->move_dy(-step_um/1000);
 }
 
 void GalvoController::moveMotorXP(void)
 {
-    float step_um = ui->lineEdit_motor_step_size->text().toFloat();
-    motors->move_dx(step_um/1000);
+    //float step_um = ui->lineEdit_motor_step_size->text().toFloat();
+    //motors->move_dx(step_um/1000);
 }
 
 void GalvoController::moveMotorXM(void)
 {
-    float step_um = ui->lineEdit_motor_step_size->text().toFloat();
-    motors->move_dx(-step_um/1000);
+    //float step_um = ui->lineEdit_motor_step_size->text().toFloat();
+    //motors->move_dx(-step_um/1000);
 
 }
 
 void GalvoController::goMotorHome(void)
 {
-    motors->Home();
+    //motors->Home();
 }
 
 void GalvoController::writeCoeffTxt(void)

@@ -42,8 +42,7 @@ inline void DAQException::show()
     {
         DAQmxGetExtendedErrorInfo(errBuff,2048);
         QMessageBox msgBox;
-        QString tmp;
-        tmp.sprintf("DAQmx Error:\n %s\n",errBuff);
+        QString tmp=QString("DAQmx Error: %1 \n").arg(errBuff);
         msgBox.setText(tmp);
         msgBox.exec();
     }
