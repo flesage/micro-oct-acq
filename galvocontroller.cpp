@@ -203,6 +203,7 @@ GalvoController::GalvoController() :
     dm->Reset();
 
     // Open CSV file
+    std::ifstream dm_file;
     dm_file.open("C:/Program Files/Alpao/SDK/Config/BAX351-Z2C.csv");
     if (!dm_file.is_open())
     {
@@ -775,10 +776,11 @@ void GalvoController::startScan()
     bool finite_acq_flag=ui->checkBox_finite_acq->isChecked();
 
     // Initialize z_mode
-    int z_mode_min = ui->lineEdit_dm_min->text().toInt();
-    int z_mode_max = ui->lineEdit_dm_max->text().toInt();
+    int z_mode_min = ui->spinBox_z_mode_min->text().toInt();
+    int z_mode_max = ui->spinBox_z_mode_max->text().toInt();
     z_idx = z_mode_min*(z_mode_min+1)/2-1;
     z_idx_max = z_mode_max*(z_mode_max+1)/2-1+z_mode_max;
+
     // Only go here on first call if we do multiple volumes
     if (finite_acq_flag)
     {

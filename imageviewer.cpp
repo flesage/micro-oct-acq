@@ -395,12 +395,11 @@ void ImageViewer::updateView()
                 moveDM(z_idx, dm_c_max);
                 z_idx++;
                 dm_c = Z2C[z_idx][97];
-                dm_c_max = 0;
                 max_metric = 0;
             } else
             {
                 std::cerr << z_idx << " " << dm_c << " " << metric << std::endl;
-                dm_c += (Z2C[z_idx][98]-Z2C[z_idx][97])/10;
+                dm_c += (Z2C[z_idx][98]-Z2C[z_idx][97])/20;
                 moveDM(z_idx, dm_c);
             }
         }
@@ -433,20 +432,14 @@ double ImageViewer::getMetric(int metric_number)
         {
             for (int k = p_start_line+1024*i; k < p_stop_line+1024*i; k++)
             {
-                if (p_image.bits()[k] > max)
-                {
-                    max = p_image.bits()[k];
-                }
+                if (p_image.bits()[k] > max) max = p_image.bits()[k];
             }
         }
         for (int i = p_n_extra; i < p_n_alines; i++)
         {
             for (int k = p_start_line+1024*i; k < p_stop_line+1024*i; k++)
             {
-                if (p_image.bits()[k] > 0.9*max)
-                {
-                    metric += p_image.bits()[k];
-                }
+                if (p_image.bits()[k] > 0.9*max) metric += p_image.bits()[k];
             }
         }
         break;

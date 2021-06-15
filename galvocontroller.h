@@ -156,7 +156,6 @@ private:
 
     DM *dm;
     int nbAct;
-    std::ifstream dm_file;
     float** Z2C;
     int z_idx;
     int z_idx_max;
