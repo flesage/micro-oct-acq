@@ -376,7 +376,7 @@ void ImageViewer::updateView()
                                  Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
 
     // Get metric of p_image
-    double metric = getMetric(1);
+    double metric = getMetric(2);
 
     // Optimize DM
     if (z_idx <= z_idx_max)
@@ -391,11 +391,11 @@ void ImageViewer::updateView()
 
             if (dm_c >= Z2C[z_idx][98])
             {
-                std::cerr << z_idx << " " << dm_c_max << " " << max_metric << std::endl << std::endl;
+                std::cerr << z_idx << " " << dm_c_max << " " << max_metric << std::endl;
                 moveDM(z_idx, dm_c_max);
                 z_idx++;
                 dm_c = Z2C[z_idx][97];
-                max_metric = 0;
+                dm_c_max = 0;
             } else
             {
                 std::cerr << z_idx << " " << dm_c << " " << metric << std::endl;
@@ -414,7 +414,7 @@ double ImageViewer::getMetric(int metric_number)
     double metric = 0;
     switch(metric_number)
     {
-    case 0: // Summed intensity
+    case 1: // Summed intensity
     {
         for (int i = p_n_extra; i < p_n_alines; i++)
         {
@@ -425,7 +425,7 @@ double ImageViewer::getMetric(int metric_number)
         }
         break;
     }
-    case 1: // 90% of max intensity
+    case 2: // 90% of max intensity
     {
         double max = 0;
         for (int i = p_n_extra; i < p_n_alines; i++)
@@ -444,6 +444,29 @@ double ImageViewer::getMetric(int metric_number)
         }
         break;
     }
+    case 3: // SNR
+    {
+        double mean = 0;
+        double std = 0;
+        int n = p_stop_line+1024*p_n_alines - p_start_line+1024*p_n_extra;
+        for (int i = p_n_extra; i < p_n_alines; i++)
+        {
+            for (int k = p_start_line+1024*i; k < p_stop_line+1024*i; k++)
+            {
+                mean += p_image.bits()[k];
+            }
+        }
+        mean = mean/n;
+        for (int i = p_n_extra; i < p_n_alines; i++)
+        {
+            for (int k = p_start_line+1024*i; k < p_stop_line+1024*i; k++)
+            {
+                std += (p_image.bits()[k]-mean)^2;
+            }
+        }
+        std = sqrt(std/n);
+        metric = mean/std;
+    }
     }
     return metric;
 }
@@ -452,8 +475,6 @@ void ImageViewer::moveDM(int z_poly, double amp)
 {
     if (dm->Check())
     {
-
-        std::cerr << "dm.Check()" << std::endl;
         for (int i = 0; i < nbAct; i++)
         {
             dm_data[i] = amp*Z2C[z_poly][i];
