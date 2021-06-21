@@ -3,6 +3,7 @@
 #include <QMatrix4x4>
 #include <QTime>
 #include <iostream>
+#include <algorithm>
 #include <cmath>
 #include <QPainter>
 #include "arrayfire.h"
@@ -68,6 +69,9 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, int n_extra, int ny, int
     // Initialize dm_c and dm_c_max
     dm_c = Z2C[z_idx][97];
     dm_c_max = 0;
+
+    // Initialize mirror position
+    moveDM(z_idx,dm_c);
 }
 
 ImageViewer::~ImageViewer()
@@ -375,43 +379,14 @@ void ImageViewer::updateView()
     QLabel::setPixmap(pix.scaled(this->size(),
                                  Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
 
-    // Get metric of p_image
-    double metric = getMetric(2);
-
     // Optimize DM
-    if (z_idx <= z_idx_max)
-    {
-        if (metric < old_metric)
-        {
-            if (metric > max_metric)
-            {
-                dm_c_max = dm_c;
-                max_metric = metric;
-            }
-
-            if (dm_c >= Z2C[z_idx][98])
-            {
-                std::cerr << z_idx << " " << dm_c_max << " " << max_metric << std::endl;
-                moveDM(z_idx, dm_c_max);
-                z_idx++;
-                dm_c = Z2C[z_idx][97];
-                dm_c_max = 0;
-            } else
-            {
-                std::cerr << z_idx << " " << dm_c << " " << metric << std::endl;
-                dm_c += (Z2C[z_idx][98]-Z2C[z_idx][97])/20;
-                moveDM(z_idx, dm_c);
-            }
-        }
-    }
-
-    // Set old_metric
-    old_metric = metric;
+    optimizeDM(p_image);
 }
 
-double ImageViewer::getMetric(int metric_number)
+double ImageViewer::getMetric(QImage image, int metric_number)
 {
     double metric = 0;
+
     switch(metric_number)
     {
     case 1: // Summed intensity
@@ -420,54 +395,67 @@ double ImageViewer::getMetric(int metric_number)
         {
             for (int k = p_start_line+1024*i; k < p_stop_line+1024*i; k++)
             {
-                metric += p_image.bits()[k];
+                metric += image.bits()[k];
             }
         }
+
         break;
     }
-    case 2: // 90% of max intensity
+    case 2: // Summed intensity of 400 highest pixels
     {
-        double max = 0;
+        unsigned int idx = 0;
+        int end_idx = (p_n_alines-p_n_extra)*(p_stop_line-p_start_line);
+        unsigned char* data_vec = new unsigned char[end_idx];
+
         for (int i = p_n_extra; i < p_n_alines; i++)
         {
             for (int k = p_start_line+1024*i; k < p_stop_line+1024*i; k++)
             {
-                if (p_image.bits()[k] > max) max = p_image.bits()[k];
+                data_vec[idx] = image.bits()[k];
+                idx++;
             }
         }
-        for (int i = p_n_extra; i < p_n_alines; i++)
+
+        std::sort(data_vec,&data_vec[end_idx]);
+
+        for (int i = 1; i <= 400; i++)
         {
-            for (int k = p_start_line+1024*i; k < p_stop_line+1024*i; k++)
-            {
-                if (p_image.bits()[k] > 0.9*max) metric += p_image.bits()[k];
-            }
+            metric += data_vec[end_idx-i];
         }
+
+        delete [] data_vec;
         break;
     }
-    case 3: // SNR
+    case 3: // SNR ratio
     {
         double mean = 0;
         double std = 0;
-        int n = p_stop_line+1024*p_n_alines - p_start_line+1024*p_n_extra;
+        int n = (p_n_alines-p_n_extra)*(p_stop_line-p_start_line);
+
         for (int i = p_n_extra; i < p_n_alines; i++)
         {
             for (int k = p_start_line+1024*i; k < p_stop_line+1024*i; k++)
             {
-                mean += p_image.bits()[k];
+                mean += image.bits()[k];
             }
         }
+
         mean = mean/n;
+
         for (int i = p_n_extra; i < p_n_alines; i++)
         {
             for (int k = p_start_line+1024*i; k < p_stop_line+1024*i; k++)
             {
-                std += (p_image.bits()[k]-mean)^2;
+                std += pow((image.bits()[k]-mean),2);
             }
         }
+
         std = sqrt(std/n);
         metric = mean/std;
+        break;
     }
     }
+
     return metric;
 }
 
@@ -485,6 +473,34 @@ void ImageViewer::moveDM(int z_poly, double amp)
         for (int i = 0; i < nbAct; i++)
         {
             dm_data[i] = 0;
+        }
+    }
+}
+
+void ImageViewer::optimizeDM(QImage image)
+{
+    double metric = getMetric(image,2);
+
+    if (z_idx <= z_idx_max)
+    {
+        if (metric > max_metric)
+        {
+            dm_c_max = dm_c;
+            max_metric = metric;
+        }
+
+        if (dm_c >= Z2C[z_idx][98])
+        {
+            std::cerr << z_idx << " " << dm_c_max << " " << max_metric << std::endl;
+            moveDM(z_idx, dm_c_max);
+            z_idx++;
+            dm_c = Z2C[z_idx][97];
+            dm_c_max = 0;
+        } else
+        {
+            std::cerr << z_idx << " " << dm_c << " " << metric << std::endl;
+            dm_c += (Z2C[z_idx][98]-Z2C[z_idx][97])/40;
+            moveDM(z_idx, dm_c);
         }
     }
 }

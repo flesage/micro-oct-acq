@@ -100,11 +100,11 @@ private:
     int z_idx_max;
     Scalar *dm_data;
     double max_metric;
-    double old_metric;
     double dm_c;
     double dm_c_max;
-    double getMetric(int metric_number);
+    double getMetric(QImage image, int metric_number);
     void moveDM(int z_poly, double amp);
+    void optimizeDM(QImage image);
 };
 
 #endif // ImageViewer_H

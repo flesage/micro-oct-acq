@@ -2867,7 +2867,7 @@
               <number>12</number>
              </property>
              <property name="value">
-              <number>5</number>
+              <number>4</number>
              </property>
             </widget>
            </item>
@@ -3084,7 +3084,7 @@
           </size>
          </property>
          <property name="text">
-          <string>300</string>
+          <string>200</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -3113,7 +3113,7 @@
           </size>
          </property>
          <property name="text">
-          <string>400</string>
+          <string>300</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
