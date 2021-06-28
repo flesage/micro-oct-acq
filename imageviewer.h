@@ -101,7 +101,9 @@ private:
     float** Z2C;
     int nbAct;
     int z_idx;
+    int z_idx_start;
     int z_idx_max;
+    std::ofstream dm_ouput_file;
     Scalar* dm_data;
     Scalar* current_opt_dm_data;
     double max_metric;

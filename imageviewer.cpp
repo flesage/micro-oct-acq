@@ -12,6 +12,7 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, int n_extra, int ny, int
                          float dimz, float dimx, int factor, DM* in_dm, float** in_zern, int in_n_act, int in_z_idx, int in_z_idx_max ) :
     QLabel(parent), p_ny(ny), p_factor(factor), p_n_repeat(n_repeat), f_fft(n_repeat,factor), p_n_alines(n_alines), p_n_extra(n_extra), p_view_depth(view_depth), dm(in_dm), Z2C(in_zern), nbAct(in_n_act), z_idx(in_z_idx), z_idx_max(in_z_idx_max)
 {
+    z_idx_start = z_idx;
     p_current_viewmode = STRUCT;
     is_focus_line = false;
     is_optimization = false;
@@ -70,12 +71,7 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, int n_extra, int ny, int
         current_opt_dm_data[i] = 0;
     }
 
-    // Initialize dm_c and dm_c_max
-    dm_c = Z2C[z_idx][97];
-    dm_c_max = 0;
 
-    // Initialize mirror position
-    moveDM(z_idx,dm_c);
 }
 
 ImageViewer::~ImageViewer()
@@ -94,7 +90,21 @@ ImageViewer::~ImageViewer()
 
 void ImageViewer::optimizeDM(void)
 {
-    is_dm_optimization=true;
+    if(!is_dm_optimization)
+    {
+        is_dm_optimization=true;
+
+        // Initialize dm_c, dm_c_max and z_idx
+        dm_c = Z2C[z_idx][97];
+        dm_c_max = 0;
+        z_idx=z_idx_start;
+
+        // Initialize mirror position
+        moveDM(z_idx,dm_c);
+
+        // Open output file
+        dm_ouput_file.open("dm_data.txt");
+    }
 }
 
 void ImageViewer::turnDMOn(void)
@@ -109,7 +119,7 @@ void ImageViewer::turnDMOff(void)
 {
     if(!is_dm_optimization)
     {
-        for(int i=0;i<nAct;i++) dm_data[i]=0;
+        for(int i=0;i<nbAct;i++) dm_data[i]=0;
         dm->Send(dm_data);
         is_dm=false;
     }
@@ -119,7 +129,8 @@ void ImageViewer::resetDM(void)
 {
     if(!is_dm_optimization)
     {
-        for(int i=0;i<nAct;i++) current_opt_dm_data[i]=0;
+        for(int i=0;i<nbAct;i++) current_opt_dm_data[i]=0;
+        dm->Send(current_opt_dm_data);
     }
 }
 
@@ -358,6 +369,12 @@ void ImageViewer::updateView()
             // Push middle line
             p_fwhm_view->put(&p_image.bits()[p_n_alines/2*(LINE_ARRAY_SIZE/2)]);
         }
+
+        // Optimize DM
+        if(is_dm_optimization)
+        {
+            optimizeDM(p_image);
+        }
     }
         break;
     case ANGIO:
@@ -414,12 +431,6 @@ void ImageViewer::updateView()
     // Set as pixmap
     QLabel::setPixmap(pix.scaled(this->size(),
                                  Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
-
-    // Optimize DM
-    if(is_dm_optimization)
-    {
-        optimizeDM(p_image);
-    }
 }
 
 double ImageViewer::getMetric(QImage image, int metric_number)
@@ -524,7 +535,7 @@ void ImageViewer::moveDMandCurrentOpt(int z_poly, double amp)
 
 void ImageViewer::optimizeDM(QImage image)
 {
-    double metric = getMetric(image,2);
+    double metric = getMetric(image,3);
 
     if (z_idx <= z_idx_max)
     {
@@ -536,14 +547,14 @@ void ImageViewer::optimizeDM(QImage image)
 
         if (dm_c >= Z2C[z_idx][98])
         {
-            std::cerr << z_idx << " " << dm_c_max << " " << max_metric << std::endl;
+            dm_ouput_file << z_idx << " " << dm_c_max << " " << max_metric << std::endl;
             moveDMandCurrentOpt(z_idx, dm_c_max);
             z_idx++;
             dm_c = Z2C[z_idx][97];
             dm_c_max = 0;
         } else
         {
-            std::cerr << z_idx << " " << dm_c << " " << metric << std::endl;
+            dm_ouput_file << z_idx << " " << dm_c << " " << metric << std::endl;
             dm_c += (Z2C[z_idx][98]-Z2C[z_idx][97])/40;
             moveDM(z_idx, dm_c);
         }
@@ -552,6 +563,7 @@ void ImageViewer::optimizeDM(QImage image)
     {
         // If we get here we finished optimization.
         is_dm_optimization=false;
+        dm_ouput_file.close();
     }
 }
 
