@@ -55,6 +55,10 @@ public slots:
     void updateLineScanPos(int start_x, int start_y, int stop_x, int stop_y);
     void updateViewLinePositions(bool, int, int);
     void updateAngioAverageFlag(bool);
+    void turnDMOn(void);
+    void turnDMOff(void);
+    void optimizeDM(void);
+    void resetDM(void);
 
 protected:
     virtual void  keyPressEvent(QKeyEvent *event);
@@ -98,13 +102,17 @@ private:
     int nbAct;
     int z_idx;
     int z_idx_max;
-    Scalar *dm_data;
+    Scalar* dm_data;
+    Scalar* current_opt_dm_data;
     double max_metric;
     double dm_c;
     double dm_c_max;
     double getMetric(QImage image, int metric_number);
     void moveDM(int z_poly, double amp);
+    void moveDMandCurrentOpt(int z_poly, double amp);
     void optimizeDM(QImage image);
+    bool is_dm_optimization;
+    bool is_dm;
 };
 
 #endif // ImageViewer_H

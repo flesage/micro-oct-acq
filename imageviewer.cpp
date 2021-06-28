@@ -15,6 +15,8 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, int n_extra, int ny, int
     p_current_viewmode = STRUCT;
     is_focus_line = false;
     is_optimization = false;
+    is_dm_optimization = false;
+    is_dm=false;
     p_image_threshold =0.001f;
     p_hanning_threshold = 1e-6f;
     f_fft.init(LINE_ARRAY_SIZE,p_n_alines,dimz, dimx);
@@ -61,9 +63,11 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, int n_extra, int ny, int
 
     // Initialize dm_data
     dm_data = new Scalar[97];
+    current_opt_dm_data = new Scalar[97];
     for (int i = 0; i < nbAct; i++)
     {
         dm_data[i] = 0;
+        current_opt_dm_data[i] = 0;
     }
 
     // Initialize dm_c and dm_c_max
@@ -85,6 +89,38 @@ ImageViewer::~ImageViewer()
     delete p_angio_view;
 
     delete [] dm_data;
+    delete [] current_opt_dm_data;
+}
+
+void ImageViewer::optimizeDM(void)
+{
+    is_dm_optimization=true;
+}
+
+void ImageViewer::turnDMOn(void)
+{
+    if(!is_dm_optimization)
+    {
+        dm->Send(current_opt_dm_data);
+    }
+}
+
+void ImageViewer::turnDMOff(void)
+{
+    if(!is_dm_optimization)
+    {
+        for(int i=0;i<nAct;i++) dm_data[i]=0;
+        dm->Send(dm_data);
+        is_dm=false;
+    }
+}
+
+void ImageViewer::resetDM(void)
+{
+    if(!is_dm_optimization)
+    {
+        for(int i=0;i<nAct;i++) current_opt_dm_data[i]=0;
+    }
 }
 
 void ImageViewer::set_disp_comp_vect(float* disp_comp_vector)
@@ -380,7 +416,10 @@ void ImageViewer::updateView()
                                  Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
 
     // Optimize DM
-    optimizeDM(p_image);
+    if(is_dm_optimization)
+    {
+        optimizeDM(p_image);
+    }
 }
 
 double ImageViewer::getMetric(QImage image, int metric_number)
@@ -465,15 +504,23 @@ void ImageViewer::moveDM(int z_poly, double amp)
     {
         for (int i = 0; i < nbAct; i++)
         {
-            dm_data[i] = amp*Z2C[z_poly][i];
+            dm_data[i] = amp*Z2C[z_poly][i]+current_opt_dm_data[i];
         }
 
         dm->Send(dm_data);
+    }
+}
 
+void ImageViewer::moveDMandCurrentOpt(int z_poly, double amp)
+{
+    if (dm->Check())
+    {
         for (int i = 0; i < nbAct; i++)
         {
-            dm_data[i] = 0;
+            current_opt_dm_data[i] = amp*Z2C[z_poly][i]+current_opt_dm_data[i];
         }
+
+        dm->Send(current_opt_dm_data);
     }
 }
 
@@ -492,7 +539,7 @@ void ImageViewer::optimizeDM(QImage image)
         if (dm_c >= Z2C[z_idx][98])
         {
             std::cerr << z_idx << " " << dm_c_max << " " << max_metric << std::endl;
-            moveDM(z_idx, dm_c_max);
+            moveDMandCurrentOpt(z_idx, dm_c_max);
             z_idx++;
             dm_c = Z2C[z_idx][97];
             dm_c_max = 0;
@@ -502,6 +549,11 @@ void ImageViewer::optimizeDM(QImage image)
             dm_c += (Z2C[z_idx][98]-Z2C[z_idx][97])/40;
             moveDM(z_idx, dm_c);
         }
+    }
+    else
+    {
+        // If we get here we finished optimization.
+        is_dm_optimization=false;
     }
 }
 
