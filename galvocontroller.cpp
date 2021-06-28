@@ -225,8 +225,8 @@ GalvoController::GalvoController() :
         while (std::getline(s, column, ','))
         {
             Z2C[row][col] = std::stof(column);
-            if(Z2C[row][col]>max_val) max_val=Z2C[row][col];
-            if(Z2C[row][col]<min_val) min_val=Z2C[row][col];
+            if (Z2C[row][col] > max_val) max_val = Z2C[row][col];
+            if (Z2C[row][col] < min_val) min_val = Z2C[row][col];
             col++;
         }
         Z2C[row][97] = 1.0/min_val;

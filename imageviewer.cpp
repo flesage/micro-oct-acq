@@ -426,32 +426,30 @@ double ImageViewer::getMetric(QImage image, int metric_number)
         delete [] data_vec;
         break;
     }
-    case 3: // SNR ratio
+    case 3: // Image variance
     {
         double mean = 0;
-        double std = 0;
-        int n = (p_n_alines-p_n_extra)*(p_stop_line-p_start_line);
-
+        int size = 0;
         for (int i = p_n_extra; i < p_n_alines; i++)
         {
             for (int k = p_start_line+1024*i; k < p_stop_line+1024*i; k++)
             {
                 mean += image.bits()[k];
+                size++;
             }
         }
 
-        mean = mean/n;
+        mean /= size;
 
         for (int i = p_n_extra; i < p_n_alines; i++)
         {
             for (int k = p_start_line+1024*i; k < p_stop_line+1024*i; k++)
             {
-                std += pow((image.bits()[k]-mean),2);
+                metric += pow(image.bits()[k]-mean,2);
             }
         }
 
-        std = sqrt(std/n);
-        metric = mean/std;
+        metric /= size;
         break;
     }
     }
