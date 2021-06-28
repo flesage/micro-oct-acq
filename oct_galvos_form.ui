@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>680</width>
-    <height>992</height>
+    <width>771</width>
+    <height>1090</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -356,7 +356,7 @@
         </size>
        </property>
        <property name="currentIndex">
-        <number>0</number>
+        <number>4</number>
        </property>
        <widget class="QWidget" name="tab_para">
         <attribute name="title">
@@ -1475,7 +1475,7 @@
              <x>10</x>
              <y>10</y>
              <width>271</width>
-             <height>80</height>
+             <height>82</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -1567,8 +1567,8 @@
             <rect>
              <x>10</x>
              <y>10</y>
-             <width>282</width>
-             <height>291</height>
+             <width>300</width>
+             <height>308</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_13">
@@ -2617,7 +2617,7 @@
            <x>20</x>
            <y>20</y>
            <width>281</width>
-           <height>108</height>
+           <height>117</height>
           </rect>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_12">
@@ -2872,6 +2872,51 @@
             </widget>
            </item>
           </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_12">
+           <item>
+            <widget class="QPushButton" name="pushButton_optimize_dm">
+             <property name="text">
+              <string>Optimize</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pushButton_reset_dm">
+             <property name="text">
+              <string>Reset</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pushButton_dm_on">
+             <property name="text">
+              <string>Mirror ON</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pushButton_dm_off">
+             <property name="text">
+              <string>Mirror OFF</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <spacer name="verticalSpacer_5">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
          </item>
         </layout>
        </widget>

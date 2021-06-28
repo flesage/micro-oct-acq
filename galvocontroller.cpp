@@ -982,6 +982,10 @@ void GalvoController::startScan()
         connect(view_timer,SIGNAL(timeout()),p_image_view,SLOT(updateView()));
         connect(this,SIGNAL(sig_updateAveragingFlag(bool)),p_image_view,SLOT(updateAngioAverageFlag(bool)));
         connect(this,SIGNAL(sig_updateAveragingAlgo(int)),p_image_view,SLOT(updateAngioAlgo(int)));
+        connect(ui->pushButton_optimize_dm,SIGNAL(clicked()),p_image_view,SLOT(optimizeDM()));
+        connect(ui->pushButton_dm_on,SIGNAL(clicked()),p_image_view,SLOT(turnDMOn()));
+        connect(ui->pushButton_dm_off,SIGNAL(clicked()),p_image_view,SLOT(turnDMOff()));
+        connect(ui->pushButton_reset_dm,SIGNAL(clicked()),p_image_view,SLOT(resetDM()));
 
 
 
