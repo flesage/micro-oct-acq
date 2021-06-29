@@ -157,8 +157,8 @@ private:
     DM *dm;
     int nbAct;
     float** Z2C;
-    int z_idx;
-    int z_idx_max;
+    int z_mode_min;
+    int z_mode_max;
 };
 
 

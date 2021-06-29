@@ -776,10 +776,8 @@ void GalvoController::startScan()
     bool finite_acq_flag=ui->checkBox_finite_acq->isChecked();
 
     // Initialize z_mode
-    int z_mode_min = ui->spinBox_z_mode_min->text().toInt();
-    int z_mode_max = ui->spinBox_z_mode_max->text().toInt();
-    z_idx = z_mode_min*(z_mode_min+1)/2-1;
-    z_idx_max = z_mode_max*(z_mode_max+1)/2-1+z_mode_max;
+    z_mode_min = ui->spinBox_z_mode_min->text().toInt();
+    z_mode_max = ui->spinBox_z_mode_max->text().toInt();
 
     // Only go here on first call if we do multiple volumes
     if (finite_acq_flag)
@@ -969,7 +967,7 @@ void GalvoController::startScan()
         float line_period = 1.0f/line_rate/(nx+n_extra);
         float dimx = width/nx;
         float dimz = 3.5;
-        p_image_view = new ImageViewer(0,nx+n_extra,n_extra,ny, view_depth,n_repeat, hpf_time_constant,line_period,spatial_kernel_size,dimz,dimx,factor,dm,Z2C,nbAct,z_idx,z_idx_max);
+        p_image_view = new ImageViewer(0,nx+n_extra,n_extra,ny, view_depth,n_repeat, hpf_time_constant,line_period,spatial_kernel_size,dimz,dimx,factor,dm,Z2C,nbAct,z_mode_min,z_mode_max);
         p_image_view->updateHanningThreshold(ui->lineEdit_hanningeps->text().toFloat());
         p_image_view->updateImageThreshold(ui->lineEdit_logeps->text().toFloat());
         p_image_view->updateAngioAlgo(ui->comboBox_angio->currentIndex());

@@ -32,7 +32,7 @@ class ImageViewer : public QLabel
     Q_OBJECT
 public:
     explicit ImageViewer(QWidget *parent = 0, int n_alines = 100, int n_extra = 40, int ny=1, int view_depth=512, unsigned int n_repeat=1, float msec_fwhm=0.0002, float spatial_fwhm=3.5,
-                         float line_period=0.01, float dimz=3.5, float dimx=3.5, int factor=1, DM* in_dm=0, float** in_zern=0, int in_n_act=0, int in_z_idx=1, int in_z_idx_max=5 );
+                         float line_period=0.01, float dimz=3.5, float dimx=3.5, int factor=1, DM* in_dm=0, float** in_zern=0, int in_n_act=0, int in_z_mode_min=2, int in_z_mode_max=4 );
     virtual ~ImageViewer();
     virtual int heightForWidth( int width ) const;
     virtual QSize sizeHint() const;
@@ -100,10 +100,12 @@ private:
     DM *dm;
     float** Z2C;
     int nbAct;
+    int z_mode_min;
+    int z_mode_max;
     int z_idx;
-    int z_idx_start;
     int z_idx_max;
     std::ofstream dm_ouput_file;
+    int dm_output_file_number;
     Scalar* dm_data;
     Scalar* current_opt_dm_data;
     double max_metric;
@@ -114,7 +116,6 @@ private:
     void moveDMandCurrentOpt(int z_poly, double amp);
     void optimizeDM(QImage image);
     bool is_dm_optimization;
-    bool is_dm;
 };
 
 #endif // ImageViewer_H

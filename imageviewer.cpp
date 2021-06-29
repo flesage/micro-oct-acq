@@ -9,15 +9,13 @@
 #include "arrayfire.h"
 
 ImageViewer::ImageViewer(QWidget *parent, int n_alines, int n_extra, int ny, int view_depth, unsigned int n_repeat, float msec_fwhm, float line_period, float spatial_fwhm,
-                         float dimz, float dimx, int factor, DM* in_dm, float** in_zern, int in_n_act, int in_z_idx, int in_z_idx_max ) :
-    QLabel(parent), p_ny(ny), p_factor(factor), p_n_repeat(n_repeat), f_fft(n_repeat,factor), p_n_alines(n_alines), p_n_extra(n_extra), p_view_depth(view_depth), dm(in_dm), Z2C(in_zern), nbAct(in_n_act), z_idx(in_z_idx), z_idx_max(in_z_idx_max)
+                         float dimz, float dimx, int factor, DM* in_dm, float** in_zern, int in_n_act, int in_z_mode_min, int in_z_mode_max ) :
+    QLabel(parent), p_ny(ny), p_factor(factor), p_n_repeat(n_repeat), f_fft(n_repeat,factor), p_n_alines(n_alines), p_n_extra(n_extra), p_view_depth(view_depth), dm(in_dm), Z2C(in_zern), nbAct(in_n_act), z_mode_min(in_z_mode_min), z_mode_max(in_z_mode_max)
 {
-    z_idx_start = z_idx;
     p_current_viewmode = STRUCT;
     is_focus_line = false;
     is_optimization = false;
     is_dm_optimization = false;
-    is_dm=false;
     p_image_threshold =0.001f;
     p_hanning_threshold = 1e-6f;
     f_fft.init(LINE_ARRAY_SIZE,p_n_alines,dimz, dimx);
@@ -71,7 +69,11 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, int n_extra, int ny, int
         current_opt_dm_data[i] = 0;
     }
 
+    // Initialize max_metric
+    max_metric = 0;
 
+    // Intialize dm_output_file_number
+    dm_output_file_number = 0;
 }
 
 ImageViewer::~ImageViewer()
@@ -92,18 +94,23 @@ void ImageViewer::optimizeDM(void)
 {
     if(!is_dm_optimization)
     {
+        // Set dm optimization flag
         is_dm_optimization=true;
 
-        // Initialize dm_c, dm_c_max and z_idx
+        // Initialize z_idx and z_idx_max
+        z_idx = z_mode_min*(z_mode_min+1)/2-1;
+        z_idx_max = z_mode_max*(z_mode_max+1)/2-1+z_mode_max;
+
+        // Initialize dm_c and dm_c_max
         dm_c = Z2C[z_idx][97];
         dm_c_max = 0;
-        z_idx=z_idx_start;
 
         // Initialize mirror position
         moveDM(z_idx,dm_c);
 
         // Open output file
-        dm_ouput_file.open("dm_data.txt");
+        dm_ouput_file.open("D:/dm_optimization_data/dm_data_" + std::to_string(dm_output_file_number) + ".txt");
+        dm_output_file_number++;
     }
 }
 
@@ -119,9 +126,7 @@ void ImageViewer::turnDMOff(void)
 {
     if(!is_dm_optimization)
     {
-        for(int i=0;i<nbAct;i++) dm_data[i]=0;
-        dm->Send(dm_data);
-        is_dm=false;
+        dm->Reset();
     }
 }
 
@@ -130,7 +135,8 @@ void ImageViewer::resetDM(void)
     if(!is_dm_optimization)
     {
         for(int i=0;i<nbAct;i++) current_opt_dm_data[i]=0;
-        dm->Send(current_opt_dm_data);
+        max_metric = 0; // Reset max_metric to restart optimization from the beginning
+        dm->Reset();
     }
 }
 
@@ -369,12 +375,6 @@ void ImageViewer::updateView()
             // Push middle line
             p_fwhm_view->put(&p_image.bits()[p_n_alines/2*(LINE_ARRAY_SIZE/2)]);
         }
-
-        // Optimize DM
-        if(is_dm_optimization)
-        {
-            optimizeDM(p_image);
-        }
     }
         break;
     case ANGIO:
@@ -431,6 +431,12 @@ void ImageViewer::updateView()
     // Set as pixmap
     QLabel::setPixmap(pix.scaled(this->size(),
                                  Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
+
+    // Optimize DM
+    if ((is_dm_optimization && p_current_viewmode == STRUCT) || (is_dm_optimization && p_current_viewmode == ANGIO))
+    {
+        optimizeDM(p_image);
+    }
 }
 
 double ImageViewer::getMetric(QImage image, int metric_number)
@@ -451,7 +457,7 @@ double ImageViewer::getMetric(QImage image, int metric_number)
 
         break;
     }
-    case 2: // Summed intensity of 400 highest pixels
+    case 2: // Summed intensity of 500 highest pixels
     {
         unsigned int idx = 0;
         int end_idx = (p_n_alines-p_n_extra)*(p_stop_line-p_start_line);
@@ -468,7 +474,7 @@ double ImageViewer::getMetric(QImage image, int metric_number)
 
         std::sort(data_vec,&data_vec[end_idx]);
 
-        for (int i = 1; i <= 400; i++)
+        for (int i = 1; i <= 500; i++)
         {
             metric += data_vec[end_idx-i];
         }
@@ -545,7 +551,7 @@ void ImageViewer::optimizeDM(QImage image)
             max_metric = metric;
         }
 
-        if (dm_c >= Z2C[z_idx][98])
+        if (dm_c > Z2C[z_idx][98])
         {
             dm_ouput_file << z_idx << " " << dm_c_max << " " << max_metric << std::endl;
             moveDMandCurrentOpt(z_idx, dm_c_max);
