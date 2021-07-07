@@ -457,7 +457,7 @@ double ImageViewer::getMetric(QImage image, int metric_number)
 
         break;
     }
-    case 2: // Summed intensity of 500 highest pixels
+    case 2: // Summed intensity of 10% highest pixels
     {
         unsigned int idx = 0;
         int end_idx = (p_n_alines-p_n_extra)*(p_stop_line-p_start_line);
@@ -474,7 +474,7 @@ double ImageViewer::getMetric(QImage image, int metric_number)
 
         std::sort(data_vec,&data_vec[end_idx]);
 
-        for (int i = 1; i <= 500; i++)
+        for (int i = 1; i <= round(end_idx*0.1); i++)
         {
             metric += data_vec[end_idx-i];
         }
@@ -545,7 +545,7 @@ void ImageViewer::optimizeDM(QImage image)
 
     if (z_idx <= z_idx_max)
     {
-        if (metric > max_metric)
+        if (metric > max_metric && dm_c > Z2C[z_idx][97]+(Z2C[z_idx][98]-Z2C[z_idx][97])/40*4)
         {
             dm_c_max = dm_c;
             max_metric = metric;
