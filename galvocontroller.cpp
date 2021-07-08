@@ -229,8 +229,8 @@ GalvoController::GalvoController() :
             if (Z2C[row][col] < min_val) min_val = Z2C[row][col];
             col++;
         }
-        Z2C[row][97] = 0.9/min_val;
-        Z2C[row][98] = 0.9/max_val;
+        Z2C[row][97] = 0.5/min_val;
+        Z2C[row][98] = 0.5/max_val;
         row++;
     }
     dm_file.close();

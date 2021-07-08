@@ -109,7 +109,7 @@ void ImageViewer::optimizeDM(void)
         moveDM(z_idx,dm_c);
 
         // Open output file
-        dm_ouput_file.open("D:/dm_optimization_data/dm_data_" + std::to_string(dm_output_file_number) + ".txt");
+        dm_output_file.open("D:/dm_optimization_data/dm_data_" + std::to_string(dm_output_file_number) + ".txt");
         dm_output_file_number++;
     }
 }
@@ -541,7 +541,7 @@ void ImageViewer::moveDMandCurrentOpt(int z_poly, double amp)
 
 void ImageViewer::optimizeDM(QImage image)
 {
-    double metric = getMetric(image,3);
+    double metric = getMetric(image,2);
 
     if (z_idx <= z_idx_max)
     {
@@ -553,14 +553,14 @@ void ImageViewer::optimizeDM(QImage image)
 
         if (dm_c > Z2C[z_idx][98])
         {
-            dm_ouput_file << z_idx << " " << dm_c_max << " " << max_metric << std::endl;
+            dm_output_file << z_idx << " " << dm_c_max << " " << max_metric << std::endl;
             moveDMandCurrentOpt(z_idx, dm_c_max);
             z_idx++;
             dm_c = Z2C[z_idx][97];
             dm_c_max = 0;
         } else
         {
-            dm_ouput_file << z_idx << " " << dm_c << " " << metric << std::endl;
+            dm_output_file << z_idx << " " << dm_c << " " << metric << std::endl;
             dm_c += (Z2C[z_idx][98]-Z2C[z_idx][97])/40;
             moveDM(z_idx, dm_c);
         }
@@ -569,7 +569,7 @@ void ImageViewer::optimizeDM(QImage image)
     {
         // If we get here we finished optimization.
         is_dm_optimization=false;
-        dm_ouput_file.close();
+        dm_output_file.close();
     }
 }
 

@@ -104,7 +104,7 @@ private:
     int z_mode_max;
     int z_idx;
     int z_idx_max;
-    std::ofstream dm_ouput_file;
+    std::ofstream dm_output_file;
     int dm_output_file_number;
     Scalar* dm_data;
     Scalar* current_opt_dm_data;
