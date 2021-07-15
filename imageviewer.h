@@ -102,24 +102,23 @@ private:
     DM *dm;
     float** Z2C;
     int nbAct;
-    int z_mode_min;
-    int z_mode_max;
     int z_idx;
     int z_idx_max;
-    std::ofstream dm_output_file;
-    int dm_output_file_number;
     Scalar* dm_data;
     Scalar* current_opt_dm_data;
-    double max_metric;
-    double dm_c;
-    double dm_c_max;
-    double getMetric(QImage image, int metric_number);
-    void moveDM(int z_poly, double amp);
-    void moveDMandCurrentOpt(int z_poly, double amp);
-    void optimizeDM(QImage image);
+    double dm_metric[50];
+    int dm_idx;
+    int dm_idx_max;
+    int nbElements;
+    double dm_c[50];
     bool is_dm_optimization;
     int p_metric;
     float p_percent;
+    double getMetric(QImage image, int metric_number);
+    void moveDM(double amp);
+    void moveDMandCurrentOpt(double amp);
+    double polyfit();
+    void optimizeDM(QImage image);
 };
 
 #endif // ImageViewer_H

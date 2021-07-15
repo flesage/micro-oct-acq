@@ -2838,10 +2838,10 @@
            <item row="0" column="1">
             <widget class="QSpinBox" name="spinBox_z_mode_min">
              <property name="minimum">
-              <number>1</number>
+              <number>0</number>
              </property>
              <property name="maximum">
-              <number>12</number>
+              <number>95</number>
              </property>
              <property name="singleStep">
               <number>1</number>
@@ -2861,13 +2861,13 @@
            <item row="1" column="1">
             <widget class="QSpinBox" name="spinBox_z_mode_max">
              <property name="minimum">
-              <number>1</number>
+              <number>0</number>
              </property>
              <property name="maximum">
-              <number>12</number>
+              <number>95</number>
              </property>
              <property name="value">
-              <number>4</number>
+              <number>8</number>
              </property>
             </widget>
            </item>

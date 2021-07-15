@@ -10,7 +10,7 @@
 
 ImageViewer::ImageViewer(QWidget *parent, int n_alines, int n_extra, int ny, int view_depth, unsigned int n_repeat, float msec_fwhm, float line_period, float spatial_fwhm,
                          float dimz, float dimx, int factor, DM* in_dm, float** in_zern, int in_n_act, int in_z_mode_min, int in_z_mode_max ) :
-    QLabel(parent), p_ny(ny), p_factor(factor), p_n_repeat(n_repeat), f_fft(n_repeat,factor), p_n_alines(n_alines), p_n_extra(n_extra), p_view_depth(view_depth), dm(in_dm), Z2C(in_zern), nbAct(in_n_act), z_mode_min(in_z_mode_min), z_mode_max(in_z_mode_max)
+    QLabel(parent), p_ny(ny), p_factor(factor), p_n_repeat(n_repeat), f_fft(n_repeat,factor), p_n_alines(n_alines), p_n_extra(n_extra), p_view_depth(view_depth), dm(in_dm), Z2C(in_zern), nbAct(in_n_act), z_idx(in_z_mode_min), z_idx_max(in_z_mode_max)
 {
     p_current_viewmode = STRUCT;
     p_metric = 0;
@@ -71,11 +71,8 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, int n_extra, int ny, int
         current_opt_dm_data[i] = 0;
     }
 
-    // Initialize max_metric
-    max_metric = 0;
-
-    // Intialize dm_output_file_number
-    dm_output_file_number = 0;
+    // Initialize nbElements
+    nbElements = 50;
 }
 
 ImageViewer::~ImageViewer()
@@ -109,22 +106,19 @@ void ImageViewer::optimizeDM(void)
     if(!is_dm_optimization)
     {
         // Set dm optimization flag
-        is_dm_optimization=true;
+        is_dm_optimization = true;
 
-        // Initialize z_idx and z_idx_max
-        z_idx = z_mode_min*(z_mode_min+1)/2-1;
-        z_idx_max = z_mode_max*(z_mode_max+1)/2-1+z_mode_max;
-
-        // Initialize dm_c and dm_c_max
-        dm_c = Z2C[z_idx][97];
-        dm_c_max = 0;
+        // Initialize dm_idx and dm_c
+        dm_idx = 0;
+        dm_idx_max = 0;
+        for(int i = 0; i < nbElements; i++)
+        {
+            dm_c[i] = Z2C[z_idx][97]+(Z2C[z_idx][98]-Z2C[z_idx][97])/nbElements*i;
+            dm_metric[i] = 0;
+        }
 
         // Initialize mirror position
-        moveDM(z_idx,dm_c);
-
-        // Open output file
-        dm_output_file.open("D:/dm_optimization_data/dm_data_" + std::to_string(dm_output_file_number) + ".txt");
-        dm_output_file_number++;
+        moveDM(dm_c[dm_idx]);
     }
 }
 
@@ -149,7 +143,6 @@ void ImageViewer::resetDM(void)
     if(!is_dm_optimization)
     {
         for(int i=0;i<nbAct;i++) current_opt_dm_data[i]=0;
-        max_metric = 0; // Reset max_metric to restart optimization from the beginning
         dm->Reset();
     }
 }
@@ -447,10 +440,15 @@ void ImageViewer::updateView()
                                  Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
 
     // Optimize DM
-    std::cerr << getMetric(p_image,p_metric) << std::endl;
     if ((is_dm_optimization && p_current_viewmode == STRUCT) || (is_dm_optimization && p_current_viewmode == ANGIO))
     {
         optimizeDM(p_image);
+    }
+
+    // Display metric values
+    if (!is_dm_optimization)
+    {
+        std::cerr << getMetric(p_image,p_metric) << std::endl;
     }
 }
 
@@ -517,64 +515,134 @@ double ImageViewer::getMetric(QImage image, int metric_number)
     return metric;
 }
 
-void ImageViewer::moveDM(int z_poly, double amp)
+void ImageViewer::moveDM(double amp)
 {
     if (dm->Check())
     {
         for (int i = 0; i < nbAct; i++)
         {
-            dm_data[i] = amp*Z2C[z_poly][i]+current_opt_dm_data[i];
+            dm_data[i] = amp*Z2C[z_idx][i]+current_opt_dm_data[i];
         }
 
         dm->Send(dm_data);
     }
 }
 
-void ImageViewer::moveDMandCurrentOpt(int z_poly, double amp)
+void ImageViewer::moveDMandCurrentOpt(double amp)
 {
     if (dm->Check())
     {
         for (int i = 0; i < nbAct; i++)
         {
-            current_opt_dm_data[i] = amp*Z2C[z_poly][i]+current_opt_dm_data[i];
+            current_opt_dm_data[i] = amp*Z2C[z_idx][i]+current_opt_dm_data[i];
         }
 
         dm->Send(current_opt_dm_data);
     }
 }
 
+double ImageViewer::polyfit()
+{
+    // sumX = values of sigma(xi^2n)
+    double sumX[5];
+    for(int i = 0; i < 5; i++)
+    {
+        sumX[i] = 0;
+        for(int j = dm_idx_max-3; j < dm_idx_max+3; j++)
+        {
+            sumX[i] += pow(dm_c[j],(float)i);
+        }
+    }
+
+    // sumY = values of sigma(xi^n * yi)
+    double sumY[3];
+    for(int i = 0; i < 3; i++)
+    {
+        sumY[i] = 0;
+        for(int j = dm_idx_max-3; j < dm_idx_max+3; j++)
+        {
+            sumY[i] += pow(dm_c[j],(float)i)*dm_metric[j];
+        }
+    }
+
+    // M = square matrices for Cramer's Rule
+    double M[3][3] = {
+        {sumX[0], sumX[1], sumX[2]},
+        {sumX[1], sumX[2], sumX[3]},
+        {sumX[2], sumX[3], sumX[4]}
+    };
+    double M0[3][3] = {
+        {sumY[0], sumX[1], sumX[2]},
+        {sumY[1], sumX[2], sumX[3]},
+        {sumY[2], sumX[3], sumX[4]}
+    };
+    double M1[3][3] = {
+        {sumX[0], sumY[0], sumX[2]},
+        {sumX[1], sumY[1], sumX[3]},
+        {sumX[2], sumY[2], sumX[4]}
+    };
+    double M2[3][3] = {
+        {sumX[0], sumX[1], sumY[0]},
+        {sumX[1], sumX[2], sumY[1]},
+        {sumX[2], sumX[3], sumY[2]}
+    };
+
+    // Determine the determinants for each M matrix
+    double detM = M[0][0]*M[1][1]*M[2][2] + M[0][1]*M[1][2]*M[2][0] + M[0][2]*M[1][0]*M[2][1] - M[0][2]*M[1][1]*M[2][0] - M[0][1]*M[1][0]*M[2][2] - M[0][0]*M[1][2]*M[2][1];
+    double detM0 = M0[0][0]*M0[1][1]*M0[2][2] + M0[0][1]*M0[1][2]*M0[2][0] + M0[0][2]*M0[1][0]*M0[2][1] - M0[0][2]*M0[1][1]*M0[2][0] - M0[0][1]*M0[1][0]*M0[2][2] - M0[0][0]*M0[1][2]*M0[2][1];
+    double detM1 = M1[0][0]*M1[1][1]*M1[2][2] + M1[0][1]*M1[1][2]*M1[2][0] + M1[0][2]*M1[1][0]*M1[2][1] - M1[0][2]*M1[1][1]*M1[2][0] - M1[0][1]*M1[1][0]*M1[2][2] - M1[0][0]*M1[1][2]*M1[2][1];
+    double detM2 = M2[0][0]*M2[1][1]*M2[2][2] + M2[0][1]*M2[1][2]*M2[2][0] + M2[0][2]*M2[1][0]*M2[2][1] - M2[0][2]*M2[1][1]*M2[2][0] - M2[0][1]*M2[1][0]*M2[2][2] - M2[0][0]*M2[1][2]*M2[2][1];
+
+    // Find the coefficient
+    double coeff[3] = {detM0/detM, detM1/detM, detM2/detM};
+    std::cerr << coeff[0] << " " << coeff[1] << " " << coeff[2] << std::endl;
+
+    // Find the maximum coefficient when dy/dx = 0
+    double max_coeff = -coeff[1]/(2*coeff[2]);
+
+    if((max_coeff < Z2C[z_idx][97]) || (max_coeff > Z2C[z_idx][98]))
+    {
+        max_coeff = 0;
+    }
+
+    return max_coeff;
+}
+
 void ImageViewer::optimizeDM(QImage image)
 {
-    double metric = getMetric(image,p_metric);
+    dm_metric[dm_idx] = getMetric(image,p_metric);
 
     if (z_idx <= z_idx_max)
     {
-        if (metric > max_metric && dm_c > Z2C[z_idx][97]+(Z2C[z_idx][98]-Z2C[z_idx][97])/40*4)
+        if((dm_metric[dm_idx] >= dm_metric[dm_idx_max]) && (dm_idx > 4))
         {
-            dm_c_max = dm_c;
-            max_metric = metric;
+            dm_idx_max = dm_idx;
         }
 
-        if (dm_c > Z2C[z_idx][98])
+        if (dm_idx >= nbElements-1)
         {
-            dm_output_file << z_idx << " " << dm_c_max << " " << max_metric << std::endl;
-            moveDMandCurrentOpt(z_idx, dm_c_max);
+            double dm_c_max = polyfit();
+            std::cerr << z_idx << " " << dm_idx_max << " " << dm_c_max << std::endl;
+            moveDMandCurrentOpt(dm_c_max);
             z_idx++;
-            dm_c = Z2C[z_idx][97];
-            dm_c_max = 0;
+            dm_idx = 0;
+            dm_idx_max = 0;
+            for(int i = 0; i < nbElements; i++)
+            {
+                dm_c[i] = Z2C[z_idx][97]+(Z2C[z_idx][98]-Z2C[z_idx][97])/nbElements*i;
+                dm_metric[i] = 0;
+            }
         } else
         {
-            dm_output_file << z_idx << " " << dm_c << " " << metric << std::endl;
-            dm_c += (Z2C[z_idx][98]-Z2C[z_idx][97])/40;
-            moveDM(z_idx, dm_c);
+            std::cerr << z_idx << " " << dm_c[dm_idx] << " " << dm_metric[dm_idx] << std::endl;
+            dm_idx++;
+            moveDM(dm_c[dm_idx]);
         }
     }
     else
     {
-        // If we get here we finished optimization.
-        is_dm_optimization=false;
-        dm_output_file.close();
-        std::cerr << "DM optimization complete." << std::endl;
+        // If we get here, we finished optimization.
+        is_dm_optimization = false;
     }
 }
 
