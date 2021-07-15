@@ -13,6 +13,8 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, int n_extra, int ny, int
     QLabel(parent), p_ny(ny), p_factor(factor), p_n_repeat(n_repeat), f_fft(n_repeat,factor), p_n_alines(n_alines), p_n_extra(n_extra), p_view_depth(view_depth), dm(in_dm), Z2C(in_zern), nbAct(in_n_act), z_mode_min(in_z_mode_min), z_mode_max(in_z_mode_max)
 {
     p_current_viewmode = STRUCT;
+    p_metric = 0;
+    p_percent = 0.10;
     is_focus_line = false;
     is_optimization = false;
     is_dm_optimization = false;
@@ -88,6 +90,18 @@ ImageViewer::~ImageViewer()
 
     delete [] dm_data;
     delete [] current_opt_dm_data;
+}
+
+void ImageViewer::setMetric(int new_metric)
+{
+    p_metric = new_metric;
+}
+
+void ImageViewer::setPercent(float new_percent)
+{
+    if(new_percent < 1.0) new_percent = 1.0;
+    if(new_percent > 100.0) new_percent = 100.0;
+    p_percent = new_percent/100.0;
 }
 
 void ImageViewer::optimizeDM(void)
@@ -433,6 +447,7 @@ void ImageViewer::updateView()
                                  Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
 
     // Optimize DM
+    std::cerr << getMetric(p_image,p_metric) << std::endl;
     if ((is_dm_optimization && p_current_viewmode == STRUCT) || (is_dm_optimization && p_current_viewmode == ANGIO))
     {
         optimizeDM(p_image);
@@ -445,19 +460,7 @@ double ImageViewer::getMetric(QImage image, int metric_number)
 
     switch(metric_number)
     {
-    case 1: // Summed intensity
-    {
-        for (int i = p_n_extra; i < p_n_alines; i++)
-        {
-            for (int k = p_start_line+1024*i; k < p_stop_line+1024*i; k++)
-            {
-                metric += image.bits()[k];
-            }
-        }
-
-        break;
-    }
-    case 2: // Summed intensity of 10% highest pixels
+    case 0: // Summed intensity
     {
         unsigned int idx = 0;
         int end_idx = (p_n_alines-p_n_extra)*(p_stop_line-p_start_line);
@@ -474,7 +477,7 @@ double ImageViewer::getMetric(QImage image, int metric_number)
 
         std::sort(data_vec,&data_vec[end_idx]);
 
-        for (int i = 1; i <= round(end_idx*0.1); i++)
+        for (int i = 1; i <= round(end_idx*p_percent); i++)
         {
             metric += data_vec[end_idx-i];
         }
@@ -482,10 +485,11 @@ double ImageViewer::getMetric(QImage image, int metric_number)
         delete [] data_vec;
         break;
     }
-    case 3: // Image variance
+    case 1: // Variance
     {
         double mean = 0;
         int size = 0;
+
         for (int i = p_n_extra; i < p_n_alines; i++)
         {
             for (int k = p_start_line+1024*i; k < p_stop_line+1024*i; k++)
@@ -541,7 +545,7 @@ void ImageViewer::moveDMandCurrentOpt(int z_poly, double amp)
 
 void ImageViewer::optimizeDM(QImage image)
 {
-    double metric = getMetric(image,2);
+    double metric = getMetric(image,p_metric);
 
     if (z_idx <= z_idx_max)
     {
@@ -570,6 +574,7 @@ void ImageViewer::optimizeDM(QImage image)
         // If we get here we finished optimization.
         is_dm_optimization=false;
         dm_output_file.close();
+        std::cerr << "DM optimization complete." << std::endl;
     }
 }
 

@@ -59,6 +59,8 @@ public slots:
     void turnDMOff(void);
     void optimizeDM(void);
     void resetDM(void);
+    void setMetric(int);
+    void setPercent(float);
 
 protected:
     virtual void  keyPressEvent(QKeyEvent *event);
@@ -116,6 +118,8 @@ private:
     void moveDMandCurrentOpt(int z_poly, double amp);
     void optimizeDM(QImage image);
     bool is_dm_optimization;
+    int p_metric;
+    float p_percent;
 };
 
 #endif // ImageViewer_H

@@ -33,41 +33,6 @@
       <layout class="QHBoxLayout" name="horizontalLayout_8">
        <item>
         <layout class="QGridLayout" name="gridLayout_5">
-         <item row="1" column="1">
-          <widget class="QPushButton" name="pushButton_center">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-             <horstretch>32</horstretch>
-             <verstretch>32</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>40</width>
-             <height>40</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>40</width>
-             <height>40</height>
-            </size>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset resource="icons.qrc">
-             <normaloff>:/icons/img/home_icon.png</normaloff>:/icons/img/home_icon.png</iconset>
-           </property>
-           <property name="iconSize">
-            <size>
-             <width>32</width>
-             <height>32</height>
-            </size>
-           </property>
-          </widget>
-         </item>
          <item row="1" column="0">
           <widget class="QPushButton" name="pushButton_left">
            <property name="sizePolicy">
@@ -103,12 +68,12 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="1">
-          <widget class="QPushButton" name="pushButton_up">
+         <item row="1" column="1">
+          <widget class="QPushButton" name="pushButton_center">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
              <horstretch>32</horstretch>
-             <verstretch>0</verstretch>
+             <verstretch>32</verstretch>
             </sizepolicy>
            </property>
            <property name="minimumSize">
@@ -128,7 +93,7 @@
            </property>
            <property name="icon">
             <iconset resource="icons.qrc">
-             <normaloff>:/icons/img/arrow_up.png</normaloff>:/icons/img/arrow_up.png</iconset>
+             <normaloff>:/icons/img/home_icon.png</normaloff>:/icons/img/home_icon.png</iconset>
            </property>
            <property name="iconSize">
             <size>
@@ -164,6 +129,41 @@
            <property name="icon">
             <iconset resource="icons.qrc">
              <normaloff>:/icons/img/arrow_right.png</normaloff>:/icons/img/arrow_right.png</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QPushButton" name="pushButton_up">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>32</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>40</width>
+             <height>40</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>40</width>
+             <height>40</height>
+            </size>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="icons.qrc">
+             <normaloff>:/icons/img/arrow_up.png</normaloff>:/icons/img/arrow_up.png</iconset>
            </property>
            <property name="iconSize">
             <size>
@@ -2900,6 +2900,38 @@
             <widget class="QPushButton" name="pushButton_dm_off">
              <property name="text">
               <string>Mirror OFF</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="QComboBox" name="comboBox_dmMetric">
+           <item>
+            <property name="text">
+             <string>Intensity</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Variance</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+         <item>
+          <layout class="QFormLayout" name="formLayout_2">
+           <item row="0" column="0">
+            <widget class="QLabel" name="label_53">
+             <property name="text">
+              <string>Percent Pixels</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLineEdit" name="lineEdit_percent">
+             <property name="text">
+              <string>10</string>
              </property>
             </widget>
            </item>
