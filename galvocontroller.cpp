@@ -984,9 +984,10 @@ void GalvoController::startScan()
         connect(ui->pushButton_dm_on,SIGNAL(clicked()),p_image_view,SLOT(turnDMOn()));
         connect(ui->pushButton_dm_off,SIGNAL(clicked()),p_image_view,SLOT(turnDMOff()));
         connect(ui->pushButton_reset_dm,SIGNAL(clicked()),p_image_view,SLOT(resetDM()));
-        connect(ui->comboBox_dmMetric,SIGNAL(activated(int)),p_image_view,SLOT(setMetric(int)));
-        float percent = ui->lineEdit_percent->text().toFloat();
-        p_image_view->setPercent(percent);
+        int set_metric = ui->comboBox_dmMetric->currentIndex();
+        p_image_view->setMetric(set_metric);
+        double set_percent = ui->doubleSpinBox_percent->text().toDouble();
+        p_image_view->setPercent(set_percent);
 
 
 

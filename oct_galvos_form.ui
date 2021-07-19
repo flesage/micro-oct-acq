@@ -2917,6 +2917,11 @@
              <string>Variance</string>
             </property>
            </item>
+           <item>
+            <property name="text">
+             <string>Entropy</string>
+            </property>
+           </item>
           </widget>
          </item>
          <item>
@@ -2929,9 +2934,18 @@
             </widget>
            </item>
            <item row="0" column="1">
-            <widget class="QLineEdit" name="lineEdit_percent">
-             <property name="text">
-              <string>10</string>
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_percent">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="maximum">
+              <double>100.000000000000000</double>
+             </property>
+             <property name="singleStep">
+              <double>1.000000000000000</double>
+             </property>
+             <property name="value">
+              <double>10.000000000000000</double>
              </property>
             </widget>
            </item>

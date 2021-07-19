@@ -13,12 +13,10 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, int n_extra, int ny, int
     QLabel(parent), p_ny(ny), p_factor(factor), p_n_repeat(n_repeat), f_fft(n_repeat,factor), p_n_alines(n_alines), p_n_extra(n_extra), p_view_depth(view_depth), dm(in_dm), Z2C(in_zern), nbAct(in_n_act), z_idx(in_z_mode_min), z_idx_max(in_z_mode_max)
 {
     p_current_viewmode = STRUCT;
-    p_metric = 0;
-    p_percent = 0.10;
     is_focus_line = false;
     is_optimization = false;
     is_dm_optimization = false;
-    p_image_threshold =0.001f;
+    p_image_threshold = 0.001f;
     p_hanning_threshold = 1e-6f;
     f_fft.init(LINE_ARRAY_SIZE,p_n_alines,dimz, dimx);
     f_fft.init_doppler(msec_fwhm,line_period,spatial_fwhm);
@@ -94,7 +92,7 @@ void ImageViewer::setMetric(int new_metric)
     p_metric = new_metric;
 }
 
-void ImageViewer::setPercent(float new_percent)
+void ImageViewer::setPercent(double new_percent)
 {
     if(new_percent < 1.0) new_percent = 1.0;
     if(new_percent > 100.0) new_percent = 100.0;
@@ -458,7 +456,7 @@ double ImageViewer::getMetric(QImage image, int metric_number)
 
     switch(metric_number)
     {
-    case 0: // Summed intensity
+    case 0: // Intensity
     {
         unsigned int idx = 0;
         int end_idx = (p_n_alines-p_n_extra)*(p_stop_line-p_start_line);
@@ -508,6 +506,42 @@ double ImageViewer::getMetric(QImage image, int metric_number)
         }
 
         metric /= size;
+        break;
+    }
+    case 2: // Entropy
+    {
+        unsigned int idx = 0;
+        int total = (p_n_alines-p_n_extra)*(p_stop_line-p_start_line);
+        int nbBins = round(sqrt(total));
+        unsigned char* data_vec = new unsigned char[total];
+
+        for (int i = p_n_extra; i < p_n_alines; i++)
+        {
+            for (int k = p_start_line+1024*i; k < p_stop_line+1024*i; k++)
+            {
+                data_vec[idx] = image.bits()[k];
+                idx++;
+            }
+        }
+
+        std::sort(data_vec,&data_vec[total]);
+
+        double *bin = new double[nbBins];
+
+        for(int i = 0; i < nbBins; i++)
+        {
+            bin[i] = 0.0;
+            for (int j = 0; j < total; j++)
+            {
+                unsigned char min = data_vec[0]+((data_vec[total-1]-data_vec[0])/nbBins)*i;
+                unsigned char max = data_vec[0]+((data_vec[total-1]-data_vec[0])/nbBins)*(i+1);
+                if((data_vec[j] >= min) && (data_vec[j] < max)) bin[i]++;
+            }
+            if(bin[i] > 0) metric -= (bin[i]/total)*log2(bin[i]/total);
+        }
+
+        delete[] bin;
+        delete [] data_vec;
         break;
     }
     }
@@ -599,11 +633,6 @@ double ImageViewer::polyfit()
 
     // Find the maximum coefficient when dy/dx = 0
     double max_coeff = -coeff[1]/(2*coeff[2]);
-
-    if((max_coeff < Z2C[z_idx][97]) || (max_coeff > Z2C[z_idx][98]))
-    {
-        max_coeff = 0;
-    }
 
     return max_coeff;
 }
