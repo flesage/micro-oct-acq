@@ -103,10 +103,12 @@ private:
     float** Z2C;
     int nbAct;
     int z_idx;
-    int z_idx_max;
+    int z_mode_min;
+    int z_mode_max;
     Scalar* dm_data;
     Scalar* current_opt_dm_data;
     double dm_metric[50];
+    double dm_max_metric;
     int dm_idx;
     int dm_idx_max;
     int nbElements;
