@@ -168,7 +168,8 @@ GalvoController::GalvoController() :
     flagMotor=0;
 
     double* tmp=new double[LINE_ARRAY_SIZE];
-    FILE* fp=fopen("C:\\Users\\Public\\Documents\\dispersion_compensation_10x.dat","rb");
+    FILE* fp;
+    fopen_s(&fp,"C:\\Users\\Public\\Documents\\dispersion_compensation_10x.dat","rb");
     if(fp == 0)
     {
         std::cerr << "No Dispersion Compensation File Found for 10x Objective" << std::endl;
@@ -181,7 +182,7 @@ GalvoController::GalvoController() :
         for(int i=0;i<LINE_ARRAY_SIZE;i++) p_disp_comp_vec_10x[i]=(float) tmp[i];
         fclose(fp);
     }
-    fp=fopen("C:\\Users\\Public\\Documents\\dispersion_compensation_25x.dat","rb");
+    fopen_s(&fp,"C:\\Users\\Public\\Documents\\dispersion_compensation_25x.dat","rb");
     if(fp == 0)
     {
         std::cerr << "No Dispersion Compensation File Found for 25x Objective" << std::endl;
@@ -196,13 +197,10 @@ GalvoController::GalvoController() :
     }
     delete [] tmp;
 
-    // Open the mirror and set to zero
     std::string serialName ("BAX351");
     dm = new DM(serialName.c_str());
-    nbAct = (int) dm->Get("NbOfActuator");
     dm->Reset();
 
-    // Open CSV file
     std::ifstream dm_file;
     dm_file.open("C:/Program Files/Alpao/SDK/Config/BAX351-Z2C.csv");
     if (!dm_file.is_open())
@@ -211,7 +209,6 @@ GalvoController::GalvoController() :
         exit(1);
     }
 
-    // Access Zernike polynomials
     Z2C = new float*[96];
     std::string line, column;
     int row = 0;
@@ -594,18 +591,12 @@ void GalvoController::updateInfo(void)
     float lat_sampling=width/nx;
     float interFrameTime=1/line_rate*1000;
     QString tmp;
-    //tmp.sprintf("Current time per pix.:\t%5.2f us\n",time_per_pix);
-    text = text+tmp;
-    //tmp.sprintf("Current exposure:\t%5.2f us\n",exposure);
-    text=text+tmp;
-    //tmp.sprintf("Beam speed in x:\t%5.2f mm/sec\n",speed_x);
-    text=text+tmp;
-    //tmp.sprintf("Lateral sampling in x:\t%5.3f um/pix\n",lat_sampling);
-    text=text+tmp;
-    //tmp.sprintf("Inter B-scan time in x:\t%5.3f ms\n",interFrameTime);
-    text=text+tmp;
-    //tmp.sprintf("Linelength:\t\t%5.3f um\n",p_line_length);
-    text=text+tmp;
+    text = text+QString("Current time per pix.:\t%1 us\n").arg(time_per_pix);
+    text=text+QString("Current exposure:\t\t%1 us\n").arg(exposure);
+    text=text+QString("Beam speed in x:\t\t%1 mm/sec\n").arg(speed_x);
+    text=text+QString("Lateral sampling in x:\t%1 um/pix\n").arg(lat_sampling);
+    text=text+QString("Inter B-scan time in x:\t%1 ms\n").arg(interFrameTime);
+    text=text+QString("Linelength:\t\t%1 um\n").arg(p_line_length);
 
 
 
@@ -775,9 +766,9 @@ void GalvoController::startScan()
     bool show_line_flag=ui->checkBox_view_line->isChecked();
     bool finite_acq_flag=ui->checkBox_finite_acq->isChecked();
 
-    // Initialize z_mode
-    z_mode_min = ui->spinBox_z_mode_min->text().toInt();
-    z_mode_max = ui->spinBox_z_mode_max->text().toInt();
+    // Initialize Zernike modes
+    z_min = ui->spinBox_z_mode_min->text().toInt();
+    z_max = ui->spinBox_z_mode_max->text().toInt();
 
     // Only go here on first call if we do multiple volumes
     if (finite_acq_flag)
@@ -967,7 +958,7 @@ void GalvoController::startScan()
         float line_period = 1.0f/line_rate/(nx+n_extra);
         float dimx = width/nx;
         float dimz = 3.5;
-        p_image_view = new ImageViewer(0,nx+n_extra,n_extra,ny, view_depth,n_repeat, hpf_time_constant,line_period,spatial_kernel_size,dimz,dimx,factor,dm,Z2C,nbAct,z_mode_min,z_mode_max);
+        p_image_view = new ImageViewer(0,nx+n_extra,n_extra,ny, view_depth,n_repeat, hpf_time_constant,line_period,spatial_kernel_size,dimz,dimx,factor,dm,Z2C,z_min,z_max);
         p_image_view->updateHanningThreshold(ui->lineEdit_hanningeps->text().toFloat());
         p_image_view->updateImageThreshold(ui->lineEdit_logeps->text().toFloat());
         p_image_view->updateAngioAlgo(ui->comboBox_angio->currentIndex());
@@ -1281,7 +1272,7 @@ void GalvoController::readCoeffTxt(void)
     p_coeff_y_quad=fields.at(4).toFloat();
     p_coeff_yyx=fields.at(5).toFloat();
 
-    QFile fileCoeff("C:\git-projects\micro-oct-acq-angiolive/userCoefficients.txt");
+    QFile fileCoeff("C:/git-projects/micro-oct-acq-angiolive/userCoefficients.txt");
     if (!fileCoeff.open(QIODevice::ReadOnly | QIODevice::Text))
         return;
     QTextStream inCoeff(&fileCoeff);

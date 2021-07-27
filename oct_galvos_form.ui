@@ -2,14 +2,6 @@
 <ui version="4.0">
  <class>OCTGalvosForm</class>
  <widget class="QWidget" name="OCTGalvosForm">
-  <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>771</width>
-    <height>1090</height>
-   </rect>
-  </property>
   <property name="sizePolicy">
    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
     <horstretch>0</horstretch>
@@ -432,7 +424,7 @@
                 </size>
                </property>
                <property name="text">
-                <string>400</string>
+                <string>800</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -1410,17 +1402,17 @@
                </property>
                <item>
                 <property name="text">
+                 <string>Variance</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
                  <string>Phase Insensitive</string>
                 </property>
                </item>
                <item>
                 <property name="text">
                  <string>Phase Sensitive</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Variance</string>
                 </property>
                </item>
                <item>

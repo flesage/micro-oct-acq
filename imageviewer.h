@@ -32,7 +32,7 @@ class ImageViewer : public QLabel
     Q_OBJECT
 public:
     explicit ImageViewer(QWidget *parent = 0, int n_alines = 100, int n_extra = 40, int ny=1, int view_depth=512, unsigned int n_repeat=1, float msec_fwhm=0.0002, float spatial_fwhm=3.5,
-                         float line_period=0.01, float dimz=3.5, float dimx=3.5, int factor=1, DM* in_dm=0, float** in_zern=0, int in_n_act=0, int in_z_mode_min=2, int in_z_mode_max=4 );
+                         float line_period=0.01, float dimz=3.5, float dimx=3.5, int factor=1, DM* in_dm=0, float** in_zern=0, int in_z_min=2, int in_z_max=13 );
     virtual ~ImageViewer();
     virtual int heightForWidth( int width ) const;
     virtual QSize sizeHint() const;
@@ -101,24 +101,21 @@ private:
 
     DM *dm;
     float** Z2C;
-    int nbAct;
     int z_idx;
-    int z_mode_min;
-    int z_mode_max;
+    int z_min;
+    int z_max;
     Scalar* dm_data;
-    Scalar* current_opt_dm_data;
+    Scalar* dm_current_opt;
     double dm_metric[50];
-    double dm_max_metric;
+    double dm_metric_max;
     int dm_idx;
     int dm_idx_max;
-    int nbElements;
     double dm_c[50];
     bool is_dm_optimization;
     int p_metric;
     double p_percent;
     double getMetric(QImage image, int metric_number);
-    void moveDM(double amp);
-    void moveDMandCurrentOpt(double amp);
+    void moveDM(Scalar* data, double amp);
     double polyfit();
     void optimizeDM(QImage image);
 };

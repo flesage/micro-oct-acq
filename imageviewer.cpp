@@ -9,8 +9,8 @@
 #include "arrayfire.h"
 
 ImageViewer::ImageViewer(QWidget *parent, int n_alines, int n_extra, int ny, int view_depth, unsigned int n_repeat, float msec_fwhm, float line_period, float spatial_fwhm,
-                         float dimz, float dimx, int factor, DM* in_dm, float** in_zern, int in_n_act, int in_z_mode_min, int in_z_mode_max ) :
-    QLabel(parent), p_ny(ny), p_factor(factor), p_n_repeat(n_repeat), f_fft(n_repeat,factor), p_n_alines(n_alines), p_n_extra(n_extra), p_view_depth(view_depth), dm(in_dm), Z2C(in_zern), nbAct(in_n_act), z_mode_min(in_z_mode_min), z_mode_max(in_z_mode_max)
+                         float dimz, float dimx, int factor, DM* in_dm, float** in_zern, int in_z_min, int in_z_max ) :
+    QLabel(parent), p_n_alines(n_alines), p_ny(ny), p_factor(factor), p_n_repeat(n_repeat), p_n_extra(n_extra), f_fft(n_repeat,factor), p_view_depth(view_depth), dm(in_dm), Z2C(in_zern), z_min(in_z_min), z_max(in_z_max)
 {
     p_current_viewmode = STRUCT;
     is_focus_line = false;
@@ -32,9 +32,6 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, int n_extra, int ny, int
 
     p_angio_averageFlag = false;
     p_angio_view->setAverageFlag(p_angio_averageFlag);
-
-
-
 
     p_line_status = false;
     p_start_line = 0;
@@ -59,18 +56,13 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, int n_extra, int ny, int
     }
     p_doppler_image.setColorTable(dop_color_table);
 
-
-    // Initialize dm_data
     dm_data = new Scalar[97];
-    current_opt_dm_data = new Scalar[97];
-    for (int i = 0; i < nbAct; i++)
+    dm_current_opt = new Scalar[97];
+    for (int i = 0; i < 97; i++)
     {
         dm_data[i] = 0;
-        current_opt_dm_data[i] = 0;
+        dm_current_opt[i] = 0;
     }
-
-    // Initialize nbElements
-    nbElements = 50;
 }
 
 ImageViewer::~ImageViewer()
@@ -84,7 +76,7 @@ ImageViewer::~ImageViewer()
     delete p_angio_view;
 
     delete [] dm_data;
-    delete [] current_opt_dm_data;
+    delete [] dm_current_opt;
 }
 
 void ImageViewer::setMetric(int new_metric)
@@ -103,22 +95,18 @@ void ImageViewer::optimizeDM(void)
 {
     if(!is_dm_optimization)
     {
-        // Set dm optimization flag
         is_dm_optimization = true;
 
-        // Initialize variables
-        z_idx = z_mode_min;
+        z_idx = z_min;
         dm_idx = 0;
         dm_idx_max = 0;
-        dm_max_metric = 0;
-        for(int i = 0; i < nbElements; i++)
+        for(int i = 0; i < 50; i++)
         {
-            dm_c[i] = Z2C[z_idx][97]+(Z2C[z_idx][98]-Z2C[z_idx][97])/nbElements*i;
+            dm_c[i] = Z2C[z_idx][97]+(Z2C[z_idx][98]-Z2C[z_idx][97])/50*i;
             dm_metric[i] = 0;
         }
 
-        // Initialize mirror position
-        moveDM(dm_c[dm_idx]);
+        moveDM(dm_data,dm_c[dm_idx]);
     }
 }
 
@@ -126,7 +114,7 @@ void ImageViewer::turnDMOn(void)
 {
     if(!is_dm_optimization)
     {
-        dm->Send(current_opt_dm_data);
+        dm->Send(dm_current_opt);
     }
 }
 
@@ -142,7 +130,8 @@ void ImageViewer::resetDM(void)
 {
     if(!is_dm_optimization)
     {
-        for(int i=0;i<nbAct;i++) current_opt_dm_data[i]=0;
+        for(int i = 0; i < 97; i++) dm_current_opt[i] = 0;
+        dm_metric_max = 0;
         dm->Reset();
     }
 }
@@ -439,31 +428,23 @@ void ImageViewer::updateView()
     QLabel::setPixmap(pix.scaled(this->size(),
                                  Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
 
-    // Optimize DM
     if ((is_dm_optimization && p_current_viewmode == STRUCT) || (is_dm_optimization && p_current_viewmode == ANGIO))
     {
         optimizeDM(p_image);
-    }
-
-    // Display metric values
-    if (!is_dm_optimization)
-    {
-        std::cerr << getMetric(p_image,p_metric) << std::endl;
     }
 }
 
 double ImageViewer::getMetric(QImage image, int metric_number)
 {
     double metric = 0;
+    unsigned int idx = 0;
+    int end_idx = (p_n_alines-p_n_extra)*(p_stop_line-p_start_line);
+    unsigned char* data_vec = new unsigned char[end_idx];
 
     switch(metric_number)
     {
     case 0: // Intensity
     {
-        unsigned int idx = 0;
-        int end_idx = (p_n_alines-p_n_extra)*(p_stop_line-p_start_line);
-        unsigned char* data_vec = new unsigned char[end_idx];
-
         for (int i = p_n_extra; i < p_n_alines; i++)
         {
             for (int k = p_start_line+1024*i; k < p_stop_line+1024*i; k++)
@@ -480,42 +461,35 @@ double ImageViewer::getMetric(QImage image, int metric_number)
             metric += data_vec[end_idx-i];
         }
 
-        delete [] data_vec;
         break;
     }
     case 1: // Variance
     {
         double mean = 0;
-        int size = 0;
 
         for (int i = p_n_extra; i < p_n_alines; i++)
         {
             for (int k = p_start_line+1024*i; k < p_stop_line+1024*i; k++)
             {
-                mean += image.bits()[k];
-                size++;
+                data_vec[idx]= image.bits()[k];
+                mean += data_vec[idx];
+                idx++;
             }
         }
 
-        mean /= size;
+        mean /= end_idx;
 
-        for (int i = p_n_extra; i < p_n_alines; i++)
+        for (int i = 0; i < end_idx; i++)
         {
-            for (int k = p_start_line+1024*i; k < p_stop_line+1024*i; k++)
-            {
-                metric += pow(image.bits()[k]-mean,2);
-            }
+            metric += pow(data_vec[i]-mean,2);
         }
 
-        metric /= size;
+        metric /= end_idx;
         break;
     }
     case 2: // Entropy
     {
-        unsigned int idx = 0;
-        int total = (p_n_alines-p_n_extra)*(p_stop_line-p_start_line);
-        int nbBins = round(sqrt(total));
-        unsigned char* data_vec = new unsigned char[total];
+        int nbBins = round(sqrt(end_idx));
 
         for (int i = p_n_extra; i < p_n_alines; i++)
         {
@@ -526,54 +500,41 @@ double ImageViewer::getMetric(QImage image, int metric_number)
             }
         }
 
-        std::sort(data_vec,&data_vec[total]);
+        std::sort(data_vec,&data_vec[end_idx]);
 
         double *bin = new double[nbBins];
 
         for(int i = 0; i < nbBins; i++)
         {
             bin[i] = 0.0;
-            for (int j = 0; j < total; j++)
+            for (int j = 0; j < end_idx; j++)
             {
-                unsigned char min = data_vec[0]+((data_vec[total-1]-data_vec[0])/nbBins)*i;
-                unsigned char max = data_vec[0]+((data_vec[total-1]-data_vec[0])/nbBins)*(i+1);
+                unsigned char min = data_vec[0]+((data_vec[end_idx-1]-data_vec[0])/nbBins)*i;
+                unsigned char max = data_vec[0]+((data_vec[end_idx-1]-data_vec[0])/nbBins)*(i+1);
                 if((data_vec[j] >= min) && (data_vec[j] < max)) bin[i]++;
             }
-            if(bin[i] > 0) metric -= (bin[i]/total)*log2(bin[i]/total);
+            if(bin[i] > 0) metric -= (bin[i]/end_idx)*log2(bin[i]/end_idx);
         }
 
         delete[] bin;
-        delete [] data_vec;
         break;
     }
     }
 
+    delete [] data_vec;
     return metric;
 }
 
-void ImageViewer::moveDM(double amp)
+void ImageViewer::moveDM(Scalar* data, double amp)
 {
     if (dm->Check())
     {
-        for (int i = 0; i < nbAct; i++)
+        for (int i = 0; i < 97; i++)
         {
-            dm_data[i] = amp*Z2C[z_idx][i]+current_opt_dm_data[i];
+            data[i] = amp*Z2C[z_idx][i]+dm_current_opt[i];
         }
 
-        dm->Send(dm_data);
-    }
-}
-
-void ImageViewer::moveDMandCurrentOpt(double amp)
-{
-    if (dm->Check())
-    {
-        for (int i = 0; i < nbAct; i++)
-        {
-            current_opt_dm_data[i] = amp*Z2C[z_idx][i]+current_opt_dm_data[i];
-        }
-
-        dm->Send(current_opt_dm_data);
+        dm->Send(data);
     }
 }
 
@@ -583,7 +544,6 @@ double ImageViewer::polyfit()
 
     if (dm_idx_max != 0)
     {
-        // sumX = values of sigma(xi^2n)
         double sumX[5];
         for(int i = 0; i < 5; i++)
         {
@@ -594,7 +554,6 @@ double ImageViewer::polyfit()
             }
         }
 
-        // sumY = values of sigma(xi^n * yi)
         double sumY[3];
         for(int i = 0; i < 3; i++)
         {
@@ -605,7 +564,6 @@ double ImageViewer::polyfit()
             }
         }
 
-        // M = square matrices for Cramer's Rule
         double M[3][3] = {
             {sumX[0], sumX[1], sumX[2]},
             {sumX[1], sumX[2], sumX[3]},
@@ -627,16 +585,13 @@ double ImageViewer::polyfit()
             {sumX[2], sumX[3], sumY[2]}
         };
 
-        // Determine the determinants for each M matrix
         double detM = M[0][0]*M[1][1]*M[2][2] + M[0][1]*M[1][2]*M[2][0] + M[0][2]*M[1][0]*M[2][1] - M[0][2]*M[1][1]*M[2][0] - M[0][1]*M[1][0]*M[2][2] - M[0][0]*M[1][2]*M[2][1];
         double detM0 = M0[0][0]*M0[1][1]*M0[2][2] + M0[0][1]*M0[1][2]*M0[2][0] + M0[0][2]*M0[1][0]*M0[2][1] - M0[0][2]*M0[1][1]*M0[2][0] - M0[0][1]*M0[1][0]*M0[2][2] - M0[0][0]*M0[1][2]*M0[2][1];
         double detM1 = M1[0][0]*M1[1][1]*M1[2][2] + M1[0][1]*M1[1][2]*M1[2][0] + M1[0][2]*M1[1][0]*M1[2][1] - M1[0][2]*M1[1][1]*M1[2][0] - M1[0][1]*M1[1][0]*M1[2][2] - M1[0][0]*M1[1][2]*M1[2][1];
         double detM2 = M2[0][0]*M2[1][1]*M2[2][2] + M2[0][1]*M2[1][2]*M2[2][0] + M2[0][2]*M2[1][0]*M2[2][1] - M2[0][2]*M2[1][1]*M2[2][0] - M2[0][1]*M2[1][0]*M2[2][2] - M2[0][0]*M2[1][2]*M2[2][1];
 
-        // Find the coefficient
         double coeff[3] = {detM0/detM, detM1/detM, detM2/detM};
 
-        // Find the maximum coefficient when dy/dx = 0
         max_coeff = -coeff[1]/(2*coeff[2]);
     }
 
@@ -647,32 +602,32 @@ void ImageViewer::optimizeDM(QImage image)
 {
     dm_metric[dm_idx] = getMetric(image,p_metric);
 
-    if (z_idx <= z_mode_max)
+    if (z_idx <= z_max)
     {
-        if((dm_metric[dm_idx] >= dm_max_metric) && (dm_idx > 4))
+        if((dm_metric[dm_idx] >= dm_metric_max) && (dm_idx > 4))
         {
             dm_idx_max = dm_idx;
-            dm_max_metric = dm_metric[dm_idx_max];
+            dm_metric_max = dm_metric[dm_idx_max];
         }
 
-        if (dm_idx >= nbElements-1)
+        if (dm_idx >= 49)
         {
             double dm_c_max = polyfit();
-            std::cerr << dm_c_max << std::endl;
-            moveDMandCurrentOpt(dm_c_max);
+            std::cerr << z_idx << " " << dm_c_max << " " << dm_metric_max << std::endl;
+            moveDM(dm_current_opt,dm_c_max);
             z_idx++;
             dm_idx = 0;
             dm_idx_max = 0;
-            for(int i = 0; i < nbElements; i++)
+            for(int i = 0; i < 50; i++)
             {
-                dm_c[i] = Z2C[z_idx][97]+(Z2C[z_idx][98]-Z2C[z_idx][97])/nbElements*i;
+                dm_c[i] = Z2C[z_idx][97]+(Z2C[z_idx][98]-Z2C[z_idx][97])/50*i;
                 dm_metric[i] = 0;
             }
         } else
         {
             std::cerr << z_idx << " " << dm_c[dm_idx] << " " << dm_metric[dm_idx] << std::endl;
             dm_idx++;
-            moveDM(dm_c[dm_idx]);
+            moveDM(dm_data,dm_c[dm_idx]);
         }
     }
     else

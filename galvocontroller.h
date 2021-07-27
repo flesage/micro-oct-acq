@@ -155,10 +155,9 @@ private:
     float* p_disp_comp_vec_25x;
 
     DM *dm;
-    int nbAct;
     float** Z2C;
-    int z_mode_min;
-    int z_mode_max;
+    int z_min;
+    int z_max;
 };
 
 
