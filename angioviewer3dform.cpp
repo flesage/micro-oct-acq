@@ -113,6 +113,7 @@ void AngioViewer3DForm::put(const af::array& data, unsigned int frame_number)
 void AngioViewer3DForm::changeDepth(int depth)
 {
     p_current_depth = depth;
+    ui->depth_label->setText(QString::number(depth));
 }
 
 void AngioViewer3DForm::changeSliceThickness()

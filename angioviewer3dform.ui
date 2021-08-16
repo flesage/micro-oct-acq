@@ -50,6 +50,20 @@
        </property>
       </widget>
      </item>
+     <item>
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string> Depth (Pixels): </string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="depth_label">
+       <property name="text">
+        <string>0</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
   </layout>
