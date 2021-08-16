@@ -100,6 +100,7 @@ void ImageViewer::optimizeDM(void)
         z_idx = z_min;
         dm_idx = 0;
         dm_idx_max = 0;
+        dm_metric_max = getMetric(p_image,p_metric);
         for(int i = 0; i < 50; i++)
         {
             dm_c[i] = Z2C[z_idx][97]+(Z2C[z_idx][98]-Z2C[z_idx][97])/50*i;
