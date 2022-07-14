@@ -546,26 +546,22 @@ void GalvoController::updateInfo(void)
     float lat_sampling=width/nx;
     float interFrameTime=1/line_rate*1000;
     QString tmp;
-    tmp.sprintf("Current time per pix.:\t%5.2f us\n",time_per_pix);
-    text = text+tmp;
-    tmp.sprintf("Current exposure:\t%5.2f us\n",exposure);
-    text=text+tmp;
-    tmp.sprintf("Beam speed in x:\t%5.2f mm/sec\n",speed_x);
-    text=text+tmp;
-    tmp.sprintf("Lateral sampling in x:\t%5.3f um/pix\n",lat_sampling);
-    text=text+tmp;
-    tmp.sprintf("Inter B-scan time in x:\t%5.3f ms\n",interFrameTime);
-    text=text+tmp;
-    tmp.sprintf("Linelength:\t\t%5.3f um\n",p_line_length);
-    text=text+tmp;
+    text = text+QString("Current time per pix.:\t%1 us\n").arg(time_per_pix,5,'f',2);
+
+    text=text+QString("Beam speed in x:\t%1 mm/sec\n").arg(speed_x,5,'f',2);
+
+    text=text+QString("Lateral sampling in x:\t%1 um/pix\n").arg(lat_sampling,5,'f',3);
+
+    text=text+QString("Inter B-scan time in x:\t%1 ms\n").arg(interFrameTime,5,'f',3);
+
+    text=text+QString("Linelength:\t\t%1 um\n").arg(p_line_length,5,'f',3);
 
 
 
 
     if (time_per_pix < 0.9*exposure)
     {
-        tmp.sprintf("WARNING: \nINTEGRATION TIME HIGHER THAN TIME\nPER PIXEL!!!\n");
-        text=text+tmp;
+        text=text+QString("WARNING: \nINTEGRATION TIME HIGHER THAN TIME\nPER PIXEL!!!\n");
     }
     ui->label_info->setText(text);
 }
@@ -654,7 +650,7 @@ void GalvoController::checkPath()
             if (pathToData.exists())
             {
                 QString numberStr;
-                numberStr.sprintf("%03d", counter);
+                numberStr=QString("%1").arg(counter,3);
                 newfolderName = folderName+"_"+numberStr;
                 pathToData = QDir::cleanPath(dataDir + QDir::separator() + newfolderName +QDir::separator());
                 counter++;
@@ -667,7 +663,7 @@ void GalvoController::checkPath()
                     std::cout<<"in line update"<<std::endl;
                     p_line_number_str = readLineNumber();
                     QString linenumber;
-                    linenumber.sprintf("%03d", p_line_number_str.toInt());
+                    linenumber=QString("%1").arg(p_line_number_str.toInt(),3);
                     newfolderName = folderName+"_"+linenumber;
                     ui->lineEdit_datasetname->setText(newfolderName);
                 }
@@ -849,41 +845,40 @@ void GalvoController::startScan()
 
 
         QString info;
-        QString tmp;
-        info.sprintf("nx: %d\n",nx);
-        info=info+tmp.sprintf("ny: %d\n",ny);
-        info=info+tmp.sprintf("n_repeat: %d\n",n_repeat);
+        QString tmp = QString("nx: %1\n").arg(nx);
+        info=info+QString("ny: %1\n").arg(ny);
+        info=info+QString("n_repeat: %1\n").arg(n_repeat);
         if (ui->comboBox_scantype->currentText() == "Line")
         {
-            info=info+tmp.sprintf("width: %f\n",p_line_length);
+            info=info+QString("width: %1\n").arg(p_line_length);
         }
         else
         {
-            info=info+tmp.sprintf("width: %f\n",width);
+            info=info+QString("width: %1\n").arg(width);
         }
-        info=info+tmp.sprintf("height: %f\n",height);
-        info=info+tmp.sprintf("n_extra: %d\n",n_extra);
-        info=info+tmp.sprintf("line_rate: %f\n",line_rate);
-        info=info+tmp.sprintf("exposure: %f\n",exposure);
-        info=info+tmp.sprintf("alinerepeat: %d\n",aline_repeat);
+        info=info+QString("height: %1\n").arg(height);
+        info=info+QString("n_extra: %1\n").arg(n_extra);
+        info=info+QString("line_rate: %1\n").arg(line_rate);
+        info=info+QString("exposure: %1\n").arg(exposure);
+        info=info+QString("alinerepeat: %1\n").arg(aline_repeat);
         info=info+"scantype: "+ui->comboBox_scantype->currentText()+"\n";
-        info=info+tmp.sprintf("center_x: %f\n",p_center_x);
-        info=info+tmp.sprintf("center_y: %f\n",p_center_y);
-        info=info+tmp.sprintf("offset_x: %f\n",p_offset_x);
-        info=info+tmp.sprintf("offset_y: %f\n",p_offset_y);
-        info=info+tmp.sprintf("coeff_x: %f\n",p_coeff_x);
-        info=info+tmp.sprintf("coeff_y: %f\n",p_coeff_y);
+        info=info+QString("center_x: %1\n").arg(p_center_x);
+        info=info+QString("center_y: %1\n").arg(p_center_y);
+        info=info+QString("offset_x: %1\n").arg(p_offset_x);
+        info=info+QString("offset_y: %1\n").arg(p_offset_y);
+        info=info+QString("coeff_x: %1\n").arg(p_coeff_x);
+        info=info+QString("coeff_y: %1\n").arg(p_coeff_y);
 
         QString objective = ui->comboBox_objective->currentText();
-        info=info+tmp.sprintf("objective: %s\n",objective.toUtf8().constData());
+        info=info+QString("objective: %1\n").arg(objective.toUtf8().constData());
 
         if (ui->checkBox_adjustLength->isChecked())
         {
-            info=info+tmp.sprintf("start_line_x: %f\n",p_start_line_x);
-            info=info+tmp.sprintf("stop_line_x: %f\n",p_stop_line_x);
-            info=info+tmp.sprintf("start_line_y: %f\n",p_start_line_y);
-            info=info+tmp.sprintf("stop_line_y: %f\n",p_stop_line_y);
-            info=info+tmp.sprintf("line_length: %f\n",p_line_length);
+            info=info+QString("start_line_x: %1\n").arg(p_start_line_x);
+            info=info+QString("stop_line_x: %1\n").arg(p_stop_line_x);
+            info=info+QString("start_line_y: %1\n").arg(p_start_line_y);
+            info=info+QString("stop_line_y: %1\n").arg(p_stop_line_y);
+            info=info+QString("line_length: %1\n").arg(p_line_length);
         }
 
 
@@ -1036,9 +1031,8 @@ void GalvoController::stopScan()
         if (show_line_flag)
         {
             QString info;
-            QString tmp;
-            info.sprintf("start_line: %d\n",p_start_viewline);
-            info=info+tmp.sprintf("stop_line: %d\n",p_stop_viewline);
+            QString tmp=QString("start_line: %1\n").arg(p_start_viewline);
+            info=info+QString("stop_line: %1\n").arg(p_stop_viewline);
             p_data_saver->addInfo(info);
             p_data_saver->writeInfoFile();
         }

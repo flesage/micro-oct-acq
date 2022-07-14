@@ -295,7 +295,7 @@ void FringeFFT::read_interp_matrix()
     // Read matrix and cast to float as a dense A matrix
     double* p_interpolation_matrix = new double[p_nz*p_nz];
     float* A=new float[p_nz*p_nz];
-    FILE* fp=fopen("C:\\Users\\Public\\Documents\\interpolation_matrix_HR.dat","rb");
+    FILE* fp=fopen("C:\\Users\\Public\\Documents\\interpolation_matrix.dat","rb");
 
     if(fp == 0)
     {

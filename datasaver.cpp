@@ -88,7 +88,7 @@ void DataSaver::run()
         {
             // Change file when we have a chunk
             if (fp) fclose(fp);
-            tmp.sprintf("fringe_%05d.bin",file_num);
+            tmp=QString("fringe_%1.bin").arg(file_num,5);
             tmp=parent_dir.absolutePath()+ QDir::separator()+tmp;
             fp = fopen(tmp.toUtf8().constData(), "wb");
             emit filenumber(file_num);

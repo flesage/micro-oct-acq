@@ -98,8 +98,7 @@ void MotorClass::move_dx(float dist)
     if(is_open)
     {
         port.flush();
-        QString tmp;
-        tmp.sprintf("1PR%.2f\r",dist);
+        QString tmp=QString("1PR%1\r").arg(dist,0,'f',2);
         port.write(tmp.toUtf8());
 //        char data=0;
 //        do
@@ -117,8 +116,7 @@ void MotorClass::move_dy(float dist)
     if(is_open)
     {
         port.flush();
-        QString tmp;
-        tmp.sprintf("2PR%.2f\r",dist);
+        QString tmp=QString("2PR%1\r").arg(dist,0,'f',2);
         port.write(tmp.toUtf8());
 /*        char data=0;
         do
@@ -135,8 +133,7 @@ void MotorClass::move_dz(float dist)
     if(is_open)
     {
         port.flush();
-        QString tmp;
-        tmp.sprintf("3PR%.2f\r",dist);
+        QString tmp=QString("3PR%1\r").arg(dist,0,'f',2);;
         port.write(tmp.toUtf8());
 //        char data=0;
 //        do
@@ -153,8 +150,7 @@ void MotorClass::move_ax(float dist)
     if(is_open)
     {
         port.flush();
-        QString tmp;
-        tmp.sprintf("1PA%.2f\r",dist);
+        QString tmp=QString("1PA%1\r").arg(dist,0,'f',2);
         port.write(tmp.toUtf8());
         char data=0;
         do
@@ -171,8 +167,7 @@ void MotorClass::move_ay(float dist)
     if(is_open)
     {
         port.flush();
-        QString tmp;
-        tmp.sprintf("2PA%.2f\r",dist);
+        QString tmp=QString("2PA%1f\r").arg(dist,0,'f',2);
         port.write(tmp.toUtf8());
         char data=0;
         do
@@ -189,8 +184,7 @@ void MotorClass::move_az(float dist)
     if(is_open)
     {
         port.flush();
-        QString tmp;
-        tmp.sprintf("3PA%.2f\r",dist);
+        QString tmp=QString("3PA%1\r").arg(dist,0,'f',2);
         port.write(tmp.toUtf8());
         char data=0;
         do

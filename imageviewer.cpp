@@ -1,6 +1,6 @@
 #include "imageviewer.h"
 #include "config.h"
-#include <QMatrix>
+//#include <QMatrix>
 #include <QTime>
 #include <iostream>
 #include <cmath>
@@ -238,8 +238,8 @@ void ImageViewer::updateView()
     // We receive a uint16 image that we need to transform to uint8 for display
     int n_pts = p_n_alines * LINE_ARRAY_SIZE;
     QImage tmp;
-    QMatrix rm;
-    rm.rotate(90);
+//    QMatrix rm;
+//    rm.rotate(90);
     QRect rect;
 
     switch(p_current_viewmode)
@@ -263,7 +263,7 @@ void ImageViewer::updateView()
 
         p_mutex.unlock();
         pix = QPixmap::fromImage(p_fringe_image);
-        pix=pix.transformed(rm);
+//        pix=pix.transformed(rm);
     }
         break;
     case DOPPLER:
@@ -274,7 +274,7 @@ void ImageViewer::updateView()
         rect.setRect(0,0,p_view_depth,p_n_alines-1);
         tmp = p_doppler_image.copy(rect);
         pix = QPixmap::fromImage(tmp);
-        pix=pix.transformed(rm);
+//        pix=pix.transformed(rm);
     }
         break;
     case HILBERT:
@@ -284,7 +284,7 @@ void ImageViewer::updateView()
         rect.setRect(0,0,2048,p_n_alines);
         tmp = p_hilbert_image.copy(rect);
         pix = QPixmap::fromImage(tmp);
-        pix=pix.transformed(rm);
+//        pix=pix.transformed(rm);
         if(is_optimization)
         {
             // Push middle line
@@ -299,7 +299,7 @@ void ImageViewer::updateView()
         rect.setRect(0,0,p_view_depth,p_n_alines);
         tmp = p_image.copy(rect);
         pix = QPixmap::fromImage(tmp);
-        pix=pix.transformed(rm);
+//        pix=pix.transformed(rm);
         if(is_optimization)
         {
             // Push middle line
@@ -328,7 +328,7 @@ void ImageViewer::updateView()
             rect.setRect(0,0,p_view_depth,p_n_alines);
             tmp = p_image.copy(rect);
             pix = QPixmap::fromImage(tmp);
-            pix=pix.transformed(rm);
+//            pix=pix.transformed(rm);
 
             if( p_ny > 1 )
             {
