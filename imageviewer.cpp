@@ -238,6 +238,8 @@ void ImageViewer::updateView()
     // We receive a uint16 image that we need to transform to uint8 for display
     int n_pts = p_n_alines * LINE_ARRAY_SIZE;
     QImage tmp;
+    QTransform trfm;
+    trfm.rotate(90);
 //    QMatrix rm;
 //    rm.rotate(90);
     QRect rect;
@@ -359,6 +361,7 @@ void ImageViewer::updateView()
     }
 
     // Set as pixmap
+    pix=pix.transformed(trfm);
     QLabel::setPixmap(pix.scaled(this->size(),
                                  Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
 

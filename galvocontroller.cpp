@@ -572,7 +572,6 @@ void GalvoController::scanTypeChosen(const QString& text)
     {
         ui->label_nx->setText("Nx");
         ui->label_ny->setText("Ny");
-        ui->label_ny->setText("Ny");
         ui->label_width->setText("Width (um)");
         ui->label_height->setEnabled(true);
         ui->lineEdit_height->setEnabled(true);
@@ -844,8 +843,8 @@ void GalvoController::startScan()
 
 
 
-        QString info;
-        QString tmp = QString("nx: %1\n").arg(nx);
+        //QString info;
+        QString info = QString("nx: %1\n").arg(nx);
         info=info+QString("ny: %1\n").arg(ny);
         info=info+QString("n_repeat: %1\n").arg(n_repeat);
         if (ui->comboBox_scantype->currentText() == "Line")

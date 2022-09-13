@@ -369,7 +369,6 @@
             <widget class="QLabel" name="label_47">
              <property name="font">
               <font>
-               <weight>75</weight>
                <bold>true</bold>
               </font>
              </property>
@@ -1043,7 +1042,6 @@
             <widget class="QLabel" name="label_48">
              <property name="font">
               <font>
-               <weight>75</weight>
                <bold>true</bold>
               </font>
              </property>
@@ -1218,7 +1216,7 @@
                 </size>
                </property>
                <property name="currentIndex">
-                <number>0</number>
+                <number>2</number>
                </property>
                <item>
                 <property name="text">
@@ -1268,7 +1266,7 @@
                 </size>
                </property>
                <property name="currentIndex">
-                <number>2</number>
+                <number>0</number>
                </property>
                <item>
                 <property name="text">
@@ -1333,7 +1331,6 @@
             <widget class="QLabel" name="label_4">
              <property name="font">
               <font>
-               <weight>75</weight>
                <bold>true</bold>
               </font>
              </property>
@@ -1363,7 +1360,6 @@
                </property>
                <property name="font">
                 <font>
-                 <weight>75</weight>
                  <bold>true</bold>
                 </font>
                </property>
@@ -1483,7 +1479,6 @@
              <widget class="QLabel" name="label_46">
               <property name="font">
                <font>
-                <weight>75</weight>
                 <bold>true</bold>
                </font>
               </property>
@@ -1576,7 +1571,6 @@
              <widget class="QLabel" name="label_45">
               <property name="font">
                <font>
-                <weight>75</weight>
                 <bold>true</bold>
                </font>
               </property>
@@ -2255,7 +2249,6 @@
                    <property name="font">
                     <font>
                      <pointsize>6</pointsize>
-                     <weight>75</weight>
                      <bold>true</bold>
                     </font>
                    </property>
@@ -2287,7 +2280,6 @@
                    <property name="font">
                     <font>
                      <pointsize>6</pointsize>
-                     <weight>75</weight>
                      <bold>true</bold>
                     </font>
                    </property>
@@ -3699,7 +3691,6 @@
              </property>
              <property name="font">
               <font>
-               <weight>50</weight>
                <bold>false</bold>
               </font>
              </property>

@@ -12,7 +12,6 @@
 #include "datasaver.h"
 #include "fringeviewer.h"
 #include "imageviewer.h"
-#include "datasaver.h"
 #include "float64datasaver.h"
 #include "analoginput.h"
 #include "motorclass.h"
