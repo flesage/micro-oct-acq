@@ -50,6 +50,7 @@ HEADERS  += \
     datasaver.h \
     fringeviewer.h \
     imageviewer.h \
+    orthogonalViewer3dForm.h \
     softwarecamera.h \
     fringeviewer.h \
     analoginput.h \
@@ -60,7 +61,8 @@ HEADERS  += \
 
 FORMS    += \
     angioviewer3dform.ui \
-    oct_galvos_form.ui
+    oct_galvos_form.ui \
+    orthogonalViewer3dForm.ui
 
 RESOURCES += \
     icons.qrc
