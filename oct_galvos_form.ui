@@ -33,12 +33,12 @@
       <layout class="QHBoxLayout" name="horizontalLayout_8">
        <item>
         <layout class="QGridLayout" name="gridLayout_5">
-         <item row="2" column="1">
-          <widget class="QPushButton" name="pushButton_down">
+         <item row="0" column="1">
+          <widget class="QPushButton" name="pushButton_up">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
              <horstretch>32</horstretch>
-             <verstretch>32</verstretch>
+             <verstretch>0</verstretch>
             </sizepolicy>
            </property>
            <property name="minimumSize">
@@ -58,7 +58,7 @@
            </property>
            <property name="icon">
             <iconset resource="icons.qrc">
-             <normaloff>:/icons/img/arrow_down.png</normaloff>:/icons/img/arrow_down.png</iconset>
+             <normaloff>:/icons/img/arrow_up.png</normaloff>:/icons/img/arrow_up.png</iconset>
            </property>
            <property name="iconSize">
             <size>
@@ -173,12 +173,12 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="1">
-          <widget class="QPushButton" name="pushButton_up">
+         <item row="2" column="1">
+          <widget class="QPushButton" name="pushButton_down">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
              <horstretch>32</horstretch>
-             <verstretch>0</verstretch>
+             <verstretch>32</verstretch>
             </sizepolicy>
            </property>
            <property name="minimumSize">
@@ -198,7 +198,7 @@
            </property>
            <property name="icon">
             <iconset resource="icons.qrc">
-             <normaloff>:/icons/img/arrow_up.png</normaloff>:/icons/img/arrow_up.png</iconset>
+             <normaloff>:/icons/img/arrow_down.png</normaloff>:/icons/img/arrow_down.png</iconset>
            </property>
            <property name="iconSize">
             <size>
@@ -2829,7 +2829,7 @@
            <x>10</x>
            <y>10</y>
            <width>297</width>
-           <height>217</height>
+           <height>328</height>
           </rect>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -2864,15 +2864,47 @@
            </widget>
           </item>
           <item>
+           <widget class="QLabel" name="label_rotation_status">
+            <property name="toolTip">
+             <string>Rotation Stage Status</string>
+            </property>
+            <property name="autoFillBackground">
+             <bool>false</bool>
+            </property>
+            <property name="frameShape">
+             <enum>QFrame::Box</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Sunken</enum>
+            </property>
+            <property name="lineWidth">
+             <number>1</number>
+            </property>
+            <property name="text">
+             <string>Rotation stage status</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item>
            <layout class="QFormLayout" name="formLayout">
-            <item row="0" column="0">
+            <item row="1" column="0">
+             <widget class="QLabel" name="label_54">
+              <property name="text">
+               <string>Current position (deg)</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
              <widget class="QLabel" name="label_51">
               <property name="text">
                <string>Jog step size (deg)</string>
               </property>
              </widget>
             </item>
-            <item row="0" column="1">
+            <item row="2" column="1">
              <widget class="QLineEdit" name="lineEdit_rotation_jogStepSize">
               <property name="enabled">
                <bool>false</bool>
@@ -2882,21 +2914,14 @@
               </property>
              </widget>
             </item>
-            <item row="1" column="0">
+            <item row="3" column="0">
              <widget class="QLabel" name="label_52">
               <property name="text">
-               <string>Max velocity (deg/sec)</string>
+               <string>Max velocity (deg/s)</string>
               </property>
              </widget>
             </item>
-            <item row="2" column="0">
-             <widget class="QLabel" name="label_53">
-              <property name="text">
-               <string>Acceleration (deg/sec2)</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="1">
+            <item row="3" column="1">
              <widget class="QLineEdit" name="lineEdit_rotation_jogMaxVelocity">
               <property name="enabled">
                <bool>false</bool>
@@ -2906,7 +2931,14 @@
               </property>
              </widget>
             </item>
-            <item row="2" column="1">
+            <item row="4" column="0">
+             <widget class="QLabel" name="label_53">
+              <property name="text">
+               <string>Acceleration (deg/s2)</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="1">
              <widget class="QLineEdit" name="lineEdit_rotation_jogAcceleration">
               <property name="enabled">
                <bool>false</bool>
@@ -2916,10 +2948,31 @@
               </property>
              </widget>
             </item>
+            <item row="1" column="1">
+             <widget class="QDoubleSpinBox" name="doubleSpinBox_rotation_position">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
            </layout>
           </item>
           <item>
            <layout class="QGridLayout" name="gridLayout_17">
+            <item row="0" column="2">
+             <widget class="QPushButton" name="pushButton_rotation_jogForward">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="icon">
+               <iconset resource="icons.qrc">
+                <normaloff>:/icons/img/arrow_right.png</normaloff>:/icons/img/arrow_right.png</iconset>
+              </property>
+             </widget>
+            </item>
             <item row="0" column="0">
              <widget class="QPushButton" name="pushButton_rotation_jogReverse">
               <property name="enabled">
@@ -2945,20 +2998,6 @@
               <property name="icon">
                <iconset resource="icons.qrc">
                 <normaloff>:/icons/img/home_icon.png</normaloff>:/icons/img/home_icon.png</iconset>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="2">
-             <widget class="QPushButton" name="pushButton_rotation_jogForward">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <property name="text">
-               <string/>
-              </property>
-              <property name="icon">
-               <iconset resource="icons.qrc">
-                <normaloff>:/icons/img/arrow_right.png</normaloff>:/icons/img/arrow_right.png</iconset>
               </property>
              </widget>
             </item>
