@@ -528,7 +528,8 @@ void MotorClass::RotationStageHome()
     }
 }
 
-// TODO: Rotation Stage Set Jog Parameters
+// Set the rotation stage jog parameters
+// TODO: test this.
 void MotorClass::RotationStageSetJogParameters(float jogStepSize, float jogMaxVelocity, float jogAcceleration)
 {
     std::cout<<"...setting the rotation stage jog parameters"<<std::endl;
@@ -584,11 +585,45 @@ void MotorClass::RotationStageSetJogParameters(float jogStepSize, float jogMaxVe
     command[27] = 0x00;
 
     // DEBUG
-    for (const int &n : command) {
-        std::cout << std::hex << n << std::dec << " ";
-    }
-    std::cout << std::endl;
+    // for (const int &n : command) {
+    //     std::cout << std::hex << n << std::dec << " ";
+    // }
+    // std::cout << std::endl;
+
+    // Writing the command
+    port_rotation.flush();
+    port_rotation.write(command, 28);
+    port_rotation.flush();
 }
+
+// Rotation Stage Jog
+// @param direction: if >0 the direction is forward, otherwise it is reverse.
+// TODO: test this
+void MotorClass::RotationStageJog(int direction) 
+{
+    if (is_open_rotation)
+    {
+        std::cout<<"...jogging the rotation stage"<<std::endl;
+        char command[6];
+        command[0] = 0x6A; // MGMSG_MOT_MOVE_JOG 0x046A
+        command[1] = 0x04;
+        command[2] = 0x01; // Channel: 0x01
+        command[3] = (direction > 0)? 0x01: 0x02; // Direction: 0x01 is forward, 0x02 is reverse.
+        command[4] = 0x50; // destination, general USB Port
+        command[5] = 0x01; // source, host
+
+        // Write the command
+        port_rotation.flush();
+        port_rotation.write(command, 6);
+        port_rotation.flush();
+    } else {
+        std::cout << "...rotation stage port is not open"<<std::endl;
+    }
+}
+
+// TODO: method to to an absolute move
+// TODO: component to display the current position
+// TODO: label to show the active / inactive state
 
 /*
 

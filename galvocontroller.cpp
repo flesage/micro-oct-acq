@@ -99,6 +99,8 @@ GalvoController::GalvoController() :
     connect(ui->lineEdit_rotation_jogStepSize, SIGNAL(editingFinished()), this, SLOT(slot_rotation_updateJogParameters()));
     connect(ui->lineEdit_rotation_jogMaxVelocity, SIGNAL(editingFinished()), this, SLOT(slot_rotation_updateJogParameters()));
     connect(ui->lineEdit_rotation_jogAcceleration, SIGNAL(editingFinished()), this, SLOT(slot_rotation_updateJogParameters()));
+    connect(ui->pushButton_rotation_jogReverse, SIGNAL(clicked()), this, SLOT(slot_rotation_jogReverse()));
+    connect(ui->pushButton_rotation_jogForward, SIGNAL(clicked()), this, SLOT(slot_rotation_jogForward()));
 
     connect(ui->lineEdit_startLine,SIGNAL(editingFinished()),this,SLOT(slot_updateViewLinePositions()));
     connect(ui->lineEdit_stopLine,SIGNAL(editingFinished()),this,SLOT(slot_updateViewLinePositions()));
@@ -1378,8 +1380,8 @@ void GalvoController::activateRotationStage(bool flag){
         motors->RotationStageOpenPort();
         ui->pushButton_rotationStageHome->setEnabled(true);
         ui->pushButton_rotationStageIdentify->setEnabled(true);
-        ui->pushButton_decreaseAngle->setEnabled(true);
-        ui->pushButton_increaseAngle->setEnabled(true);
+        ui->pushButton_rotation_jogForward->setEnabled(true);
+        ui->pushButton_rotation_jogReverse->setEnabled(true);
         ui->lineEdit_rotation_jogStepSize->setEnabled(true);
         ui->lineEdit_rotation_jogMaxVelocity->setEnabled(true);
         ui->lineEdit_rotation_jogAcceleration->setEnabled(true);
@@ -1388,15 +1390,14 @@ void GalvoController::activateRotationStage(bool flag){
     {
         ui->pushButton_rotationStageHome->setEnabled(false);
         ui->pushButton_rotationStageIdentify->setEnabled(false);
-        ui->pushButton_decreaseAngle->setEnabled(false);
-        ui->pushButton_increaseAngle->setEnabled(false);
+        ui->pushButton_rotation_jogForward->setEnabled(false);
+        ui->pushButton_rotation_jogReverse->setEnabled(false);
         ui->lineEdit_rotation_jogStepSize->setEnabled(false);
         ui->lineEdit_rotation_jogMaxVelocity->setEnabled(false);
         ui->lineEdit_rotation_jogAcceleration->setEnabled(false);
         motors->RotationStageClosePort();
     }
 }
-
 
 void GalvoController::identifyRotationStage(void){
     std::cout<<"Identifying the rotation stage"<<std::endl;
@@ -1415,3 +1416,15 @@ void GalvoController::slot_rotation_updateJogParameters(void){
     float acceleration = ui->lineEdit_rotation_jogAcceleration->text().toFloat();
     motors->RotationStageSetJogParameters(step_size, max_velocity, acceleration);
 }
+
+void GalvoController::slot_rotation_jogForward(void){
+    std::cout<<"Jogging the rotation stage forward"<<std::endl;
+    motors->RotationStageJog(1);
+}
+
+void GalvoController::slot_rotation_jogReverse(void){
+    std::cout<<"Jogging the rotation stage in reverse"<<std::endl;
+    motors->RotationStageJog(-1);
+}
+
+

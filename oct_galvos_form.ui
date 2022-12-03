@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>714</width>
-    <height>1018</height>
+    <height>1042</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -1471,7 +1471,7 @@
              <x>10</x>
              <y>10</y>
              <width>271</width>
-             <height>90</height>
+             <height>96</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -1563,7 +1563,7 @@
              <x>10</x>
              <y>10</y>
              <width>282</width>
-             <height>310</height>
+             <height>319</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_13">
@@ -2829,7 +2829,7 @@
            <x>10</x>
            <y>10</y>
            <width>297</width>
-           <height>208</height>
+           <height>217</height>
           </rect>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -2921,7 +2921,7 @@
           <item>
            <layout class="QGridLayout" name="gridLayout_17">
             <item row="0" column="0">
-             <widget class="QPushButton" name="pushButton_decreaseAngle">
+             <widget class="QPushButton" name="pushButton_rotation_jogReverse">
               <property name="enabled">
                <bool>false</bool>
               </property>
@@ -2949,7 +2949,7 @@
              </widget>
             </item>
             <item row="0" column="2">
-             <widget class="QPushButton" name="pushButton_increaseAngle">
+             <widget class="QPushButton" name="pushButton_rotation_jogForward">
               <property name="enabled">
                <bool>false</bool>
               </property>
