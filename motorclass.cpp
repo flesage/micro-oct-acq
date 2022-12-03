@@ -1,11 +1,13 @@
 #include "motorclass.h"
 #include <iostream>
 #include <QThread>
+#include "config.h"
 
 MotorClass::MotorClass()
 {
     is_open = false;
     piezo_is_open = false;
+    is_open_rotation = false;
     p_piezo_speed = 0;
     p_piezo_moving=0;
 }
@@ -442,6 +444,151 @@ void MotorClass::PiezoStopJog()
 //    }
 
 //}
+
+/* Rotation Stage Controls */
+
+// TODO: Complete and document the method to open the rotation stage port
+void MotorClass::RotationStageOpenPort()
+{
+    std::cout<<"...opening rotation stage"<<std::endl;
+    if(!is_open_rotation)
+    {
+        port_rotation.setPortName(ROTATION_STAGE_PORT_COM);
+        port_rotation.open(QSerialPort::ReadWrite);
+        port_rotation.setBaudRate(115200);
+        port_rotation.setDataBits(QSerialPort::Data8);
+        port_rotation.setParity(QSerialPort::NoParity);
+        port_rotation.setStopBits(QSerialPort::OneStop);
+        port_rotation.setFlowControl(QSerialPort::HardwareControl); // for RTS/CTS hardware flow control
+        //rotation_stage_port.write(); // TODO: write the identify command
+        port_rotation.flush();
+        is_open_rotation=true;
+    }
+    std::cout<<"...done!"<<std::endl;
+}
+
+// TODO: Complete and document the method to close the rotation stage port
+void MotorClass::RotationStageClosePort()
+{
+    std::cout<<"...closing rotation stage"<<std::endl;
+    if(is_open_rotation)
+    {
+        port_rotation.flush();
+        //rotation_stage_port.write("1MF\r", 4);
+        //rotation_stage_port.flush();
+        port_rotation.close();
+        is_open_rotation=false;
+    }
+    std::cout<<"...done!"<<std::endl;
+}
+
+// TODO: Rotation Stage Identify
+void MotorClass::RotationStageIdentify()
+{
+    if(is_open_rotation)
+    {
+        std::cout<<"...identifyng rotation stage"<<std::endl;
+        char command[6];
+        command[0] = 0x23; // MGMSG_MOD_IDENTIFY: 23/02
+        command[1] = 0x02;
+        command[2] = 0x01; // Channel Idents 0x01, 0x02, ...
+        command[3] = 0x00;
+        command[4] = 0x50; // destination, general USB Port
+        command[5] = 0x01; // source, host
+
+        // Write the command
+        port_rotation.flush();
+        port_rotation.write(command, 6);
+        port_rotation.flush();
+    } else {
+        std::cout << "...rotation stage port is not open"<<std::endl;
+    }
+}
+
+// TODO: Rotation Stage Home
+void MotorClass::RotationStageHome()
+{
+    if(is_open_rotation)
+    {
+        std::cout<<"...homing the rotation stage"<<std::endl;
+        char command[6];
+        command[0] = 0x43; // MGMSG_MOT_MOVE_HOME: 43/04
+        command[1] = 0x04;
+        command[2] = 0x01; // Channel Idents 0x01, 0x02, ...
+        command[3] = 0x00;
+        command[4] = 0x50; // destination, general USB Port
+        command[5] = 0x01; // source, host
+
+        // Write the command
+        port_rotation.flush();
+        port_rotation.write(command, 6);
+        port_rotation.flush();
+    } else {
+        std::cout << "...rotation stage port is not open"<<std::endl;
+    }
+}
+
+// TODO: Rotation Stage Set Jog Parameters
+void MotorClass::RotationStageSetJogParameters(float jogStepSize, float jogMaxVelocity, float jogAcceleration)
+{
+    std::cout<<"...setting the rotation stage jog parameters"<<std::endl;
+
+    // Preparing the command
+    char command[28];
+    // Header
+    command[0] = 0x16;
+    command[1] = 0x04;
+    command[2] = 0x16;
+    command[3] = 0x00;
+    command[4] = 0x50; // destination, general USB port
+    command[5] = 0x01; // source, host
+
+    // Channel 
+    command[6] = 0x01;
+    command[7] = 0x00;
+
+    // Jog Mode (1: continuous jogging, 2: single step jogging.)
+    command[8] = 0x02;
+    command[9] = 0x00;
+
+    // Jog Step Size in encoder counts (conversion described in section 8), long
+    long step_size = jogStepSize * ROTATION_DEG2ENC;
+    // Conversion to little endien 4 byte array
+    command[10] = step_size & 0xFF;
+    command[11] = (step_size >> 8) & 0xFF;
+    command[12] = (step_size >> 16) & 0xFF;
+    command[13] = (step_size >> 24) & 0xFF;
+
+    // Jog Min Velocity (minimum start velocity in encoder counts/sec)
+    command[14] = 0x00;
+    command[15] = 0x00;
+    command[16] = 0x00;
+    command[17] = 0x00;
+
+    // Jog Acceleration
+    long acceleration = jogAcceleration * ROTATION_ACC2ENC; // deg/sec^2 converted to enc/sec^2
+    command[18] = acceleration & 0xFF;
+    command[19] = (acceleration >> 8) & 0xFF;
+    command[20] = (acceleration >> 16) & 0xFF;
+    command[21] = (acceleration >> 24) & 0xFF;
+
+    // Jog Max Velocity
+    long velocity = jogMaxVelocity * ROTATION_VEL2ENC; // deg/sec converted to enc/sec
+    command[22] = velocity & 0xFF;
+    command[23] = (velocity >> 8) & 0xFF;
+    command[24] = (velocity >> 16) & 0xFF;
+    command[25] = (velocity >> 24) & 0xFF;
+
+    // Stop Mode (1: abrupt, 2: profiled stop or controlled deceleration)
+    command[26] = 0x02;
+    command[27] = 0x00;
+
+    // DEBUG
+    for (const int &n : command) {
+        std::cout << std::hex << n << std::dec << " ";
+    }
+    std::cout << std::endl;
+}
 
 /*
 
