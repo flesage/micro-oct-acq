@@ -91,6 +91,15 @@ private slots:
     void slot_updateAngiogramAlgo(void);
     void setCenterFromLineScan(void);
 
+   // Rotation stage
+    void activateRotationStage(bool flag);
+    void identifyRotationStage(void);
+    void homeRotationStage(void);
+    void slot_rotation_updateJogParameters(void);
+    //void rotationJogForward(void);
+    //void rotationJogBackward(void);
+
+
 private:
     Ui::OCTGalvosForm *ui;
     QString dataDir;

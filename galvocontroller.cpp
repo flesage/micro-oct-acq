@@ -92,6 +92,14 @@ GalvoController::GalvoController() :
     connect(ui->pushButton_piezoJog,SIGNAL(clicked()),this,SLOT(jogPiezo()));
     connect(ui->pushButton_piezoStop,SIGNAL(clicked()),this,SLOT(stopPiezo()));
 
+    /* OCRT Rotation Stage Signals */
+    connect(ui->checkBox_rotationStageActivate, SIGNAL(clicked(bool)), this, SLOT(activateRotationStage(bool)));
+    connect(ui->pushButton_rotationStageIdentify, SIGNAL(clicked()), this, SLOT(identifyRotationStage()));
+    connect(ui->pushButton_rotationStageHome, SIGNAL(clicked()), this, SLOT(homeRotationStage()));
+    connect(ui->lineEdit_rotation_jogStepSize, SIGNAL(editingFinished()), this, SLOT(slot_rotation_updateJogParameters()));
+    connect(ui->lineEdit_rotation_jogMaxVelocity, SIGNAL(editingFinished()), this, SLOT(slot_rotation_updateJogParameters()));
+    connect(ui->lineEdit_rotation_jogAcceleration, SIGNAL(editingFinished()), this, SLOT(slot_rotation_updateJogParameters()));
+
     connect(ui->lineEdit_startLine,SIGNAL(editingFinished()),this,SLOT(slot_updateViewLinePositions()));
     connect(ui->lineEdit_stopLine,SIGNAL(editingFinished()),this,SLOT(slot_updateViewLinePositions()));
     connect(ui->checkBox_view_line,SIGNAL(clicked(bool)),this,SLOT(slot_updateViewLinePositions()));
@@ -1361,4 +1369,49 @@ void GalvoController::slot_updateAngiogramAlgo(void)
 {
     int angioAlgo=ui->comboBox_angio->currentIndex();
     emit sig_updateAveragingAlgo(angioAlgo);
+}
+
+/* Rotation Stage Slots */
+void GalvoController::activateRotationStage(bool flag){
+    if(flag)
+    {
+        motors->RotationStageOpenPort();
+        ui->pushButton_rotationStageHome->setEnabled(true);
+        ui->pushButton_rotationStageIdentify->setEnabled(true);
+        ui->pushButton_decreaseAngle->setEnabled(true);
+        ui->pushButton_increaseAngle->setEnabled(true);
+        ui->lineEdit_rotation_jogStepSize->setEnabled(true);
+        ui->lineEdit_rotation_jogMaxVelocity->setEnabled(true);
+        ui->lineEdit_rotation_jogAcceleration->setEnabled(true);
+    }
+    else
+    {
+        ui->pushButton_rotationStageHome->setEnabled(false);
+        ui->pushButton_rotationStageIdentify->setEnabled(false);
+        ui->pushButton_decreaseAngle->setEnabled(false);
+        ui->pushButton_increaseAngle->setEnabled(false);
+        ui->lineEdit_rotation_jogStepSize->setEnabled(false);
+        ui->lineEdit_rotation_jogMaxVelocity->setEnabled(false);
+        ui->lineEdit_rotation_jogAcceleration->setEnabled(false);
+        motors->RotationStageClosePort();
+    }
+}
+
+
+void GalvoController::identifyRotationStage(void){
+    std::cout<<"Identifying the rotation stage"<<std::endl;
+    motors->RotationStageIdentify();
+}
+
+void GalvoController::homeRotationStage(void){
+    std::cout<<"Homing the rotation stage"<<std::endl;
+    motors->RotationStageHome();
+}
+
+void GalvoController::slot_rotation_updateJogParameters(void){
+    std::cout<<"Updating the rotation stage jog parameters"<<std::endl;
+    float step_size = ui->lineEdit_rotation_jogStepSize->text().toFloat();
+    float max_velocity = ui->lineEdit_rotation_jogMaxVelocity->text().toFloat();
+    float acceleration = ui->lineEdit_rotation_jogAcceleration->text().toFloat();
+    motors->RotationStageSetJogParameters(step_size, max_velocity, acceleration);
 }
