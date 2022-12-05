@@ -98,6 +98,7 @@ private slots:
     void slot_rotation_updateJogParameters(void);
     void slot_rotation_jogForward(void);
     void slot_rotation_jogReverse(void);
+    void slot_rotation_absoluteMove(void);
 
 private:
     Ui::OCTGalvosForm *ui;

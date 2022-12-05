@@ -32,6 +32,7 @@ public:
     void RotationStageHome();
     void RotationStageSetJogParameters(float jogStepSize, float jogMaxVelocity, float jogAcceleration);
     void RotationStageJog(int direction);
+    void RotationAbsoluteMove(float position);
 
 private:
     // Serial Ports

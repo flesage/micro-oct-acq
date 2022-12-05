@@ -621,9 +621,38 @@ void MotorClass::RotationStageJog(int direction)
     }
 }
 
-// TODO: method to to an absolute move
+// TODO: test the rotation stage absolute move method
+// MGMSG_MOT_MOVE_ABSOLUTE (0x0453) to configure and start an absolute move
+void MotorClass::RotationAbsoluteMove(float position)
+{
+    // Prepare the command
+    std::cout<<"...performing a rotation stage absolute move"<<std::endl;
+    char command[12];
+    command[0] = 0x53; // MGMSG_ MOT_SET_MOVEABSPARAMS (0x0450)
+    command[1] = 0x04;
+    command[2] = 0x06;
+    command[3] = 0x00;
+    command[4] = 0x50; // destination, general USB Port
+    command[5] = 0x01; // source, host
+    command[6] = 0x01; // Channel as a short int
+    command[7] = 0x00;
+
+    // Convert position to little endian long int
+    long pos_enc = position * ROTATION_DEG2ENC;
+    command[8] = pos_enc & 0xFF;
+    command[9] = (pos_enc >> 8) & 0xFF;
+    command[10] = (pos_enc >> 16) & 0xFF;
+    command[11] = (pos_enc >> 24) & 0xFF;
+
+    // Write the configuration command
+    port_rotation.flush();
+    port_rotation.write(command, 12);
+    port_rotation.flush();
+}
+
 // TODO: component to display the current position
 // TODO: label to show the active / inactive state
+// TODO: method to update the motor status in the UI and in the class
 
 /*
 

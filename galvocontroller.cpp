@@ -101,6 +101,7 @@ GalvoController::GalvoController() :
     connect(ui->lineEdit_rotation_jogAcceleration, SIGNAL(editingFinished()), this, SLOT(slot_rotation_updateJogParameters()));
     connect(ui->pushButton_rotation_jogReverse, SIGNAL(clicked()), this, SLOT(slot_rotation_jogReverse()));
     connect(ui->pushButton_rotation_jogForward, SIGNAL(clicked()), this, SLOT(slot_rotation_jogForward()));
+    connect(ui->doubleSpinBox_rotation_position, SIGNAL(editingFinished()), this, SLOT(slot_rotation_absoluteMove()));
 
     connect(ui->lineEdit_startLine,SIGNAL(editingFinished()),this,SLOT(slot_updateViewLinePositions()));
     connect(ui->lineEdit_stopLine,SIGNAL(editingFinished()),this,SLOT(slot_updateViewLinePositions()));
@@ -1385,6 +1386,7 @@ void GalvoController::activateRotationStage(bool flag){
         ui->lineEdit_rotation_jogStepSize->setEnabled(true);
         ui->lineEdit_rotation_jogMaxVelocity->setEnabled(true);
         ui->lineEdit_rotation_jogAcceleration->setEnabled(true);
+        ui->doubleSpinBox_rotation_position->setEnabled(true);
     }
     else
     {
@@ -1395,6 +1397,7 @@ void GalvoController::activateRotationStage(bool flag){
         ui->lineEdit_rotation_jogStepSize->setEnabled(false);
         ui->lineEdit_rotation_jogMaxVelocity->setEnabled(false);
         ui->lineEdit_rotation_jogAcceleration->setEnabled(false);
+        ui->doubleSpinBox_rotation_position->setEnabled(false);
         motors->RotationStageClosePort();
     }
 }
@@ -1427,4 +1430,8 @@ void GalvoController::slot_rotation_jogReverse(void){
     motors->RotationStageJog(-1);
 }
 
-
+void GalvoController::slot_rotation_absoluteMove(void){
+    std::cout<<"Moving (absolute) the rotation stage"<<std::endl;
+    float position = ui->doubleSpinBox_rotation_position->value();
+    motors->RotationAbsoluteMove(position);
+}
