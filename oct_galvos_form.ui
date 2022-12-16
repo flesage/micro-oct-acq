@@ -2829,7 +2829,7 @@
            <x>10</x>
            <y>10</y>
            <width>297</width>
-           <height>328</height>
+           <height>363</height>
           </rect>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -2860,6 +2860,23 @@
             </property>
             <property name="text">
              <string>Identify</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButton_rotation_testReadJog">
+            <property name="text">
+             <string>Test_ReadJog</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButton_rotation_stop">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Stop</string>
             </property>
            </widget>
           </item>
@@ -2910,7 +2927,7 @@
                <bool>false</bool>
               </property>
               <property name="text">
-               <string>15</string>
+               <string>5</string>
               </property>
              </widget>
             </item>
@@ -2927,7 +2944,7 @@
                <bool>false</bool>
               </property>
               <property name="text">
-               <string>5</string>
+               <string>10</string>
               </property>
              </widget>
             </item>
@@ -2944,7 +2961,7 @@
                <bool>false</bool>
               </property>
               <property name="text">
-               <string>2.5</string>
+               <string>10</string>
               </property>
              </widget>
             </item>
