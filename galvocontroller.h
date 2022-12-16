@@ -15,6 +15,7 @@
 #include "float64datasaver.h"
 #include "analoginput.h"
 #include "motorclass.h"
+#include "thorlabsrotation.h"
 
 namespace Ui {
 class OCTGalvosForm;
@@ -99,6 +100,7 @@ private slots:
     void slot_rotation_jogForward(void);
     void slot_rotation_jogReverse(void);
     void slot_rotation_absoluteMove(void);
+    void slot_rotation_readParameters(void);
 
 private:
     Ui::OCTGalvosForm *ui;
@@ -152,6 +154,7 @@ private:
     Float64DataSaver* p_ai_data_saver;
     int p_block_size;
     MotorClass* motors;
+    ThorlabsRotation* thorlabs_rotation;
     bool flagMotor;
     float* p_disp_comp_vec_10x;
     float* p_disp_comp_vec_25x;

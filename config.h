@@ -18,11 +18,12 @@
 
 // Rotation Stage Configuration (Thorlabs TDC001 + PRM1/MZ8)
 // Communication Protocol: https://www.thorlabs.com/Software/Motion%20Control/APT_Communications_Protocol.pdf
+#define ROTATION_SIMULATION true
 #define ROTATION_STAGE_PORT_COM "COM3" // Joel's laptop: COM3
 #define ROTATION_DEG2ENC 1919.6418578623391 // for the PRM1-Z8, Thorlabs communication protocol, section 8
 #define ROTATION_VEL2ENC 42941.66 // deg/s, Thorlabs communication protocol, section 8
 #define ROTATION_ACC2ENC 14.66 // deg/s2, Thorlabs communication protocol, section 8
 
-//#define SIMULATION
+#define SIMULATION
 
 #endif // CONFIG_H

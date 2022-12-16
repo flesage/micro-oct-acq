@@ -18,10 +18,12 @@ DEFINES += NOMINMAX
 INCLUDEPATH += "C:\Program Files (x86)\National Instruments\NI-DAQ\DAQmx ANSI C Dev\include"
 INCLUDEPATH += "C:\Program Files (x86)\National Instruments\NI-IMAQ\Include"
 INCLUDEPATH += "C:\Program Files\ArrayFire\v3\include"
+INCLUDEPATH += "C:\Program Files\Thorlabs\Kinesis"
 
 LIBS += -L"C:\Program Files\ArrayFire\v3\lib" -lafopencl
 LIBS += -L"C:\Program Files (x86)\National Instruments\Shared\ExternalCompilerSupport\C\lib64\msvc" -lNIDAQmx
 LIBS += -L"C:\Program Files (x86)\National Instruments\NI-IMAQ\Lib\MSVC" -limaq
+LIBS += -L"C:\Program Files\Thorlabs\Kinesis" -lThorlabs.MotionControl.TCube.DCServo
 
 SOURCES += main.cpp \
     angioviewer3dform.cpp \
@@ -32,11 +34,13 @@ SOURCES += main.cpp \
     datasaver.cpp \
     fringeviewer.cpp \
     imageviewer.cpp \
+    oct3dorthogonalviewer.cpp \
     softwarecamera.cpp \
     analoginput.cpp \
     FringeFFT.cpp \
     fwhmviewer.cpp \
-    motorclass.cpp
+    motorclass.cpp \
+    thorlabsrotation.cpp
 
 HEADERS  += \
     angioviewer3dform.h \
@@ -50,20 +54,20 @@ HEADERS  += \
     datasaver.h \
     fringeviewer.h \
     imageviewer.h \
-    orthogonalViewer3dForm.h \
+    oct3dorthogonalviewer.h \
     softwarecamera.h \
     fringeviewer.h \
     analoginput.h \
     float64datasaver.h \
     FringeFFT.h \
     fwhmviewer.h \
-    motorclass.h
+    motorclass.h \
+    thorlabsrotation.h
 
 FORMS    += \
     angioviewer3dform.ui \
-    oct_galvos_form.ui \
-    orthogonalViewer3dForm.ui
+    oct3dorthogonalviewer.ui \
+    oct_galvos_form.ui
 
 RESOURCES += \
     icons.qrc
-

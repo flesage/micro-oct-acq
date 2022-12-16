@@ -31,6 +31,7 @@ public:
     void RotationStageIdentify();
     void RotationStageHome();
     void RotationStageSetJogParameters(float jogStepSize, float jogMaxVelocity, float jogAcceleration);
+    void RotationStageGetJogParameters();
     void RotationStageJog(int direction);
     void RotationAbsoluteMove(float position);
 

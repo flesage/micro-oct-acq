@@ -13,6 +13,8 @@
 #include <QApplication>
 #include "motorclass.h"
 #include "piezostage.h"
+#include "thorlabsrotation.h"
+
 
 GalvoController::GalvoController() :
     ui(new Ui::OCTGalvosForm), p_galvos(GALVOS_DEV,GALVOS_AOX,GALVOS_AOY), p_settings("Polytechnique/LIOM","OCT"),
@@ -54,6 +56,7 @@ GalvoController::GalvoController() :
     p_stop_viewline = ui->lineEdit_stopLine->text().toInt();
 
     motors = new MotorClass();
+    thorlabs_rotation = new ThorlabsRotation();
 
     double radians_per_volt = 2*3.14159265359/(360*0.8);
     double f1=50.0;
@@ -85,6 +88,7 @@ GalvoController::GalvoController() :
     connect(ui->lineEdit_width,SIGNAL(editingFinished()),this,SLOT(updateInfo()));
     connect(ui->lineEdit_aline_repeat,SIGNAL(editingFinished()),this,SLOT(updateInfo()));
 
+    /* Piezo Signals*/
     connect(ui->pushButton_piezoOn,SIGNAL(clicked()),this,SLOT(turnPiezoOn()));
     connect(ui->pushButton_piezoOff,SIGNAL(clicked()),this,SLOT(turnPiezoOff()));
     connect(ui->pushButton_piezoHome,SIGNAL(clicked()),this,SLOT(homePiezo()));
@@ -102,6 +106,7 @@ GalvoController::GalvoController() :
     connect(ui->pushButton_rotation_jogReverse, SIGNAL(clicked()), this, SLOT(slot_rotation_jogReverse()));
     connect(ui->pushButton_rotation_jogForward, SIGNAL(clicked()), this, SLOT(slot_rotation_jogForward()));
     connect(ui->doubleSpinBox_rotation_position, SIGNAL(editingFinished()), this, SLOT(slot_rotation_absoluteMove()));
+    connect(ui->pushButton_rotation_testReadJog, SIGNAL(clicked()), this, SLOT(slot_rotation_readParameters()));
 
     connect(ui->lineEdit_startLine,SIGNAL(editingFinished()),this,SLOT(slot_updateViewLinePositions()));
     connect(ui->lineEdit_stopLine,SIGNAL(editingFinished()),this,SLOT(slot_updateViewLinePositions()));
@@ -120,6 +125,7 @@ GalvoController::GalvoController() :
     connect(ui->pushButton_left,SIGNAL(clicked()),this,SLOT(moveLeft()));
     connect(ui->pushButton_readOffsetFile,SIGNAL(clicked()),this,SLOT(readOffset()));
 
+    /* Motor Signals*/
     connect(ui->pushButton_motor_home,SIGNAL(clicked()),this,SLOT(goMotorHome()));
     connect(ui->pushButton_motor_down,SIGNAL(clicked()),this,SLOT(moveMotorDown()));
     connect(ui->pushButton_motor_up,SIGNAL(clicked()),this,SLOT(moveMotorUp()));
@@ -1422,12 +1428,12 @@ void GalvoController::slot_rotation_updateJogParameters(void){
 
 void GalvoController::slot_rotation_jogForward(void){
     std::cout<<"Jogging the rotation stage forward"<<std::endl;
-    motors->RotationStageJog(1);
+    motors->RotationStageJog(-1); // For the rotation stage used, +deg is backward
 }
 
 void GalvoController::slot_rotation_jogReverse(void){
     std::cout<<"Jogging the rotation stage in reverse"<<std::endl;
-    motors->RotationStageJog(-1);
+    motors->RotationStageJog(1); // For the rotation stage used, -deg is forward
 }
 
 void GalvoController::slot_rotation_absoluteMove(void){
@@ -1435,3 +1441,12 @@ void GalvoController::slot_rotation_absoluteMove(void){
     float position = ui->doubleSpinBox_rotation_position->value();
     motors->RotationAbsoluteMove(position);
 }
+
+// TODO: Rotation stage, read and update parameters
+void GalvoController::slot_rotation_readParameters(void){
+    std::cout<<"Testing the new thorlabs dll api"<<std::endl;
+    thorlabs_rotation->TestGetInformation();
+    //motors->RotationStageGetJogParameters();
+}
+
+// TODO: Rotation Stage, Add a button to stop everything

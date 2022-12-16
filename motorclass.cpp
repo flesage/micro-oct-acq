@@ -650,9 +650,34 @@ void MotorClass::RotationAbsoluteMove(float position)
     port_rotation.flush();
 }
 
+// Rotation stage, get jog parameters
+void MotorClass::RotationStageGetJogParameters()
+{
+    // Prepare the command
+    std::cout<<"...reading the rotation stage jog parameters"<<std::endl;
+    char command[6];
+    command[0] = 0x17; // MGMSG_MOT_REQ_JOGPARAMS 0x0417
+    command[1] = 0x04;
+    command[2] = 0x01; // Channel
+    command[3] = 0x00;
+    command[4] = 0x50; // destination, general USB Port
+    command[5] = 0x01; // source, host
+
+    // Write the command, and read the response
+    QByteArray response;
+    port_rotation.flush();
+    QThread::sleep(0.2);
+    port_rotation.write(command, 6);
+    response = piezo_port.readAll();
+    std::cout<<"done: "<<response.constData()<<std::endl;
+    QThread::sleep(0.5);
+    port_rotation.flush();
+}
+
 // TODO: component to display the current position
 // TODO: label to show the active / inactive state
 // TODO: method to update the motor status in the UI and in the class
+// TODO: add method to update the rotation stage parameters based on UI value.
 
 /*
 
