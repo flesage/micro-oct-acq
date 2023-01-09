@@ -2827,9 +2827,9 @@
          <property name="geometry">
           <rect>
            <x>10</x>
-           <y>10</y>
-           <width>297</width>
-           <height>363</height>
+           <y>7</y>
+           <width>282</width>
+           <height>488</height>
           </rect>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -2864,13 +2864,6 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="pushButton_rotation_testReadJog">
-            <property name="text">
-             <string>Test_ReadJog</string>
-            </property>
-           </widget>
-          </item>
-          <item>
            <widget class="QPushButton" name="pushButton_rotation_stop">
             <property name="enabled">
              <bool>false</bool>
@@ -2881,27 +2874,12 @@
            </widget>
           </item>
           <item>
-           <widget class="QLabel" name="label_rotation_status">
-            <property name="toolTip">
-             <string>Rotation Stage Status</string>
-            </property>
-            <property name="autoFillBackground">
+           <widget class="QPushButton" name="pushButton_rotation_stop_immediately">
+            <property name="enabled">
              <bool>false</bool>
             </property>
-            <property name="frameShape">
-             <enum>QFrame::Box</enum>
-            </property>
-            <property name="frameShadow">
-             <enum>QFrame::Sunken</enum>
-            </property>
-            <property name="lineWidth">
-             <number>1</number>
-            </property>
             <property name="text">
-             <string>Rotation stage status</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignCenter</set>
+             <string>Stop Immediately</string>
             </property>
            </widget>
           </item>
@@ -2910,7 +2888,7 @@
             <item row="1" column="0">
              <widget class="QLabel" name="label_54">
               <property name="text">
-               <string>Current position (deg)</string>
+               <string>Move to (deg)</string>
               </property>
              </widget>
             </item>
@@ -2973,6 +2951,32 @@
               <property name="decimals">
                <number>2</number>
               </property>
+              <property name="minimum">
+               <double>-360.000000000000000</double>
+              </property>
+              <property name="maximum">
+               <double>360.000000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_55">
+              <property name="text">
+               <string>Current position (deg)</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QDoubleSpinBox" name="doubleSpinBox_rotation_current_position">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="decimals">
+               <number>2</number>
+              </property>
+              <property name="minimum">
+               <double>-360.000000000000000</double>
+              </property>
               <property name="maximum">
                <double>360.000000000000000</double>
               </property>
@@ -2982,10 +2986,16 @@
           </item>
           <item>
            <layout class="QGridLayout" name="gridLayout_17">
+            <property name="spacing">
+             <number>0</number>
+            </property>
             <item row="0" column="2">
              <widget class="QPushButton" name="pushButton_rotation_jogForward">
               <property name="enabled">
                <bool>false</bool>
+              </property>
+              <property name="toolTip">
+               <string>Jog Forwards</string>
               </property>
               <property name="text">
                <string/>
@@ -2996,10 +3006,30 @@
               </property>
              </widget>
             </item>
+            <item row="0" column="1">
+             <widget class="QPushButton" name="pushButton_rotationStageHome">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="toolTip">
+               <string>Homing (Rotation)</string>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="icon">
+               <iconset resource="icons.qrc">
+                <normaloff>:/icons/img/home_icon.png</normaloff>:/icons/img/home_icon.png</iconset>
+              </property>
+             </widget>
+            </item>
             <item row="0" column="0">
              <widget class="QPushButton" name="pushButton_rotation_jogReverse">
               <property name="enabled">
                <bool>false</bool>
+              </property>
+              <property name="toolTip">
+               <string>Jog Backwards</string>
               </property>
               <property name="text">
                <string/>
@@ -3010,17 +3040,68 @@
               </property>
              </widget>
             </item>
-            <item row="0" column="1">
-             <widget class="QPushButton" name="pushButton_rotationStageHome">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
+           </layout>
+          </item>
+          <item>
+           <widget class="Line" name="line_26">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QFormLayout" name="formLayout_2">
+            <item row="0" column="0">
+             <widget class="QPushButton" name="pushButton_ocrt_calibration">
               <property name="text">
-               <string/>
+               <string>OCRT Calibration</string>
               </property>
-              <property name="icon">
-               <iconset resource="icons.qrc">
-                <normaloff>:/icons/img/home_icon.png</normaloff>:/icons/img/home_icon.png</iconset>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QPushButton" name="pushButton_ocrt_acquisition">
+              <property name="text">
+               <string>OCRT Acquisition</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="label_56">
+              <property name="text">
+               <string># steps / cycle</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QSpinBox" name="spinBox_ocrt_nsteps">
+              <property name="minimum">
+               <number>1</number>
+              </property>
+              <property name="maximum">
+               <number>360</number>
+              </property>
+              <property name="singleStep">
+               <number>30</number>
+              </property>
+              <property name="value">
+               <number>15</number>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="label_57">
+              <property name="text">
+               <string>Angular interval (deg)</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QDoubleSpinBox" name="doubleSpinBox_ocrt_angleInterval">
+              <property name="maximum">
+               <double>360.000000000000000</double>
+              </property>
+              <property name="value">
+               <double>24.000000000000000</double>
               </property>
              </widget>
             </item>

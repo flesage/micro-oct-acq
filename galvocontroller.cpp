@@ -56,7 +56,10 @@ GalvoController::GalvoController() :
     p_stop_viewline = ui->lineEdit_stopLine->text().toInt();
 
     motors = new MotorClass();
+
+    // Rotation
     thorlabs_rotation = new ThorlabsRotation();
+    rotation_timer = new QTimer();
 
     double radians_per_volt = 2*3.14159265359/(360*0.8);
     double f1=50.0;
@@ -106,7 +109,12 @@ GalvoController::GalvoController() :
     connect(ui->pushButton_rotation_jogReverse, SIGNAL(clicked()), this, SLOT(slot_rotation_jogReverse()));
     connect(ui->pushButton_rotation_jogForward, SIGNAL(clicked()), this, SLOT(slot_rotation_jogForward()));
     connect(ui->doubleSpinBox_rotation_position, SIGNAL(editingFinished()), this, SLOT(slot_rotation_absoluteMove()));
-    connect(ui->pushButton_rotation_testReadJog, SIGNAL(clicked()), this, SLOT(slot_rotation_readParameters()));
+    connect(ui->pushButton_rotation_stop, SIGNAL(clicked()), this, SLOT(slot_rotation_stop()));
+    connect(ui->pushButton_rotation_stop_immediately, SIGNAL(clicked()), this, SLOT(slot_rotation_stop_immediately()));
+    connect(ui->pushButton_exampleThorlabs, SIGNAL(clicked()), this, SLOT(slot_rotation_example_thorlabs()));
+    connect(rotation_timer, SIGNAL(timeout()), this, SLOT(slot_rotation_update_position()));
+
+
 
     connect(ui->lineEdit_startLine,SIGNAL(editingFinished()),this,SLOT(slot_updateViewLinePositions()));
     connect(ui->lineEdit_stopLine,SIGNAL(editingFinished()),this,SLOT(slot_updateViewLinePositions()));
@@ -1384,7 +1392,7 @@ void GalvoController::slot_updateAngiogramAlgo(void)
 void GalvoController::activateRotationStage(bool flag){
     if(flag)
     {
-        motors->RotationStageOpenPort();
+        thorlabs_rotation->connect();
         ui->pushButton_rotationStageHome->setEnabled(true);
         ui->pushButton_rotationStageIdentify->setEnabled(true);
         ui->pushButton_rotation_jogForward->setEnabled(true);
@@ -1393,9 +1401,14 @@ void GalvoController::activateRotationStage(bool flag){
         ui->lineEdit_rotation_jogMaxVelocity->setEnabled(true);
         ui->lineEdit_rotation_jogAcceleration->setEnabled(true);
         ui->doubleSpinBox_rotation_position->setEnabled(true);
+        ui->pushButton_rotation_stop->setEnabled(true);
+        ui->pushButton_rotation_stop_immediately->setEnabled(true);
+        rotation_timer->start(ROTATION_REFRESH_RATE);
+        //slot_rotation_updateJogParameters();
     }
     else
     {
+        thorlabs_rotation->disconnect();
         ui->pushButton_rotationStageHome->setEnabled(false);
         ui->pushButton_rotationStageIdentify->setEnabled(false);
         ui->pushButton_rotation_jogForward->setEnabled(false);
@@ -1404,18 +1417,20 @@ void GalvoController::activateRotationStage(bool flag){
         ui->lineEdit_rotation_jogMaxVelocity->setEnabled(false);
         ui->lineEdit_rotation_jogAcceleration->setEnabled(false);
         ui->doubleSpinBox_rotation_position->setEnabled(false);
-        motors->RotationStageClosePort();
+        ui->pushButton_rotation_stop->setEnabled(false);
+        ui->pushButton_rotation_stop_immediately->setEnabled(false);
+        rotation_timer->stop();
     }
 }
 
 void GalvoController::identifyRotationStage(void){
     std::cout<<"Identifying the rotation stage"<<std::endl;
-    motors->RotationStageIdentify();
+    thorlabs_rotation->identify();
 }
 
 void GalvoController::homeRotationStage(void){
     std::cout<<"Homing the rotation stage"<<std::endl;
-    motors->RotationStageHome();
+    thorlabs_rotation->move_home();
 }
 
 void GalvoController::slot_rotation_updateJogParameters(void){
@@ -1423,23 +1438,25 @@ void GalvoController::slot_rotation_updateJogParameters(void){
     float step_size = ui->lineEdit_rotation_jogStepSize->text().toFloat();
     float max_velocity = ui->lineEdit_rotation_jogMaxVelocity->text().toFloat();
     float acceleration = ui->lineEdit_rotation_jogAcceleration->text().toFloat();
-    motors->RotationStageSetJogParameters(step_size, max_velocity, acceleration);
+    thorlabs_rotation->set_jog_parameters(step_size, acceleration, max_velocity);
+    // FIXME: jog paramters
+    //motors->RotationStageSetJogParameters(step_size, max_velocity, acceleration);
 }
 
 void GalvoController::slot_rotation_jogForward(void){
     std::cout<<"Jogging the rotation stage forward"<<std::endl;
-    motors->RotationStageJog(-1); // For the rotation stage used, +deg is backward
+    thorlabs_rotation->move_jog_forwards();
 }
 
 void GalvoController::slot_rotation_jogReverse(void){
     std::cout<<"Jogging the rotation stage in reverse"<<std::endl;
-    motors->RotationStageJog(1); // For the rotation stage used, -deg is forward
+    thorlabs_rotation->move_jog_backwards();
 }
 
 void GalvoController::slot_rotation_absoluteMove(void){
     std::cout<<"Moving (absolute) the rotation stage"<<std::endl;
     float position = ui->doubleSpinBox_rotation_position->value();
-    motors->RotationAbsoluteMove(position);
+    thorlabs_rotation->move_absolute(position);
 }
 
 // TODO: Rotation stage, read and update parameters
@@ -1449,4 +1466,22 @@ void GalvoController::slot_rotation_readParameters(void){
     //motors->RotationStageGetJogParameters();
 }
 
-// TODO: Rotation Stage, Add a button to stop everything
+void GalvoController::slot_rotation_stop(void)
+{
+    thorlabs_rotation->stop();
+    std::cout<<"Stopped the rotation (profiled)"<<std::endl;
+}
+
+void GalvoController::slot_rotation_stop_immediately(void){
+    thorlabs_rotation->stop_immediately();
+    std::cout<<"Stopped the rotation (immediately)"<<std::endl;
+}
+
+void GalvoController::slot_rotation_update_position(void){
+    float pos_deg = thorlabs_rotation->get_position();
+    ui->doubleSpinBox_rotation_current_position->setValue(pos_deg);
+}
+
+void GalvoController::slot_rotation_example_thorlabs(void){
+   thorlabs_rotation->example_thorlabs();
+}

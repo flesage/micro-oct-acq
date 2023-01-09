@@ -529,7 +529,7 @@ void MotorClass::RotationStageHome()
 }
 
 // Set the rotation stage jog parameters
-// TODO: test this.
+// TODO: remove thorlabs rotation code from this class
 void MotorClass::RotationStageSetJogParameters(float jogStepSize, float jogMaxVelocity, float jogAcceleration)
 {
     std::cout<<"...setting the rotation stage jog parameters"<<std::endl;

@@ -101,6 +101,10 @@ private slots:
     void slot_rotation_jogReverse(void);
     void slot_rotation_absoluteMove(void);
     void slot_rotation_readParameters(void);
+    void slot_rotation_stop(void);
+    void slot_rotation_stop_immediately(void);
+    void slot_rotation_update_position(void);
+    void slot_rotation_example_thorlabs(void);
 
 private:
     Ui::OCTGalvosForm *ui;
@@ -150,6 +154,7 @@ private:
     ImageViewer* p_image_view;
     DataSaver* p_data_saver;
     QTimer* view_timer;
+    QTimer* rotation_timer;
     AnalogInput* p_ai;
     Float64DataSaver* p_ai_data_saver;
     int p_block_size;
