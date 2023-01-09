@@ -100,7 +100,6 @@ private slots:
     void slot_rotation_jogForward(void);
     void slot_rotation_jogReverse(void);
     void slot_rotation_absoluteMove(void);
-    void slot_rotation_readParameters(void);
     void slot_rotation_stop(void);
     void slot_rotation_stop_immediately(void);
     void slot_rotation_update_position(void);

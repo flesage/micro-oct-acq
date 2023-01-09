@@ -1458,13 +1458,6 @@ void GalvoController::slot_rotation_absoluteMove(void){
     thorlabs_rotation->move_absolute(position);
 }
 
-// TODO: Rotation stage, read and update parameters
-void GalvoController::slot_rotation_readParameters(void){
-    std::cout<<"Testing the new thorlabs dll api"<<std::endl;
-    thorlabs_rotation->TestGetInformation();
-    //motors->RotationStageGetJogParameters();
-}
-
 void GalvoController::slot_rotation_stop(void)
 {
     thorlabs_rotation->stop();

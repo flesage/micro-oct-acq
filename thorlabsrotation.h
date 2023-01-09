@@ -6,7 +6,6 @@ class ThorlabsRotation
 public:
     ThorlabsRotation();
     virtual ~ThorlabsRotation();
-    void TestGetInformation();
     void connect();
     void disconnect();
     void move_home();
@@ -18,7 +17,6 @@ public:
     void set_jog_parameters(float step_size, float acceleration, float max_velocity);
     float get_position();
     void identify();
-    void example_thorlabs();
 private:
     bool is_open;
     char serialNo[9];

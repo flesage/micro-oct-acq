@@ -3,80 +3,25 @@
 #include "config.h"
 #include "thorlabsrotation.h"
 #include "Thorlabs.MotionControl.TCube.DCServo.h"
-//#include "C:\Program Files\Thorlabs\Kinesis\Thorlabs.MotionControl.TCube.DCServo.h"
 
-// Exemple Thorlabs
-//#include "stdafx.h"
-//#include <stdlib.h>
-//#include <conio.h>
-//
-//#if defined TestCode
-//#include "..\..\..\Instruments\ThorLabs.TCube.DCServo\ThorLabs.TCube.DCServo\Thorlabs.MotionControl.TCube.DCServo.h"
-//#else
-//    #include "Thorlabs.MotionControl.TCube.DCServo.h"
-//#endif
-
-// TODO: constructor
+// Constructor
 ThorlabsRotation::ThorlabsRotation()
 {
     // Initialization
     is_open = false;
     sprintf_s(serialNo, "%d", ROTATION_SERIAL_NUMBER);
-    std::cout << "Initializing the Thorlabs Rotation Stage, serialNo=" << serialNo << std::endl;
 }
 
-// TODO: destructor
+// Destructor
 ThorlabsRotation::~ThorlabsRotation()
 {
     if (is_open) {
         disconnect();
     }
-}
 
-// TODO: test information
-void ThorlabsRotation::TestGetInformation()
-{
-    // Example_TDC001.cpp : Defines the entry point for the console application.
-    int serialNo = 83828151; // TDC001
-
-    // identify and access device
-    char testSerialNo[16];
-    sprintf_s(testSerialNo, "%d", serialNo);
-
-    // Build list of connected device
-    if (TLI_BuildDeviceList() == 0)
-    {
-        // Get device list size
-        short n = TLI_GetDeviceListSize();
-        std::cout<<"(DEBUG) DeviceListSize: "<< n <<std::endl;
-        
-        // Get TDC serial numbers
-        char serialNos[100];
-        TLI_GetDeviceListByTypeExt(serialNos, 100, 83);
-        std::cout<<"(DEBUG) DeviceListByTypeExt: " << serialNos << std::endl;
-
-        // Output list of matching devices
-        {
-            char *searchContext = nullptr;
-            char *p = strtok_s(serialNos, ",", &searchContext);
-
-            while (p != nullptr)
-            {
-                TLI_DeviceInfo deviceInfo;
-                // Get device info from device
-                TLI_GetDeviceInfo(p, &deviceInfo);
-                // Get strings from device info structure
-                char desc[65];
-                strncpy_s(desc, deviceInfo.description, 64);
-                desc[64] = '\0';
-                char serialNo[9];
-                strncpy_s(serialNo, deviceInfo.serialNo, 8);
-                serialNo[8] = '\0';
-                // output
-                std::cout << "Found Device "<<p<<"="<<serialNo<<", "<<desc<<std::endl;
-                p = strtok_s(nullptr, ",", &searchContext);
-            }
-        }
+    // Disconnect from the simulation
+    if (ROTATION_SIMULATION){
+        TLI_UninitializeSimulations();
     }
 }
 
@@ -107,20 +52,18 @@ void ThorlabsRotation::connect()
 // Disconnect and close the device
 void ThorlabsRotation::disconnect()
 {
-    // Stop polling
-    CC_StopPolling(serialNo);
+    if (is_open == true) {
+        // Stop polling
+        CC_StopPolling(serialNo);
 
-    // Disconnect and close the device.
-    CC_Close(serialNo);
+        // Disconnect and close the device.
+        CC_Close(serialNo);
 
-    // Disconnect from the simulation
-    if (ROTATION_SIMULATION){
-        TLI_UninitializeSimulations();
+        // Set state as close
+        is_open = false;
     }
-
-    // Set state as close
-    is_open = false;
 }
+    
 
 // Move the kinesis device to its home
 void ThorlabsRotation::move_home()
@@ -146,7 +89,7 @@ void ThorlabsRotation::move_jog_backwards()
     }
 }
 
-// TODO: move_absolute
+// Move (absolute)
 void ThorlabsRotation::move_absolute(float pos_deg)
 {
     if (is_open){
@@ -196,5 +139,3 @@ void ThorlabsRotation::identify()
         std::cout << "Device is not open, can't identify." << std::endl;
     }
 }
-
-// TODO: initialize jog paramters reading the current values
