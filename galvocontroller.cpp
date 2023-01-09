@@ -111,7 +111,6 @@ GalvoController::GalvoController() :
     connect(ui->doubleSpinBox_rotation_position, SIGNAL(editingFinished()), this, SLOT(slot_rotation_absoluteMove()));
     connect(ui->pushButton_rotation_stop, SIGNAL(clicked()), this, SLOT(slot_rotation_stop()));
     connect(ui->pushButton_rotation_stop_immediately, SIGNAL(clicked()), this, SLOT(slot_rotation_stop_immediately()));
-    connect(ui->pushButton_exampleThorlabs, SIGNAL(clicked()), this, SLOT(slot_rotation_example_thorlabs()));
     connect(rotation_timer, SIGNAL(timeout()), this, SLOT(slot_rotation_update_position()));
 
 
@@ -1480,8 +1479,4 @@ void GalvoController::slot_rotation_stop_immediately(void){
 void GalvoController::slot_rotation_update_position(void){
     float pos_deg = thorlabs_rotation->get_position();
     ui->doubleSpinBox_rotation_current_position->setValue(pos_deg);
-}
-
-void GalvoController::slot_rotation_example_thorlabs(void){
-   thorlabs_rotation->example_thorlabs();
 }
