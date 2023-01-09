@@ -25,16 +25,6 @@ public:
     void PiezoStartJog();
     void PiezoStopJog();
 
-    // Rotation stage
-    void RotationStageOpenPort();
-    void RotationStageClosePort();
-    void RotationStageIdentify();
-    void RotationStageHome();
-    void RotationStageSetJogParameters(float jogStepSize, float jogMaxVelocity, float jogAcceleration);
-    void RotationStageGetJogParameters();
-    void RotationStageJog(int direction);
-    void RotationAbsoluteMove(float position);
-
 private:
     // Serial Ports
     QSerialPort port;
@@ -44,11 +34,6 @@ private:
     bool piezo_is_open;
     int p_piezo_speed;
     bool p_piezo_moving;
-
-    // Rotation stage
-    QSerialPort port_rotation; // Port for the motorized rotation stage (OCRT)
-    bool is_open_rotation;
-
 };
 #endif // MOTORCLASS_H
 
