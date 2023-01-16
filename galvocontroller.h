@@ -16,6 +16,7 @@
 #include "analoginput.h"
 #include "motorclass.h"
 #include "thorlabsrotation.h"
+#include "oct3dorthogonalviewer.h"
 
 namespace Ui {
 class OCTGalvosForm;
@@ -103,6 +104,7 @@ private slots:
     void slot_rotation_stop(void);
     void slot_rotation_stop_immediately(void);
     void slot_rotation_update_position(void);
+    void slot_test_orthoviewer(void);
 
 private:
     Ui::OCTGalvosForm *ui;
@@ -150,6 +152,7 @@ private:
     QStringList p_saved_scans;
     FringeViewer* p_fringe_view;
     ImageViewer* p_image_view;
+    oct3dOrthogonalViewer* p_ortho_view;
     DataSaver* p_data_saver;
     QTimer* view_timer;
     QTimer* rotation_timer;

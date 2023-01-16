@@ -2829,7 +2829,7 @@
            <x>10</x>
            <y>7</y>
            <width>282</width>
-           <height>488</height>
+           <height>524</height>
           </rect>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -3373,6 +3373,13 @@
      </item>
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="QPushButton" name="pushButton_test_orthoViewer">
+         <property name="text">
+          <string>Test OrthoViewer</string>
+         </property>
+        </widget>
+       </item>
        <item>
         <widget class="QPushButton" name="pushButton_start">
          <property name="minimumSize">
