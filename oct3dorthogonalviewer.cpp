@@ -1,6 +1,19 @@
 #include "oct3dorthogonalviewer.h"
 #include "ui_oct3dorthogonalviewer.h"
 #include <iostream>
+#include <cmath>
+#include <QPainter>
+#include <QPen>
+#include <QColor>
+#include <QTimer>
+
+// TODO: Add mouse and keyboard interactions (scroll and mouse click position uptdate)
+// TODO: Show the projection range with the overlay
+// TODO: Add colormap options
+//  https://stackoverflow.com/questions/41744654/is-there-a-default-color-table-colormap-available-in-qt
+//  http://www.kennethmoreland.com/color-advice/
+// TODO: add option to perform averaging?
+// TODO: add simulation mode
 
 oct3dOrthogonalViewer::oct3dOrthogonalViewer(QWidget *parent) :
     QWidget(parent),
@@ -10,16 +23,31 @@ oct3dOrthogonalViewer::oct3dOrthogonalViewer(QWidget *parent) :
     ui->setupUi(this);
 
     // Setup Data
-    p_nx = 32;
-    p_ny = 64;
+    p_nx = 256;
+    p_ny = 256;
     p_nz = 128;
+    p_line_thickness = 3;
     p_projection_mode = AVERAGE;
+    p_log_transform = true;
+    p_overlay = true;
+
+    // Prepare the pen
+    pen_x = QPen(QColor(255, 0, 0, 128), p_line_thickness); // x = red
+    pen_y = QPen(QColor(0, 255, 0, 128), p_line_thickness); // y = green
+    pen_z = QPen(QColor(0, 0, 255, 128), p_line_thickness); // z = blue
 
     //p_oct = af::array(p_nz, p_nx, p_ny, f32);
+
+    // Simulating an OCT volume
     p_oct = af::randu(p_nz, p_nx, p_ny, f32);
+    for (int z=0; z<p_nz; z++){
+        p_oct(z,af::span,af::span) = p_oct(z,af::span,af::span) * exp(-z * 0.1);
+    }
     p_image_xy = QImage(p_nx, p_ny, QImage::Format_Indexed8);
     p_image_xz = QImage(p_nx, p_nz, QImage::Format_Indexed8);
-    p_image_yz = QImage(p_ny, p_nz, QImage::Format_Indexed8);
+    p_image_yz = QImage(p_nz, p_ny, QImage::Format_Indexed8);
+    simulation_timer = new QTimer();
+    p_y_sim = 0;
 
     // Adapt UI to volume size
     ui->horizontalSlider_x->setRange(0, p_nx-1);
@@ -48,13 +76,25 @@ oct3dOrthogonalViewer::oct3dOrthogonalViewer(QWidget *parent) :
     connect(ui->spinBox_z, SIGNAL(valueChanged(int)), this, SLOT(set_z(int)));
     connect(ui->spinBox_sliceThickness, SIGNAL(valueChanged(int)), this, SLOT(set_slice_thickness(int)));
     connect(ui->comboBox_projectionType, SIGNAL(currentIndexChanged(int)), this, SLOT(set_projection_mode(int)));
+    connect(ui->checkBox_logTransform, SIGNAL(stateChanged(int)), this, SLOT(set_log_transform(int)));
+    connect(ui->checkBox_xyzOverlay, SIGNAL(stateChanged(int)), this, SLOT(set_overlay(int)));
+    connect(simulation_timer, SIGNAL(timeout()), this, SLOT(simulate_bscan()));
 
     ui_is_ready = true;
+    simulation_timer->start(100);
 }
 
 oct3dOrthogonalViewer::~oct3dOrthogonalViewer()
 {
+    simulation_timer -> stop();
     delete ui;
+}
+
+// Replace a b-scan given a y frame number.
+void oct3dOrthogonalViewer::put(const af::array& data, unsigned int frame_number)
+{
+    p_oct(af::span, af::span, frame_number) = data;
+    slot_update_view();
 }
 
 void oct3dOrthogonalViewer::set_x(int x)
@@ -118,11 +158,41 @@ void oct3dOrthogonalViewer::set_projection_mode(int mode)
     }
 }
 
+void oct3dOrthogonalViewer::set_log_transform(int value)
+{
+    std::cout << "Setting log_transform=" << value << std::endl;
+    if (value == 0) {
+        p_log_transform = false;
+    } else{
+        p_log_transform = true;
+    }
+
+    if (ui_is_ready){
+        slot_update_view();
+    }
+}
+
+void oct3dOrthogonalViewer::set_overlay(int value)
+{
+    std::cout << "Setting overlay=" << value << std::endl;
+    if (value == 0) {
+        p_overlay = false;
+    } else {
+        p_overlay = true;
+    }
+
+    if (ui_is_ready){
+        slot_update_view();
+    }
+}
+
+// TODO: There is a bug with the bscan displays, every other row or column is missing.
 void oct3dOrthogonalViewer::slot_update_view()
 {
     std::cout << "Updating the view" << std::endl;
 
     // Computing X projection
+    // TODO: Change the behaviour of the slice_thickness to be centered.
     int n_slices_x;
     if (p_current_x + p_slice_thickness > p_nx - 1)
     {
@@ -177,6 +247,7 @@ void oct3dOrthogonalViewer::slot_update_view()
         mip_y = af::mean(p_oct(af::span, af::span, af::seq(p_current_y, p_current_y + n_slices_y-1)), 2);
         break;
     }
+    mip_y = af::transpose(mip_y);
 
     // Computing Z projection
     int n_slices_z;
@@ -206,7 +277,12 @@ void oct3dOrthogonalViewer::slot_update_view()
         break;
     }
 
-    // Filter the projections
+    // TODO: Contrast adjustment and filtering
+    if (p_log_transform) {
+        mip_x = af::log(mip_x + 0.001);
+        mip_y = af::log(mip_y + 0.001);
+        mip_z = af::log(mip_z + 0.001);
+    }
 
     // Adjusting contrast
     float l_max = std::max(af::max<float>(mip_x), af::max<float>(mip_y));
@@ -228,19 +304,77 @@ void oct3dOrthogonalViewer::slot_update_view()
     QImage tmp_z = p_image_xy.convertToFormat(QImage::Format_ARGB32);
 
     // Drawing annotations
-    // TODO
+    pix_xy = QPixmap::fromImage(tmp_z);
+    if (p_overlay == true){
+        QPainter painter_xy = QPainter(&pix_xy);
+        painter_xy.setPen(pen_x);
+        painter_xy.drawLine(p_current_x, 0, p_current_x, p_ny);
+        painter_xy.setPen(pen_y);
+        painter_xy.drawLine(0, p_current_y, p_nx, p_current_y);
+        painter_xy.setPen(pen_z);
+        painter_xy.drawRect(0, 0, p_nx-1, p_ny-1);
+    }
+
+    pix_xz = QPixmap::fromImage(tmp_y);
+    if (p_overlay == true){
+        QPainter painter_xz = QPainter(&pix_xz);
+        painter_xz.setPen(pen_x);
+        painter_xz.drawLine(p_current_x, 0, p_current_x, p_nz);
+        painter_xz.setPen(pen_z);
+        painter_xz.drawLine(0, p_current_z, p_nx, p_current_z);
+        painter_xz.setPen(pen_y);
+        painter_xz.drawRect(0, 0, p_nx-1, p_nz-1);
+    }
+
+    pix_yz = QPixmap::fromImage(tmp_x);
+    if (p_overlay == true){
+        QPainter painter_yz = QPainter(&pix_yz);
+        painter_yz.setPen(pen_z);
+        painter_yz.drawLine(p_current_z, 0, p_current_z, p_ny);
+        painter_yz.setPen(pen_y);
+        painter_yz.drawLine(0, p_current_y, p_nz, p_current_y);
+        painter_yz.setPen(pen_x);
+        painter_yz.drawRect(0, 0, p_nz-1, p_ny-1);
+    }
+
 
     // Set as pixmaps
-    pix = QPixmap::fromImage(tmp_x);
-    ui->label_yz->setPixmap(pix.scaled(ui->label_yz->size(),
-                                       Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
+    // TODO: Check the image's orientations
+    ui->label_yz->setPixmap(pix_yz.scaled(ui->label_yz->size(),
+                                       Qt::IgnoreAspectRatio, Qt::FastTransformation));
+    ui->label_xz->setPixmap(pix_xz.scaled(ui->label_xz->size(),
+                                       Qt::IgnoreAspectRatio, Qt::FastTransformation));
+    ui->label_xy->setPixmap(pix_xy.scaled(ui->label_xy->size(),
+                                       Qt::IgnoreAspectRatio, Qt::FastTransformation));
+}
 
+void oct3dOrthogonalViewer::resizeEvent(QResizeEvent *)
+{
+    if(!pix_xy.isNull()){
+        ui->label_xy->setPixmap(pix_xy.scaled(ui->label_xy->size(),
+                                           Qt::IgnoreAspectRatio, Qt::FastTransformation));
+    }
+    if (!pix_xz.isNull()){
+        ui->label_xz->setPixmap(pix_xz.scaled(ui->label_xz->size(),
+                                           Qt::IgnoreAspectRatio, Qt::FastTransformation));
+    }
+    if (!pix_yz.isNull()){
+        ui->label_yz->setPixmap(pix_yz.scaled(ui->label_yz->size(),
+                                           Qt::IgnoreAspectRatio, Qt::FastTransformation));
+    }
+}
 
-    pix = QPixmap::fromImage(tmp_y);
-    ui->label_xz->setPixmap(pix.scaled(ui->label_xz->size(),
-                                       Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
+void oct3dOrthogonalViewer::simulate_bscan(){
+    std::cout << "Simulating a b-scan for frame y=" << p_y_sim << std::endl;
+    simulated_bscan = af::randu(p_nz, p_nx, f32);
+    for (int z=0; z<p_nz; z++){
+        simulated_bscan(z, af::span) = simulated_bscan(z, af::span) * exp(-z * 0.1);
+    }
+    put(simulated_bscan, p_y_sim);
 
-    pix = QPixmap::fromImage(tmp_z);
-    ui->label_xy->setPixmap(pix.scaled(ui->label_xy->size(),
-                                       Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
+    // Updating the simulated frame
+    p_y_sim++;
+    if (p_y_sim == p_ny){
+        p_y_sim = 0;
+    }
 }
