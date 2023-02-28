@@ -26,6 +26,6 @@
 #define ROTATION_ACC2ENC 14.66 // deg/s2, Thorlabs communication protocol, section 8
 #define ROTATION_REFRESH_RATE 200 // ms
 
-#define SIMULATION
+// #define SIMULATION
 
 #endif // CONFIG_H

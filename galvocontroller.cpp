@@ -164,7 +164,7 @@ GalvoController::GalvoController() :
     connect(ui->checkBox_autoFill,SIGNAL(stateChanged(int)),this,SLOT(autoFillName()));
     this->updateInfo();
 
-    p_save_dir = QDir::home();
+    p_save_dir = QString("C:\\Data");
     ui->label_directory->setText(p_save_dir.absolutePath());
     connect(ui->pushButton_savedir,SIGNAL(clicked()),this,SLOT(setSaveDir()));
 

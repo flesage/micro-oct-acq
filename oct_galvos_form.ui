@@ -356,7 +356,7 @@
         </size>
        </property>
        <property name="currentIndex">
-        <number>4</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="tab_para">
         <attribute name="title">
@@ -3121,7 +3121,7 @@
      </item>
      <item>
       <layout class="QGridLayout" name="gridLayout_6">
-       <item row="0" column="1">
+       <item row="1" column="1">
         <widget class="QCheckBox" name="checkBox_fringe">
          <property name="minimumSize">
           <size>
@@ -3143,7 +3143,14 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="0">
+       <item row="3" column="0">
+        <widget class="QCheckBox" name="checkBox_finite_acq">
+         <property name="text">
+          <string>Finite acquisition</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
         <widget class="QCheckBox" name="checkBox_view_image">
          <property name="minimumSize">
           <size>
@@ -3165,31 +3172,31 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="2">
-        <widget class="QCheckBox" name="checkBox_view_line">
-         <property name="text">
-          <string>View Line</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QCheckBox" name="checkBox_finite_acq">
-         <property name="text">
-          <string>Finite acquisition</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="2">
+       <item row="3" column="2">
         <widget class="QLineEdit" name="lineEdit_nvol">
          <property name="text">
           <string>1</string>
          </property>
         </widget>
        </item>
-       <item row="1" column="1">
+       <item row="1" column="2">
+        <widget class="QCheckBox" name="checkBox_view_line">
+         <property name="text">
+          <string>View Line</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
         <widget class="QLabel" name="label_50">
          <property name="text">
           <string>N Volumes:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="3">
+        <widget class="QCheckBox" name="checkBox_view_3d">
+         <property name="text">
+          <string>View 3D</string>
          </property>
         </widget>
        </item>
