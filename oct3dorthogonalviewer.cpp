@@ -186,7 +186,6 @@ void oct3dOrthogonalViewer::set_overlay(int value)
     }
 }
 
-// TODO: There is a bug with the bscan displays, every other row or column is missing.
 void oct3dOrthogonalViewer::slot_update_view()
 {
     std::cout << "Updating the view" << std::endl;
@@ -277,7 +276,7 @@ void oct3dOrthogonalViewer::slot_update_view()
         break;
     }
 
-    // TODO: Contrast adjustment and filtering
+    // Contrast adjustment and filtering
     if (p_log_transform) {
         mip_x = af::log(mip_x + 0.001);
         mip_y = af::log(mip_y + 0.001);

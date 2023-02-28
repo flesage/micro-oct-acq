@@ -1438,8 +1438,6 @@ void GalvoController::slot_rotation_updateJogParameters(void){
     float max_velocity = ui->lineEdit_rotation_jogMaxVelocity->text().toFloat();
     float acceleration = ui->lineEdit_rotation_jogAcceleration->text().toFloat();
     thorlabs_rotation->set_jog_parameters(step_size, acceleration, max_velocity);
-    // FIXME: jog paramters
-    //motors->RotationStageSetJogParameters(step_size, max_velocity, acceleration);
 }
 
 void GalvoController::slot_rotation_jogForward(void){
