@@ -749,6 +749,10 @@ void GalvoController::startScan()
         f2=75.0;
         break;
     case 4:
+        f1=200.0;
+        f2=300.0;
+        break;
+    case 5:
         f1=10.0;
         f2=10.0;
         break;

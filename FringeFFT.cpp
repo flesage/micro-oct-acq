@@ -403,21 +403,22 @@ af::array FringeFFT::dct1(const af::array& arr)
 
 af::array FringeFFT::idct1(const af::array& arr)
 {
-    af::cfloat h_unit;
-    h_unit.real = 0.0;
-    h_unit.imag = 1.0;
-    //af::array unit = af::constant(h_unit, 1, c32);
-    int N = (int) arr.dims(0);
-    af::array tmp = arr.copy();
-    af::array offset = af::tile(tmp(0,af::span),N);
-    tmp(0,af::span) = 0.;
-    tmp = 2 * af::real( af::ifft( af::exp(0.5*h_unit*af::Pi/N*af::range(arr.dims(),0,arr.type())) * tmp ) * N );
+//    af::cfloat h_unit;
+//    h_unit.real = 0.0;
+//    h_unit.imag = 1.0;
+//    //af::array unit = af::constant(h_unit, 1, c32);
+//    int N = (int) arr.dims(0);
+//    af::array tmp = arr.copy();
+//    af::array offset = af::tile(tmp(0,af::span),N);
+//    tmp(0,af::span) = 0.;
+//    tmp = 2 * af::real( af::ifft( af::exp(0.5*h_unit*af::Pi/N*af::range(arr.dims(),0,arr.type())) * tmp ) * N );
+//
+//    out(af::seq(0,N-1,2),af::span) = tmp(af::seq(0,floor(N/2)-1),af::span);
+//    out(af::seq(1,N-1,2),af::span) = af::flip(tmp(af::seq(floor(N/2),af::end),af::span),0);
+//    offset /= sqrt(N);
+//    out /= sqrt(2*N);
+//    out += offset;
     af::array out = af::constant(0,arr.dims(),arr.type());
-    out(af::seq(0,N-1,2),af::span) = tmp(af::seq(0,floor(N/2)-1),af::span);
-    out(af::seq(1,N-1,2),af::span) = af::flip(tmp(af::seq(floor(N/2),af::end),af::span),0);
-    offset /= sqrt(N);
-    out /= sqrt(2*N);
-    out += offset;
     //tmp = offset = None;
     return out;
 }

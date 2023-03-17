@@ -19,7 +19,7 @@ INCLUDEPATH += "C:\Program Files (x86)\National Instruments\NI-DAQ\DAQmx ANSI C 
 INCLUDEPATH += "C:\Program Files (x86)\National Instruments\NI-IMAQ\Include"
 INCLUDEPATH += "C:\Program Files\ArrayFire\v3\include"
 
-LIBS += -L"C:\Program Files\ArrayFire\v3\lib" -lafopencl
+LIBS += -L"C:\Program Files\ArrayFire\v3\lib" -lafcuda
 LIBS += -L"C:\Program Files (x86)\National Instruments\Shared\ExternalCompilerSupport\C\lib64\msvc" -lNIDAQmx
 LIBS += -L"C:\Program Files (x86)\National Instruments\NI-IMAQ\Lib\MSVC" -limaq
 
