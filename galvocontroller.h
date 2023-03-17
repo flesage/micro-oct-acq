@@ -90,6 +90,7 @@ private slots:
     void slot_updateAverageAngiogram(void);
     void slot_updateAngiogramAlgo(void);
     void setCenterFromLineScan(void);
+    void slot_update_serverMode(bool);
 
 private:
     Ui::OCTGalvosForm *ui;
@@ -127,6 +128,7 @@ private:
     int p_acq_index;
     int p_n_volumes;
     QString p_datasetname;
+    bool p_server_mode;
 #ifndef SIMULATION
     Camera* p_camera;
 #else

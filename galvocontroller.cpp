@@ -53,6 +53,8 @@ GalvoController::GalvoController() :
     p_start_viewline = ui->lineEdit_startLine->text().toInt();
     p_stop_viewline = ui->lineEdit_stopLine->text().toInt();
 
+    p_server_mode = false;
+
     motors = new MotorClass();
 
     double radians_per_volt = 2*3.14159265359/(360*0.8);
@@ -137,6 +139,9 @@ GalvoController::GalvoController() :
     connect(ui->lineEdit_hanningeps,SIGNAL(editingFinished()),this,SLOT(slot_updateHanningThreshold()));
     connect(ui->lineEdit_logeps,SIGNAL(editingFinished()),this,SLOT(slot_updateImageThreshold()));
     connect(ui->checkBox_autoFill,SIGNAL(stateChanged(int)),this,SLOT(autoFillName()));
+
+    connect(ui->checkBox_serverMode, SIGNAL(clicked(bool)), this, SLOT(slot_update_serverMode(bool)));
+
     this->updateInfo();
 
     p_save_dir = QDir::home();
@@ -1364,4 +1369,16 @@ void GalvoController::slot_updateAngiogramAlgo(void)
 {
     int angioAlgo=ui->comboBox_angio->currentIndex();
     emit sig_updateAveragingAlgo(angioAlgo);
+}
+
+void GalvoController::slot_update_serverMode(bool status)
+{
+   if (status)
+   {
+       std::cout << "Starting the server mode" << std::endl;
+   }
+   else
+   {
+       std::cout << "Stopping the server mode" << std::endl;
+   }
 }
