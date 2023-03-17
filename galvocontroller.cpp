@@ -12,7 +12,7 @@
 #include "config.h"
 #include <QApplication>
 #include "motorclass.h"
-#include "piezostage.h"
+//#include "piezostage.h"
 
 GalvoController::GalvoController() :
     ui(new Ui::OCTGalvosForm), p_galvos(GALVOS_DEV,GALVOS_AOX,GALVOS_AOY), p_settings("Polytechnique/LIOM","OCT"),
@@ -96,8 +96,7 @@ GalvoController::GalvoController() :
     connect(ui->lineEdit_stopLine,SIGNAL(editingFinished()),this,SLOT(slot_updateViewLinePositions()));
     connect(ui->checkBox_view_line,SIGNAL(clicked(bool)),this,SLOT(slot_updateViewLinePositions()));
 
-    connect(ui->comboBox_scantype,SIGNAL(activated(const QString&)),this,SLOT(scanTypeChosen(const QString&)));
-    connect(ui->comboBox_scantype,SIGNAL(currentIndexChanged(const QString&)),this,SLOT(scanTypeChosen(const QString&)));
+    connect(ui->comboBox_scantype, SIGNAL(currentTextChanged(const QString&)), this, SLOT(scanTypeChosen(const QString&)));
 
     connect(ui->pushButton_start,SIGNAL(clicked()),this,SLOT(startScan()));
     connect(ui->pushButton_stop,SIGNAL(clicked()),this,SLOT(stopScan()));
@@ -389,8 +388,8 @@ void GalvoController::slot_doMosaic()
     {
         int nx = ui->lineEdit_mosaic_nx->text().toInt();
         int ny = ui->lineEdit_mosaic_ny->text().toInt();
-        int overlap_x = ui->lineEdit_mosaic_offset_x->text().toInt();
-        int overlap_y = ui->lineEdit_mosaic_offset_y->text().toInt();
+        //int overlap_x = ui->lineEdit_mosaic_offset_x->text().toInt();
+        //int overlap_y = ui->lineEdit_mosaic_offset_y->text().toInt();
         for(int i=0; i<=nx; i++)
         {
             for(int j=0; j<=ny; j++)
@@ -1222,7 +1221,7 @@ void GalvoController::readCoeffTxt(void)
     p_coeff_y_quad=fields.at(4).toFloat();
     p_coeff_yyx=fields.at(5).toFloat();
 
-    QFile fileCoeff("C:\git-projects\micro-oct-acq-angiolive/userCoefficients.txt");
+    QFile fileCoeff("C:/git-projects/micro-oct-acq-angiolive/userCoefficients.txt");
     if (!fileCoeff.open(QIODevice::ReadOnly | QIODevice::Text))
         return;
     QTextStream inCoeff(&fileCoeff);
