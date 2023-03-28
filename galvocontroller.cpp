@@ -60,6 +60,10 @@ GalvoController::GalvoController() :
 
     motors = new MotorClass();
 
+    // Rotation
+    thorlabs_rotation = new ThorlabsRotation();
+    rotation_timer = new QTimer();
+
     double radians_per_volt = 2*3.14159265359/(360*0.8);
     double f1=50.0;
     double f2=100.0;
@@ -90,12 +94,29 @@ GalvoController::GalvoController() :
     connect(ui->lineEdit_width,SIGNAL(editingFinished()),this,SLOT(updateInfo()));
     connect(ui->lineEdit_aline_repeat,SIGNAL(editingFinished()),this,SLOT(updateInfo()));
 
+    /* Piezo Signals*/
     connect(ui->pushButton_piezoOn,SIGNAL(clicked()),this,SLOT(turnPiezoOn()));
     connect(ui->pushButton_piezoOff,SIGNAL(clicked()),this,SLOT(turnPiezoOff()));
     connect(ui->pushButton_piezoHome,SIGNAL(clicked()),this,SLOT(homePiezo()));
     connect(ui->spinBox_piezoSpeed,SIGNAL(valueChanged(int)),this,SLOT(updateSpeedPiezo()));
     connect(ui->pushButton_piezoJog,SIGNAL(clicked()),this,SLOT(jogPiezo()));
     connect(ui->pushButton_piezoStop,SIGNAL(clicked()),this,SLOT(stopPiezo()));
+
+    /* OCRT Rotation Stage Signals */
+    connect(ui->checkBox_rotationStageActivate, SIGNAL(clicked(bool)), this, SLOT(activateRotationStage(bool)));
+    connect(ui->pushButton_rotationStageIdentify, SIGNAL(clicked()), this, SLOT(identifyRotationStage()));
+    connect(ui->pushButton_rotationStageHome, SIGNAL(clicked()), this, SLOT(homeRotationStage()));
+    connect(ui->lineEdit_rotation_jogStepSize, SIGNAL(editingFinished()), this, SLOT(slot_rotation_updateJogParameters()));
+    connect(ui->lineEdit_rotation_jogMaxVelocity, SIGNAL(editingFinished()), this, SLOT(slot_rotation_updateJogParameters()));
+    connect(ui->lineEdit_rotation_jogAcceleration, SIGNAL(editingFinished()), this, SLOT(slot_rotation_updateJogParameters()));
+    connect(ui->pushButton_rotation_jogReverse, SIGNAL(clicked()), this, SLOT(slot_rotation_jogReverse()));
+    connect(ui->pushButton_rotation_jogForward, SIGNAL(clicked()), this, SLOT(slot_rotation_jogForward()));
+    connect(ui->doubleSpinBox_rotation_position, SIGNAL(editingFinished()), this, SLOT(slot_rotation_absoluteMove()));
+    connect(ui->pushButton_rotation_stop, SIGNAL(clicked()), this, SLOT(slot_rotation_stop()));
+    connect(ui->pushButton_rotation_stop_immediately, SIGNAL(clicked()), this, SLOT(slot_rotation_stop_immediately()));
+    connect(rotation_timer, SIGNAL(timeout()), this, SLOT(slot_rotation_update_position()));
+    connect(ui->pushButton_test_orthoViewer, SIGNAL(clicked()), this, SLOT(slot_test_orthoviewer()));
+
 
     connect(ui->lineEdit_startLine,SIGNAL(editingFinished()),this,SLOT(slot_updateViewLinePositions()));
     connect(ui->lineEdit_stopLine,SIGNAL(editingFinished()),this,SLOT(slot_updateViewLinePositions()));
@@ -113,6 +134,7 @@ GalvoController::GalvoController() :
     connect(ui->pushButton_left,SIGNAL(clicked()),this,SLOT(moveLeft()));
     connect(ui->pushButton_readOffsetFile,SIGNAL(clicked()),this,SLOT(readOffset()));
 
+    /* Motor Signals*/
     connect(ui->pushButton_motor_home,SIGNAL(clicked()),this,SLOT(goMotorHome()));
     connect(ui->pushButton_motor_down,SIGNAL(clicked()),this,SLOT(moveMotorDown()));
     connect(ui->pushButton_motor_up,SIGNAL(clicked()),this,SLOT(moveMotorUp()));
@@ -146,7 +168,7 @@ GalvoController::GalvoController() :
     connect(ui->pushButton_startServer, SIGNAL(clicked()), this, SLOT(slot_server()));
     this->updateInfo();
 
-    p_save_dir = QDir::home();
+    p_save_dir = QString("C:\\Data");
     ui->label_directory->setText(p_save_dir.absolutePath());
     connect(ui->pushButton_savedir,SIGNAL(clicked()),this,SLOT(setSaveDir()));
 
@@ -1382,16 +1404,39 @@ void GalvoController::slot_updateAngiogramAlgo(void)
     emit sig_updateAveragingAlgo(angioAlgo);
 }
 
-void GalvoController::slot_update_serverMode(bool status)
-{
-   if (status)
-   {
-       std::cout << "Starting the server mode" << std::endl;
-   }
-   else
-   {
-       std::cout << "Stopping the server mode" << std::endl;
-   }
+/* Rotation Stage Slots */
+void GalvoController::activateRotationStage(bool flag){
+    if(flag)
+    {
+        thorlabs_rotation->connect();
+        ui->pushButton_rotationStageHome->setEnabled(true);
+        ui->pushButton_rotationStageIdentify->setEnabled(true);
+        ui->pushButton_rotation_jogForward->setEnabled(true);
+        ui->pushButton_rotation_jogReverse->setEnabled(true);
+        ui->lineEdit_rotation_jogStepSize->setEnabled(true);
+        ui->lineEdit_rotation_jogMaxVelocity->setEnabled(true);
+        ui->lineEdit_rotation_jogAcceleration->setEnabled(true);
+        ui->doubleSpinBox_rotation_position->setEnabled(true);
+        ui->pushButton_rotation_stop->setEnabled(true);
+        ui->pushButton_rotation_stop_immediately->setEnabled(true);
+        rotation_timer->start(ROTATION_REFRESH_RATE);
+        //slot_rotation_updateJogParameters();
+    }
+    else
+    {
+        thorlabs_rotation->disconnect();
+        ui->pushButton_rotationStageHome->setEnabled(false);
+        ui->pushButton_rotationStageIdentify->setEnabled(false);
+        ui->pushButton_rotation_jogForward->setEnabled(false);
+        ui->pushButton_rotation_jogReverse->setEnabled(false);
+        ui->lineEdit_rotation_jogStepSize->setEnabled(false);
+        ui->lineEdit_rotation_jogMaxVelocity->setEnabled(false);
+        ui->lineEdit_rotation_jogAcceleration->setEnabled(false);
+        ui->doubleSpinBox_rotation_position->setEnabled(false);
+        ui->pushButton_rotation_stop->setEnabled(false);
+        ui->pushButton_rotation_stop_immediately->setEnabled(false);
+        rotation_timer->stop();
+    }
 }
 
 void GalvoController::identifyRotationStage(void){

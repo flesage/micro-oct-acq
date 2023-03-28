@@ -15,6 +15,8 @@
 #include "float64datasaver.h"
 #include "analoginput.h"
 #include "motorclass.h"
+#include "thorlabsrotation.h"
+#include "oct3dorthogonalviewer.h"
 
 namespace Ui {
 class OCTGalvosForm;
@@ -152,12 +154,15 @@ private:
     QStringList p_saved_scans;
     FringeViewer* p_fringe_view;
     ImageViewer* p_image_view;
+    oct3dOrthogonalViewer* p_ortho_view;
     DataSaver* p_data_saver;
     QTimer* view_timer;
+    QTimer* rotation_timer;
     AnalogInput* p_ai;
     Float64DataSaver* p_ai_data_saver;
     int p_block_size;
     MotorClass* motors;
+    ThorlabsRotation* thorlabs_rotation;
     bool flagMotor;
     float* p_disp_comp_vec_10x;
     float* p_disp_comp_vec_25x;

@@ -1,6 +1,7 @@
 #include "motorclass.h"
 #include <iostream>
 #include <QThread>
+#include "config.h"
 
 MotorClass::MotorClass()
 {
