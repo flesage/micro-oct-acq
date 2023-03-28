@@ -13,6 +13,9 @@
 #include <QApplication>
 #include "motorclass.h"
 //#include "piezostage.h"
+#include "thorlabsrotation.h"
+#include "OCTServer.h"
+
 
 GalvoController::GalvoController() :
     ui(new Ui::OCTGalvosForm), p_galvos(GALVOS_DEV,GALVOS_AOX,GALVOS_AOY), p_settings("Polytechnique/LIOM","OCT"),
@@ -140,8 +143,7 @@ GalvoController::GalvoController() :
     connect(ui->lineEdit_logeps,SIGNAL(editingFinished()),this,SLOT(slot_updateImageThreshold()));
     connect(ui->checkBox_autoFill,SIGNAL(stateChanged(int)),this,SLOT(autoFillName()));
 
-    connect(ui->checkBox_serverMode, SIGNAL(clicked(bool)), this, SLOT(slot_update_serverMode(bool)));
-
+    connect(ui->pushButton_startServer, SIGNAL(clicked()), this, SLOT(slot_server()));
     this->updateInfo();
 
     p_save_dir = QDir::home();
@@ -950,6 +952,15 @@ void GalvoController::startScan()
             p_image_view->setCurrentViewModeStruct();
         }
     }
+    if (ui->checkBox_view_3d->isChecked())
+    {
+        // Preparing the volume parameters
+        //int nx = 512;
+        //int ny = 512;
+        //int nz = 64;
+
+    }
+
     if (ui->checkBox_save->isChecked())
     {
         p_camera->setDataSaver(p_data_saver);
@@ -985,8 +996,8 @@ void GalvoController::startScan()
                              p_center_x+p_stop_line_x,p_center_y+p_stop_line_y,nx,ny,n_extra,line_rate);
     }
     p_galvos.setTrigDelay(ui->lineEdit_shift->text().toFloat());
-    // Start generating
 
+    // Start generating
     p_galvos.startTask();
     ui->pushButton_start->setEnabled(false);
     ui->pushButton_stop->setEnabled(true);
@@ -1381,4 +1392,66 @@ void GalvoController::slot_update_serverMode(bool status)
    {
        std::cout << "Stopping the server mode" << std::endl;
    }
+}
+
+void GalvoController::identifyRotationStage(void){
+    std::cout<<"Identifying the rotation stage"<<std::endl;
+    thorlabs_rotation->identify();
+}
+
+void GalvoController::homeRotationStage(void){
+    std::cout<<"Homing the rotation stage"<<std::endl;
+    thorlabs_rotation->move_home();
+}
+
+void GalvoController::slot_rotation_updateJogParameters(void){
+    std::cout<<"Updating the rotation stage jog parameters"<<std::endl;
+    float step_size = ui->lineEdit_rotation_jogStepSize->text().toFloat();
+    float max_velocity = ui->lineEdit_rotation_jogMaxVelocity->text().toFloat();
+    float acceleration = ui->lineEdit_rotation_jogAcceleration->text().toFloat();
+    thorlabs_rotation->set_jog_parameters(step_size, acceleration, max_velocity);
+}
+
+void GalvoController::slot_rotation_jogForward(void){
+    std::cout<<"Jogging the rotation stage forward"<<std::endl;
+    thorlabs_rotation->move_jog_forwards();
+}
+
+void GalvoController::slot_rotation_jogReverse(void){
+    std::cout<<"Jogging the rotation stage in reverse"<<std::endl;
+    thorlabs_rotation->move_jog_backwards();
+}
+
+void GalvoController::slot_rotation_absoluteMove(void){
+    std::cout<<"Moving (absolute) the rotation stage"<<std::endl;
+    float position = ui->doubleSpinBox_rotation_position->value();
+    thorlabs_rotation->move_absolute(position);
+}
+
+void GalvoController::slot_rotation_stop(void)
+{
+    thorlabs_rotation->stop();
+    std::cout<<"Stopped the rotation (profiled)"<<std::endl;
+}
+
+void GalvoController::slot_rotation_stop_immediately(void){
+    thorlabs_rotation->stop_immediately();
+    std::cout<<"Stopped the rotation (immediately)"<<std::endl;
+}
+
+void GalvoController::slot_rotation_update_position(void){
+    float pos_deg = thorlabs_rotation->get_position();
+    ui->doubleSpinBox_rotation_current_position->setValue(pos_deg);
+}
+
+void GalvoController::slot_test_orthoviewer(void){
+    p_ortho_view = new oct3dOrthogonalViewer(0);
+    p_ortho_view->show();
+    p_ortho_view->slot_update_view();
+}
+
+void GalvoController::slot_server(void){
+    std::cout<< "Starting the server" << std::endl;
+    OCTServer server;
+    server.exec();
 }

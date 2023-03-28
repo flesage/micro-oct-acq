@@ -90,7 +90,20 @@ private slots:
     void slot_updateAverageAngiogram(void);
     void slot_updateAngiogramAlgo(void);
     void setCenterFromLineScan(void);
-    void slot_update_serverMode(bool);
+
+   // Rotation stage
+    void activateRotationStage(bool flag);
+    void identifyRotationStage(void);
+    void homeRotationStage(void);
+    void slot_rotation_updateJogParameters(void);
+    void slot_rotation_jogForward(void);
+    void slot_rotation_jogReverse(void);
+    void slot_rotation_absoluteMove(void);
+    void slot_rotation_stop(void);
+    void slot_rotation_stop_immediately(void);
+    void slot_rotation_update_position(void);
+    void slot_test_orthoviewer(void);
+    void slot_server(void);
 
 private:
     Ui::OCTGalvosForm *ui;

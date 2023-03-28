@@ -1,2 +1,4 @@
-
+.vs/
+.vscode/
 oct.pro.user
+*.pro.user

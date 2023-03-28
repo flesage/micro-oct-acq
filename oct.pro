@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui serialport
+QT       += core gui serialport network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -32,6 +32,8 @@ SOURCES += main.cpp \
     datasaver.cpp \
     fringeviewer.cpp \
     imageviewer.cpp \
+    oct3dorthogonalviewer.cpp \
+    octserver.cpp \
     softwarecamera.cpp \
     analoginput.cpp \
     FringeFFT.cpp \
@@ -50,6 +52,8 @@ HEADERS  += \
     datasaver.h \
     fringeviewer.h \
     imageviewer.h \
+    oct3dorthogonalviewer.h \
+    octserver.h \
     softwarecamera.h \
     fringeviewer.h \
     analoginput.h \
