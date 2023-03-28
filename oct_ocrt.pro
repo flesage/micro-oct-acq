@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui serialport
+QT       += core gui serialport network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -40,7 +40,8 @@ SOURCES += main.cpp \
     FringeFFT.cpp \
     fwhmviewer.cpp \
     motorclass.cpp \
-    thorlabsrotation.cpp
+    thorlabsrotation.cpp \
+    octserver.cpp
 
 HEADERS  += \
     angioviewer3dform.h \
@@ -62,7 +63,8 @@ HEADERS  += \
     FringeFFT.h \
     fwhmviewer.h \
     motorclass.h \
-    thorlabsrotation.h
+    thorlabsrotation.h \
+    octserver.h
 
 FORMS    += \
     angioviewer3dform.ui \
