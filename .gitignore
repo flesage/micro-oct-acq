@@ -1,4 +1,3 @@
 .vs/
 .vscode/
-oct.pro.user
-*.pro.user
+*.pro.user*
