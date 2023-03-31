@@ -53,15 +53,6 @@ OCTServer::OCTServer(QWidget *parent)
 
 OCTServer::~OCTServer()
 {
-    if (clientConnection != nullptr)
-    {
-        clientConnection->disconnect();
-        clientConnection->disconnectFromHost();
-        clientConnection->deleteLater();
-        // Don't need to delete it manually
-        // because parent will delete it automatically
-        clientConnection = nullptr;
-    }
     tcpServer->close();
 }
 
@@ -145,22 +136,12 @@ void OCTServer::slot_startConnection()
 
 void OCTServer::slot_performScan(int x, int y, int z)
 {
-    std::cout << "Starting an OCT acquisition" << std::endl;
-
     // Create the tile filename
     char buffer [20];
     snprintf(buffer, 20, "tile_x%02d_y%02d_z%02d", x, y, z);
     QString fileName = QString(buffer);
-    std::cout << fileName.toStdString() << std::endl;
     emit sig_change_filename(fileName);
 
-    // Set the filename
-
-
     // Launch a single acquisition
-    QThread::msleep(5000);
-
-    // Wait for the acquisition to end
-    std::cout << "Ending the OCT acquisition" << std::endl;
-    emit sig_end_acquisition();
+    emit sig_start_scan();
 }

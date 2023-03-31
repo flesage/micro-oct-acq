@@ -14,7 +14,7 @@
 #include "motorclass.h"
 //#include "piezostage.h"
 #include "thorlabsrotation.h"
-#include "OCTServer.h"
+#include "octserver.h"
 
 
 GalvoController::GalvoController() :
@@ -44,6 +44,7 @@ GalvoController::GalvoController() :
 
     p_block_size = 256;
     p_camera = 0;
+    p_camera_stop_requested = false;
     p_fringe_view = 0;
     p_image_view = 0;
     p_data_saver = 0;
@@ -57,6 +58,7 @@ GalvoController::GalvoController() :
     p_stop_viewline = ui->lineEdit_stopLine->text().toInt();
 
     p_server_mode = false;
+    p_server_stop_asked = false;
 
     motors = new MotorClass();
 
@@ -488,6 +490,8 @@ void GalvoController::setFileName(QString fileName)
 
 void GalvoController::setDefaultScan(void)
 {
+    // TODO: add default values
+    // TODO: load the scan parameters
     QString chosen_scan = ui->comboBox_scanlist->currentText();
     int nx = p_settings.value(chosen_scan+"/nx").toInt();
     int ny = p_settings.value(chosen_scan+"/ny").toInt();
@@ -733,6 +737,7 @@ void GalvoController::automaticCentering()
 
 void GalvoController::startScan()
 {
+    std::cout << "Starting a scan" << std::endl;
     checkPath();
     automaticCentering();
     qApp->processEvents();
@@ -762,6 +767,12 @@ void GalvoController::startScan()
     {
         p_n_volumes = ui->lineEdit_nvol->text().toInt();
         p_finite_acquisition = true;
+    }
+
+    // Server mode
+    if (p_server_mode)
+    {
+        p_server_stop_asked = false;
     }
     switch(telescope)
     {
@@ -839,9 +850,10 @@ void GalvoController::startScan()
 #else
     p_camera=new SoftwareCamera((nx+n_extra)*factor,exposure,n_frames_in_one_volume);
 #endif
+    p_camera_stop_requested = false;
     if(p_finite_acquisition || p_stack_acquisition)
     {
-        connect(p_camera,SIGNAL(volume_done()),this,SLOT(stopFiniteScan()));
+        connect(p_camera, SIGNAL(volume_done()), this, SLOT(stopFiniteScan()));
     }
 
     // If we are saving, setup for it
@@ -1054,6 +1066,16 @@ void GalvoController::stopFiniteScan()
         }
         return;
     }
+    else if (p_server_mode)
+    {
+        if(!p_server_stop_asked)
+        {
+            stopScan();
+            emit sig_serverEndScan();
+            p_server_stop_asked = true;
+        }
+        return;
+    }
     else
     {
         if(p_finite_acquisition)
@@ -1066,10 +1088,16 @@ void GalvoController::stopFiniteScan()
 
 void GalvoController::stopScan()
 {
+    if (p_camera_stop_requested)
+    {
+        return;
+    }
+
+    std::cout << "Stopping the scan" << std::endl;
+
     // Saver stop
     // Needs to be stopped first due to potential deadlock, will
     // stop when next block size if filled.
-
     if(p_data_saver)
     {
         bool show_line_flag=ui->checkBox_view_line->isChecked();
@@ -1128,8 +1156,10 @@ void GalvoController::stopScan()
     p_camera->Close();
     if(!p_stack_acquisition)
     {
-        ui->pushButton_start->setEnabled(true);
-        ui->pushButton_stop->setEnabled(false);
+        if (!p_server_mode) {
+            ui->pushButton_start->setEnabled(true);
+            ui->pushButton_stop->setEnabled(false);
+        }
     }
     else
     {
@@ -1147,6 +1177,7 @@ void GalvoController::stopScan()
             ui->pushButton_stop->setEnabled(false);
         }
     }
+    p_camera_stop_requested = true;
 }
 
 void GalvoController::moveUp(void)
@@ -1503,6 +1534,9 @@ void GalvoController::slot_test_orthoviewer(void){
 void GalvoController::slot_server(void){
     std::cout<< "Starting the server" << std::endl;
 
+    // Check that the save directory was set
+
+    p_finite_acquisition = true;
     // Set the acquisition in "save" mode.
     bool initial_save_state = ui->checkBox_save->isChecked();
     ui->checkBox_save->setChecked(true);
@@ -1512,11 +1546,11 @@ void GalvoController::slot_server(void){
     ui->checkBox_finite_acq->setChecked(true);
 
     // Disable all views
-    bool initial_view_image = ui->checkBox_view_image->isChecked();
+    //bool initial_view_image = ui->checkBox_view_image->isChecked();
     bool initial_view_aline = ui->checkBox_view_line->isChecked();
     bool initial_view_fringe = ui->checkBox_fringe ->isChecked();
     bool initial_view_3d = ui->checkBox_view_3d->isChecked();
-    ui->checkBox_view_image->setChecked(false);
+    //ui->checkBox_view_image->setChecked(false);
     ui->checkBox_view_line->setChecked(false);
     ui->checkBox_fringe->setChecked(false);
     ui->checkBox_view_3d->setChecked(false);
@@ -1524,18 +1558,24 @@ void GalvoController::slot_server(void){
     // Disable the main interface
     this->setDisabled(true);
 
+    // Creating the server
     OCTServer server;
+    p_server_mode = true;
 
     // Configure Signals and Slots
     connect(&server, SIGNAL(sig_change_filename(QString)), this, SLOT(setFileName(QString)));
+    connect(&server, SIGNAL(sig_start_scan()), this, SLOT(startScan()));
+    connect(this, SIGNAL(sig_serverEndScan()), &server, SLOT(slot_endConnection()));
 
+    // Executing the server
     server.exec();
 
     std::cout<< "Stoping the server" << std::endl;
+    p_server_mode = false;
     this->setDisabled(false);
     ui->checkBox_save->setChecked(initial_save_state);
     ui->checkBox_finite_acq->setChecked(initial_finite_acq_state);
-    ui->checkBox_view_image->setChecked(initial_view_image);
+    //ui->checkBox_view_image->setChecked(initial_view_image);
     ui->checkBox_view_line->setChecked(initial_view_aline);
     ui->checkBox_fringe->setChecked(initial_view_fringe);
     ui->checkBox_view_3d->setChecked(initial_view_3d);

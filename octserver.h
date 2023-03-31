@@ -18,6 +18,7 @@ public:
 
 signals:
     void sig_start_acquisition(int, int, int);
+    void sig_start_scan();
     void sig_end_acquisition();
     void sig_change_filename(QString);
 

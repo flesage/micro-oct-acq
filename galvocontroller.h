@@ -36,6 +36,7 @@ signals:
     void sig_updateViewLinePositions(bool,int,int);
     void sig_updateAveragingFlag(bool);
     void sig_updateAveragingAlgo(int);
+    void sig_serverEndScan();
 
 private slots:
     void updateSpeedPiezo(void);
@@ -147,11 +148,13 @@ private:
     int p_n_volumes;
     QString p_datasetname;
     bool p_server_mode;
+    bool p_server_stop_asked;
 #ifndef SIMULATION
     Camera* p_camera;
 #else
     SoftwareCamera* p_camera;
 #endif
+    bool p_camera_stop_requested;
     QDir p_save_dir;
     QSettings p_settings;
     QStringList p_saved_scans;
