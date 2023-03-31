@@ -51,6 +51,20 @@ OCTServer::OCTServer(QWidget *parent)
     setWindowTitle(QGuiApplication::applicationDisplayName());
 }
 
+OCTServer::~OCTServer()
+{
+    if (clientConnection != nullptr)
+    {
+        clientConnection->disconnect();
+        clientConnection->disconnectFromHost();
+        clientConnection->deleteLater();
+        // Don't need to delete it manually
+        // because parent will delete it automatically
+        clientConnection = nullptr;
+    }
+    tcpServer->close();
+}
+
 void OCTServer::initServer()
 {
     // Set the server address and port
@@ -77,7 +91,7 @@ void OCTServer::slot_endConnection()
     std::cout << "Closing the connection" << std::endl;
     QByteArray response;
     QDataStream out(&response, QIODevice::WriteOnly);
-    out.setVersion(QDataStream::Qt_6_6);
+    out.setVersion(QDataStream::Qt_6_4);
     out << "OCT_done";
     clientConnection->write(response);
 }
@@ -132,7 +146,21 @@ void OCTServer::slot_startConnection()
 void OCTServer::slot_performScan(int x, int y, int z)
 {
     std::cout << "Starting an OCT acquisition" << std::endl;
+
+    // Create the tile filename
+    char buffer [20];
+    snprintf(buffer, 20, "tile_x%02d_y%02d_z%02d", x, y, z);
+    QString fileName = QString(buffer);
+    std::cout << fileName.toStdString() << std::endl;
+    emit sig_change_filename(fileName);
+
+    // Set the filename
+
+
+    // Launch a single acquisition
     QThread::msleep(5000);
+
+    // Wait for the acquisition to end
     std::cout << "Ending the OCT acquisition" << std::endl;
     emit sig_end_acquisition();
 }

@@ -14,10 +14,12 @@ class OCTServer : public QDialog
 
 public:
     explicit OCTServer(QWidget *parent = nullptr);
+    ~OCTServer();
 
 signals:
     void sig_start_acquisition(int, int, int);
     void sig_end_acquisition();
+    void sig_change_filename(QString);
 
 private slots:
     void slot_startConnection();
