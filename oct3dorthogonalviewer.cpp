@@ -211,9 +211,9 @@ void oct3dOrthogonalViewer::slot_update_view()
     case MINIMUM:
         mip_x = af::min(p_oct(af::span, af::seq(p_current_x, p_current_x + n_slices_x-1), af::span), 1);
         break;
-    case VARIANCE:
-        mip_x = af::var(p_oct(af::span, af::seq(p_current_x, p_current_x + n_slices_x-1), af::span), AF_VARIANCE_DEFAULT, 1);
-        break;
+    //case VARIANCE:
+    //    mip_x = af::var(p_oct(af::span, af::seq(p_current_x, p_current_x + n_slices_x-1), af::span), AF_VARIANCE_DEFAULT, 1);
+    //    break;
     default:
         mip_x = af::mean(p_oct(af::span, af::seq(p_current_x, p_current_x + n_slices_x-1), af::span), 1);
         break;
@@ -239,9 +239,9 @@ void oct3dOrthogonalViewer::slot_update_view()
     case MINIMUM:
         mip_y = af::min(p_oct(af::span, af::span, af::seq(p_current_y, p_current_y + n_slices_y-1)), 2);
         break;
-    case VARIANCE:
-        mip_y = af::var(p_oct(af::span, af::span, af::seq(p_current_y, p_current_y + n_slices_y-1)), AF_VARIANCE_DEFAULT, 2);
-        break;
+    //case VARIANCE:
+    //    mip_y = af::var(p_oct(af::span, af::span, af::seq(p_current_y, p_current_y + n_slices_y-1)), AF_VARIANCE_DEFAULT, 2);
+    //    break;
     default:
         mip_y = af::mean(p_oct(af::span, af::span, af::seq(p_current_y, p_current_y + n_slices_y-1)), 2);
         break;
@@ -268,9 +268,9 @@ void oct3dOrthogonalViewer::slot_update_view()
     case MINIMUM:
         mip_z = af::min(p_oct(af::seq(p_current_z, p_current_z + n_slices_z-1), af::span, af::span), 0);
         break;
-    case VARIANCE:
-        mip_z = af::var(p_oct(af::seq(p_current_z, p_current_z + n_slices_z-1), af::span, af::span), AF_VARIANCE_DEFAULT, 0);
-        break;
+    //case VARIANCE:
+    //    mip_z = af::var(p_oct(af::seq(p_current_z, p_current_z + n_slices_z-1), af::span, af::span), AF_VARIANCE_DEFAULT, 0);
+    //    break;
     default:
         mip_z = af::mean(p_oct(af::seq(p_current_z, p_current_z + n_slices_z-1), af::span, af::span), 0);
         break;
