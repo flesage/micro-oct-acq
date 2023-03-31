@@ -17,6 +17,7 @@
 #include "motorclass.h"
 #include "thorlabsrotation.h"
 #include "oct3dorthogonalviewer.h"
+#include "octserver.h"
 
 namespace Ui {
 class OCTGalvosForm;
@@ -75,6 +76,7 @@ private slots:
     void updateOffset(void);
     void goHome(void);
     void setSaveDir(void);
+    void setFileName(QString);
     void addDefaultScan(void);
     void setDefaultScan(void);
     void clearCurrentScan(void);
@@ -109,6 +111,7 @@ private slots:
 
 private:
     Ui::OCTGalvosForm *ui;
+    //OCTServer *server;
     QString dataDir;
     float p_center_x;
     float p_center_y;

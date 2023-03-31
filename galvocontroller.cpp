@@ -481,6 +481,11 @@ void GalvoController::setSaveDir()
     ui->lineEdit_datasetname->setEnabled(true);
 }
 
+void GalvoController::setFileName(QString fileName)
+{
+    ui->lineEdit_datasetname->setText(fileName);
+}
+
 void GalvoController::setDefaultScan(void)
 {
     QString chosen_scan = ui->comboBox_scanlist->currentText();
@@ -1497,6 +1502,41 @@ void GalvoController::slot_test_orthoviewer(void){
 
 void GalvoController::slot_server(void){
     std::cout<< "Starting the server" << std::endl;
+
+    // Set the acquisition in "save" mode.
+    bool initial_save_state = ui->checkBox_save->isChecked();
+    ui->checkBox_save->setChecked(true);
+
+    // Perform a single acquisition
+    bool initial_finite_acq_state = ui->checkBox_finite_acq->isChecked();
+    ui->checkBox_finite_acq->setChecked(true);
+
+    // Disable all views
+    bool initial_view_image = ui->checkBox_view_image->isChecked();
+    bool initial_view_aline = ui->checkBox_view_line->isChecked();
+    bool initial_view_fringe = ui->checkBox_fringe ->isChecked();
+    bool initial_view_3d = ui->checkBox_view_3d->isChecked();
+    ui->checkBox_view_image->setChecked(false);
+    ui->checkBox_view_line->setChecked(false);
+    ui->checkBox_fringe->setChecked(false);
+    ui->checkBox_view_3d->setChecked(false);
+
+    // Disable the main interface
+    this->setDisabled(true);
+
     OCTServer server;
+
+    // Configure Signals and Slots
+    connect(&server, SIGNAL(sig_change_filename(QString)), this, SLOT(setFileName(QString)));
+
     server.exec();
+
+    std::cout<< "Stoping the server" << std::endl;
+    this->setDisabled(false);
+    ui->checkBox_save->setChecked(initial_save_state);
+    ui->checkBox_finite_acq->setChecked(initial_finite_acq_state);
+    ui->checkBox_view_image->setChecked(initial_view_image);
+    ui->checkBox_view_line->setChecked(initial_view_aline);
+    ui->checkBox_fringe->setChecked(initial_view_fringe);
+    ui->checkBox_view_3d->setChecked(initial_view_3d);
 }
