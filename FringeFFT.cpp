@@ -49,12 +49,29 @@ void FringeFFT::init(int nz, int nx, float dimz, float dimx)
         exit(-1);
     }
     fread(tmp,sizeof(double),p_nz,fp);
-    fclose(fp);
-    float* filter = new float[p_nz];
-    for(int i=0;i<p_nz;i++) filter[i]=(float) tmp[i];
-    //p_hann_dispcomp = af::complex(af::array(p_nz,1,filter,afHost));
-    p_hann_dispcomp = af::array(p_nz,1,filter,afHost);
 
+    double* phase=new double[p_nz];
+    FILE* fp2=fopen("C:\\Users\\Public\\Documents\\phase.dat","rb");
+    if(fp2 == 0)
+    {
+        std::cerr << "Check if phase file exists" << std::endl;
+        exit(-1);
+    }
+    fread(phase,sizeof(double),p_nz,fp2);
+    fclose(fp2);
+    float* f_phase = new float[p_nz];
+    for(int i=0;i<p_nz;i++) f_phase[i]=(float) phase[i];
+
+    af::cfloat h_unit = {0, 1};  // Host side
+    af::array unit_j = af::constant(h_unit, 1, c32);
+    af::array h_phase = af::complex(af::array(p_nz,1,f_phase,afHost));
+    float* filter = new float[p_nz];
+    for(int i=0;i<p_nz;i++) filter[i]=(float) (tmp[i]*0.00001);
+    p_hann_dispcomp = af::complex(af::array(p_nz,1,filter,afHost));
+    p_hann_dispcomp *= af::exp(tile(unit_j(0), h_phase.dims())*h_phase);
+
+    delete [] f_phase;
+    delete [] phase;
     delete [] filter;
     delete [] tmp;
 }
@@ -86,7 +103,7 @@ void FringeFFT::interp_and_do_fft(unsigned short* in_fringe,unsigned char* out_s
 
     // Multiply by dispersion compensation vector and hann window, store back in p_interpfringe
     gfor (af::seq i, p_nx)
-            p_interpfringe(af::span,i)=((p_interpfringe(af::span,i)-p_mean_fringe(af::span))/(p_mean_fringe(af::span)+p_hanning_threshold))*p_hann_dispcomp;
+            p_interpfringe(af::span,i)=((p_interpfringe(af::span,i)-p_mean_fringe(af::span)/(p_mean_fringe(af::span)+p_hanning_threshold)))*p_hann_dispcomp;
 
     // Do fft
     p_signal = af::fft(p_interpfringe);
