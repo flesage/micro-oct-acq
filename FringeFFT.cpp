@@ -98,8 +98,9 @@ void FringeFFT::interp_and_do_fft(unsigned short* in_fringe,unsigned char* out_s
     af::dim4 dims(2048,p_nx,1,1);
     af::array tmp(p_nz,p_nx,in_fringe,afHost);
     p_interpfringe = matmul(p_sparse_interp.as(c32),tmp.as(c32));
+
     // Compute reference
-    p_mean_fringe = mean(p_interpfringe,1);
+    p_mean_fringe = mean(p_interpfringe, 1);
 
     // Multiply by dispersion compensation vector and hann window, store back in p_interpfringe
     gfor (af::seq i, p_nx)
@@ -116,6 +117,30 @@ void FringeFFT::interp_and_do_fft(unsigned short* in_fringe,unsigned char* out_s
     float l_min = af::min<float>(p_norm_signal);
     p_norm_signal=255.0*(p_norm_signal-l_min)/(l_max-l_min);
     p_norm_signal.as(u8).host(out_signal);
+}
+
+void FringeFFT::image_reconstruction(unsigned short* in_fringe, float* out_data, int p_top_z, int p_bottom_z, float p_hanning_threshold )
+{
+    // Interpolation by sparse matrix multiplication
+    af::dim4 dims(2048, p_nx, 1, 1);
+    af::array tmp(p_nz, p_nx, in_fringe, afHost);
+    p_interpfringe = matmul(p_sparse_interp.as(c32), tmp.as(c32));
+
+    // Compute reference
+    p_mean_fringe = mean(p_interpfringe, 1);
+
+    // Multiply by dispersion compensation vector and hann window, store back in p_interpfringe
+    gfor (af::seq i, p_nx)
+            p_interpfringe(af::span,i)=((p_interpfringe(af::span,i)-p_mean_fringe(af::span)/(p_mean_fringe(af::span)+p_hanning_threshold)))*p_hann_dispcomp;
+
+    // Do fft
+    p_signal = af::abs(af::fft(p_interpfringe));
+
+    // Crop the bscan
+    p_signal = p_signal.rows(p_top_z, p_bottom_z);
+
+    // Set as output
+    p_signal.host(out_data);
 }
 
 void FringeFFT::setAngioAlgo(int angio_algo)

@@ -48,6 +48,7 @@ GalvoController::GalvoController() :
     p_fringe_view = 0;
     p_image_view = 0;
     p_data_saver = 0;
+    p_image_saver = 0;
     p_start_line_x = 0;
     p_stop_line_x = 0;
     p_start_line_y = 0;
@@ -842,7 +843,7 @@ void GalvoController::startScan()
     }
     // Set Camera
     if (p_camera != NULL) delete p_camera;
-    unsigned int n_frames_in_one_volume = (ny*n_repeat)*aline_repeat/factor;
+    unsigned int n_frames_in_one_volume = (ny*n_repeat)*aline_repeat/factor+1;
     if(n_frames_in_one_volume == 0) n_frames_in_one_volume =1;
 
 #ifndef SIMULATION
@@ -872,14 +873,26 @@ void GalvoController::startScan()
     }
     updateInfo();
     qApp->processEvents();
+    p_start_viewline = ui->lineEdit_startLine->text().toInt();
+    p_stop_viewline = ui->lineEdit_stopLine->text().toInt();
 
     if (ui->checkBox_save->isChecked())
     {
-        p_block_size = (int) ((512.0*256.0)/nx/factor);
-
-        p_data_saver = new DataSaver((nx+n_extra)*factor,p_block_size);
-        p_data_saver->setDatasetName(ui->lineEdit_datasetname->text());
-        p_data_saver->setDatasetPath(p_save_dir.absolutePath());
+        std::cerr <<"Saver" << std::endl;
+        if(p_server_mode)
+        {
+            p_block_size = (int) ((512.0*256.0)/nx/factor);
+            p_image_saver = new ImageDataSaver((nx+n_extra)*factor,p_block_size,p_start_viewline,p_stop_viewline);
+            p_image_saver->setDatasetName(ui->lineEdit_datasetname->text());
+            p_image_saver->setDatasetPath(p_save_dir.absolutePath());
+        }
+        else
+        {
+            p_block_size = (int) ((512.0*256.0)/nx/factor);
+            p_data_saver = new DataSaver((nx+n_extra)*factor,p_block_size);
+            p_data_saver->setDatasetName(ui->lineEdit_datasetname->text());
+            p_data_saver->setDatasetPath(p_save_dir.absolutePath());
+        }
 
         // AI
         if(p_ai != 0) delete p_ai;
@@ -915,8 +928,12 @@ void GalvoController::startScan()
         info=info+QString("offset_x: %1\n").arg(p_offset_x);
         info=info+QString("offset_y: %1\n").arg(p_offset_y);
         info=info+QString("coeff_x: %1\n").arg(p_coeff_x);
-        info=info+QString("coeff_y: %1\n").arg(p_coeff_y);
-
+        info=info+QString("coeff_y: %1\n").arg(p_coeff_y);        
+        if( p_server_mode )
+        {
+            info=info+QString("top_z: %1\n").arg(p_start_viewline);
+            info=info+QString("bottom_z: %1\n").arg(p_stop_viewline);
+        }
         QString objective = ui->comboBox_objective->currentText();
         info=info+QString("objective: %1\n").arg(objective.toUtf8().constData());
 
@@ -929,10 +946,19 @@ void GalvoController::startScan()
             info=info+QString("line_length: %1\n").arg(p_line_length);
         }
 
+        if( p_server_mode )
+        {
+            p_image_saver->addInfo(info);
+            connect(p_image_saver,SIGNAL(available(int)),ui->lcdNumber_saveqsize,SLOT(display(int)));
+            connect(p_image_saver,SIGNAL(filenumber(int)),this,SLOT(displayFileNumber(int)));
 
-        p_data_saver->addInfo(info);
-        connect(p_data_saver,SIGNAL(available(int)),ui->lcdNumber_saveqsize,SLOT(display(int)));
-        connect(p_data_saver,SIGNAL(filenumber(int)),this,SLOT(displayFileNumber(int)));
+        }
+        else
+        {
+            p_data_saver->addInfo(info);
+            connect(p_data_saver,SIGNAL(available(int)),ui->lcdNumber_saveqsize,SLOT(display(int)));
+            connect(p_data_saver,SIGNAL(filenumber(int)),this,SLOT(displayFileNumber(int)));
+        }
     }
     p_camera->Open();
     p_camera->SetCameraString("FPA Sensitivity",ui->comboBox_sensitivity->currentText().toUtf8().constData());
@@ -1002,15 +1028,24 @@ void GalvoController::startScan()
 
     if (ui->checkBox_save->isChecked())
     {
-        p_camera->setDataSaver(p_data_saver);
-        p_data_saver->writeInfoFile();
-        p_data_saver->startSaving();
+        if(p_server_mode)
+        {
+            p_camera->setImageDataSaver(p_image_saver);
+            p_image_saver->writeInfoFile();
+            p_image_saver->startSaving();
+        }
+        else
+        {
+            p_camera->setDataSaver(p_data_saver);
+            p_data_saver->writeInfoFile();
+            p_data_saver->startSaving();
+        }
         p_ai->SetDataSaver(p_ai_data_saver);
         p_ai_data_saver->startSaving();
         p_ai->Start();
 
     }
-
+    std::cerr << "Start Camera" << std::endl;
     p_camera->Start();
 
     if (ui->checkBox_fringe->isChecked() || ui->checkBox_view_image->isChecked())
@@ -1115,7 +1150,11 @@ void GalvoController::stopScan()
         p_data_saver->stopSaving();
         p_ai_data_saver->stopSaving();
     }
-
+    if(p_image_saver)
+    {
+        p_image_saver->stopSaving();
+        p_ai_data_saver->stopSaving();
+    }
     // camera stop
     // Slight danger of locking if buffer was full and camera is still putting fast
     // Need to have a large acquire at end of thread maybe?
@@ -1132,7 +1171,16 @@ void GalvoController::stopScan()
         delete p_ai_data_saver;
         p_ai_data_saver=0;
     }
-
+    if(p_image_saver)
+    {
+        delete p_image_saver;
+        p_image_saver = 0;
+        p_ai->Stop();
+        delete p_ai;
+        p_ai=0;
+        delete p_ai_data_saver;
+        p_ai_data_saver=0;
+    }
     view_timer->stop();
 
 

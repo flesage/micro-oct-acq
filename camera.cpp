@@ -15,6 +15,7 @@ Camera::Camera(int n_lines, float exposure, unsigned int n_frames_per_volume)
     p_started=false;
     fv_ptr = 0;
     imv_ptr = 0;
+    imsaver_ptr=0;
     dsaver_ptr=0;
     p_n_frames_per_volume=n_frames_per_volume;
 
@@ -33,6 +34,11 @@ void Camera::setImageViewer(ImageViewer* ptr)
 void Camera::setDataSaver(DataSaver* ptr)
 {
     dsaver_ptr = ptr;
+}
+
+void Camera::setImageDataSaver(ImageDataSaver* ptr)
+{
+    imsaver_ptr = ptr;
 }
 
 void Camera::SetCameraString(const char* attribute, const char* value)
@@ -209,6 +215,11 @@ void Camera::run()
         {
             dsaver_ptr->put((unsigned short*) p_current_copied_buffer);
         }
+        if(imsaver_ptr)
+        {
+            imsaver_ptr->put((unsigned short*) p_current_copied_buffer);
+        }
+
         // Needs to be fast
         p_mutex.lock();
         n_frames_read++;

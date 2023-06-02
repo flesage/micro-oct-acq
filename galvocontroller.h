@@ -10,6 +10,7 @@
 #include "camera.h"
 #include "softwarecamera.h"
 #include "datasaver.h"
+#include "imagedatasaver.h"
 #include "fringeviewer.h"
 #include "imageviewer.h"
 #include "float64datasaver.h"
@@ -162,6 +163,7 @@ private:
     ImageViewer* p_image_view;
     oct3dOrthogonalViewer* p_ortho_view;
     DataSaver* p_data_saver;
+    ImageDataSaver* p_image_saver;
     QTimer* view_timer;
     QTimer* rotation_timer;
     AnalogInput* p_ai;

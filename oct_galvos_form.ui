@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>714</width>
+    <width>719</width>
     <height>1042</height>
    </rect>
   </property>
@@ -431,7 +431,7 @@
                 </size>
                </property>
                <property name="text">
-                <string>250</string>
+                <string>750</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -771,7 +771,7 @@
                 </size>
                </property>
                <property name="text">
-                <string>100.00</string>
+                <string>80.0</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -949,7 +949,7 @@
                 </size>
                </property>
                <property name="text">
-                <string>16</string>
+                <string>23</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -1127,7 +1127,10 @@
                 </size>
                </property>
                <property name="currentText">
-                <string>Low</string>
+                <string>Medium High</string>
+               </property>
+               <property name="currentIndex">
+                <number>2</number>
                </property>
                <property name="minimumContentsLength">
                 <number>0</number>
@@ -1216,7 +1219,7 @@
                 </size>
                </property>
                <property name="currentIndex">
-                <number>0</number>
+                <number>4</number>
                </property>
                <item>
                 <property name="text">
@@ -1271,7 +1274,7 @@
                 </size>
                </property>
                <property name="currentIndex">
-                <number>0</number>
+                <number>2</number>
                </property>
                <item>
                 <property name="text">
@@ -3187,7 +3190,7 @@
        <item row="1" column="2">
         <widget class="QCheckBox" name="checkBox_view_line">
          <property name="text">
-          <string>View Line</string>
+          <string>View Z Limits</string>
          </property>
         </widget>
        </item>
@@ -3238,7 +3241,7 @@
           </size>
          </property>
          <property name="text">
-          <string>0.05</string>
+          <string>0.001</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -3312,7 +3315,7 @@
        <item row="2" column="2">
         <widget class="QLabel" name="label_42">
          <property name="text">
-          <string>Start Line</string>
+          <string>Top Z</string>
          </property>
         </widget>
        </item>
@@ -3331,7 +3334,7 @@
           </size>
          </property>
          <property name="text">
-          <string>250</string>
+          <string>50</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -3341,7 +3344,7 @@
        <item row="3" column="2">
         <widget class="QLabel" name="label_43">
          <property name="text">
-          <string>Stop Line</string>
+          <string>Bottom Z</string>
          </property>
         </widget>
        </item>

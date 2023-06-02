@@ -8,6 +8,7 @@
 #include "fringeviewer.h"
 #include "imageviewer.h"
 #include "datasaver.h"
+#include "imagedatasaver.h"
 #include "niimaq.h"
 
 
@@ -27,6 +28,8 @@ public:
     void setFringeViewer(FringeViewer* ptr);
     void setImageViewer(ImageViewer* ptr);
     void setDataSaver(DataSaver* ptr);
+    void setImageDataSaver(ImageDataSaver* ptr);
+
 signals:
     void volume_done();
 
@@ -45,6 +48,7 @@ private:
     FringeViewer* fv_ptr;
     ImageViewer* imv_ptr;
     DataSaver* dsaver_ptr;
+    ImageDataSaver* imsaver_ptr;
     unsigned int p_n_frames_per_volume;
 };
 
