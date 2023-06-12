@@ -878,7 +878,6 @@ void GalvoController::startScan()
 
     if (ui->checkBox_save->isChecked())
     {
-        std::cerr <<"Saver" << std::endl;
         if(p_server_mode)
         {
             p_block_size = (int) ((512.0*256.0)/nx/factor);
@@ -1045,7 +1044,7 @@ void GalvoController::startScan()
         p_ai->Start();
 
     }
-    std::cerr << "Start Camera" << std::endl;
+    std::cerr << "galvocontroller::Start Camera" << std::endl;
     p_camera->Start();
 
     if (ui->checkBox_fringe->isChecked() || ui->checkBox_view_image->isChecked())
@@ -1582,7 +1581,7 @@ void GalvoController::slot_test_orthoviewer(void){
 void GalvoController::slot_server(void){
     std::cout<< "Starting the server" << std::endl;
 
-    // Check that the save directory was set
+    // TODO: Check that the save directory was set
 
     p_finite_acquisition = true;
     // Set the acquisition in "save" mode.
@@ -1594,11 +1593,11 @@ void GalvoController::slot_server(void){
     ui->checkBox_finite_acq->setChecked(true);
 
     // Disable all views
-    //bool initial_view_image = ui->checkBox_view_image->isChecked();
+    bool initial_view_image = ui->checkBox_view_image->isChecked();
     bool initial_view_aline = ui->checkBox_view_line->isChecked();
     bool initial_view_fringe = ui->checkBox_fringe ->isChecked();
     bool initial_view_3d = ui->checkBox_view_3d->isChecked();
-    //ui->checkBox_view_image->setChecked(false);
+    ui->checkBox_view_image->setChecked(false);
     ui->checkBox_view_line->setChecked(false);
     ui->checkBox_fringe->setChecked(false);
     ui->checkBox_view_3d->setChecked(false);
@@ -1623,8 +1622,10 @@ void GalvoController::slot_server(void){
     this->setDisabled(false);
     ui->checkBox_save->setChecked(initial_save_state);
     ui->checkBox_finite_acq->setChecked(initial_finite_acq_state);
-    //ui->checkBox_view_image->setChecked(initial_view_image);
+    ui->checkBox_view_image->setChecked(initial_view_image);
     ui->checkBox_view_line->setChecked(initial_view_aline);
     ui->checkBox_fringe->setChecked(initial_view_fringe);
     ui->checkBox_view_3d->setChecked(initial_view_3d);
+    ui->pushButton_start->setEnabled(true);
+    ui->pushButton_stop->setDisabled(true);
 }
