@@ -79,12 +79,13 @@ void OCTServer::initServer()
 
 void OCTServer::slot_endConnection()
 {
-    std::cout << "Closing the connection" << std::endl;
+    std::cerr << "octserver::Closing the connection...";
     QByteArray response;
     QDataStream out(&response, QIODevice::WriteOnly);
     out.setVersion(QDataStream::Qt_6_4);
     out << "OCT_done";
-    clientConnection->write(response);
+    qint64 n_bytes = clientConnection->write(response);
+    std::cerr << "sent back " << n_bytes << "bytes" << std::endl;
 }
 
 QString OCTServer::getHostAddress()
@@ -108,7 +109,7 @@ QString OCTServer::getHostAddress()
 
 void OCTServer::slot_readTilePosition()
 {
-    std::cout << "Reading tile positions: (x,y,z)=";
+    std::cerr << "octserver::Reading tile positions: (x,y,z)=";
 
     QByteArray total_data, buffer;
     while(1) {
@@ -123,14 +124,16 @@ void OCTServer::slot_readTilePosition()
     p_tile_y = data.split(" ")[1].toInt();
     p_tile_z = data.split(" ")[2].toInt();
 
-    std::cout << "(" << p_tile_x <<"," << p_tile_y << "," << p_tile_z << ")" << std::endl;
+    std::cerr << "(" << p_tile_x <<"," << p_tile_y << "," << p_tile_z << ")" << std::endl;
     emit sig_start_acquisition(p_tile_x, p_tile_y, p_tile_z);
 }
 
 void OCTServer::slot_startConnection()
 {
-    std::cout << "Received a connection" << std::endl;
+    std::cerr << "octserver::Fetching the next pending connection...";
     clientConnection = tcpServer->nextPendingConnection();
+    std::cerr << "got it!" << std::endl;
+
     connect(clientConnection, &QIODevice::readyRead, this, &OCTServer::slot_readTilePosition);
 }
 
