@@ -30,6 +30,7 @@ public:
     AnalogInput(float64 sample_rate);
     void Start();
     void Stop();
+    void StopWithoutClear();
     void run();
     void SetDataSaver(Float64DataSaver* data_saver_ptr);
 private:

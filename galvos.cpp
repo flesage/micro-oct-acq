@@ -333,13 +333,18 @@ void Galvos::move(float center_x,float center_y)
 
 void Galvos::startTask()
 {
+    p_mutex.lock();
     if (!p_started)
     {
         p_started = true;
+        p_mutex.unlock();
         start();
         msleep(100);
         DAQmxErrChk(DAQmxStartTask(p_clock_task_handle));
+    }else{
+        p_mutex.unlock();
     }
+
 }
 
 void Galvos::stopNoClearTask()
@@ -349,8 +354,13 @@ void Galvos::stopNoClearTask()
     p_mutex.unlock();
     wait();
     // Choice is to stop writing to galvos first, then stop galvo clock
-    DAQmxStopTask(p_task_handle);
-    DAQmxStopTask(p_clock_task_handle);
+    if (p_task_handle != 0){
+        DAQmxStopTask(p_task_handle);
+    }
+    if (p_clock_task_handle != 0) {
+        DAQmxStopTask(p_clock_task_handle);
+    }
+
 }
 
 void Galvos::stopTask()

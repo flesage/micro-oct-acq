@@ -85,7 +85,7 @@ void OCTServer::slot_endConnection()
     out.setVersion(QDataStream::Qt_6_2);
     out << "OCT_done";
     qint64 n_bytes = clientConnection->write(response);
-    std::cerr << "sent back " << n_bytes << "bytes" << std::endl;
+    std::cerr << "sent back " << n_bytes << " bytes" << std::endl;
 }
 
 QString OCTServer::getHostAddress()

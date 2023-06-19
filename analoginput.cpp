@@ -32,11 +32,15 @@ AnalogInput::AnalogInput(float64 sample_rate): p_started(false)
 
 void AnalogInput::Start()
 {
+    p_mutex.lock();
     if (!p_started)
     {
         p_started = true;
+        p_mutex.unlock();
         DAQmxErrChk(DAQmxStartTask(p_ai_task_handle));
         start();
+    } else{
+        p_mutex.unlock();
     }
 }
 
@@ -49,6 +53,16 @@ void AnalogInput::Stop()
     wait();
     DAQmxErrChk(DAQmxStopTask(p_ai_task_handle));
     DAQmxErrChk(DAQmxClearTask(p_ai_task_handle));
+}
+
+void AnalogInput::StopWithoutClear()
+{
+    // Stop reading first as reading calls could block
+    p_mutex.lock();
+    p_started = false;
+    p_mutex.unlock();
+    wait();
+    DAQmxErrChk(DAQmxStopTask(p_ai_task_handle));
 }
 
 

@@ -1078,6 +1078,7 @@ void GalvoController::startScan()
 
 void GalvoController::configureServerScan()
 {
+    std::cerr << "Configuring the server scan mode" << std::endl;
     checkPath();
     automaticCentering();
     qApp->processEvents();
@@ -1282,6 +1283,7 @@ void GalvoController::configureServerScan()
 
 void GalvoController::startServerScan()
 {
+    std::cerr << "GalvoController::startServerScan" << std::endl;
     p_server_stop_asked = false;
     // Change dataset name and restarts without camera reconfig
     p_image_saver->setDatasetName(ui->lineEdit_datasetname->text());
@@ -1300,6 +1302,8 @@ void GalvoController::stopServerScan()
 {
     if(!p_server_stop_asked)
     {
+        std::cerr << "Stoping a server scan" << std::endl;
+
         // Saver stop
         // Needs to be stopped first due to potential deadlock, will
         // stop when next block size if filled.
@@ -1310,10 +1314,10 @@ void GalvoController::stopServerScan()
         }
         // camera stop
         p_camera->Stop();
-        p_ai->Stop();
-        // Stop galvos, close camera
+        p_ai->StopWithoutClear();
+        // Stop galvos, without closing the camera
         p_galvos.stopNoClearTask();
-        //p_camera->Close();
+
         p_camera_stop_requested = true;
         emit sig_serverEndScan();
         p_server_stop_asked = true;
@@ -1332,6 +1336,12 @@ void GalvoController::displayFileNumber(int block_number)
 
 void GalvoController::stopFiniteScan()
 {
+    // Ignore this if it is a server scan.
+    if (p_server_mode){
+        return;
+    }
+
+    // For stacks, only stop a finite acquisition when p_n_volumes reach 0
     if(p_stack_acquisition)
     {
         if(p_finite_acquisition)
@@ -1342,16 +1352,6 @@ void GalvoController::stopFiniteScan()
         else
         {
             stopScan();
-        }
-        return;
-    }
-    else if (p_server_mode)
-    {
-        if(!p_server_stop_asked)
-        {
-            stopScan();
-            emit sig_serverEndScan();
-            p_server_stop_asked = true;
         }
         return;
     }
@@ -1372,7 +1372,7 @@ void GalvoController::stopScan()
         return;
     }
 
-    std::cout << "Stopping the scan" << std::endl;
+    std::cout << "GalvoController::stopScan | Stopping the scan" << std::endl;
 
     // Saver stop
     // Needs to be stopped first due to potential deadlock, will
@@ -1824,7 +1824,7 @@ void GalvoController::slot_test_orthoviewer(void){
 }
 
 void GalvoController::slot_server(void){
-    std::cout<< "Starting the server" << std::endl;
+    std::cerr << "Starting the OCT server" << std::endl;
 
     // TODO: Check that the save directory was set
 
