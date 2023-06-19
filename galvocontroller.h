@@ -53,7 +53,10 @@ private slots:
     void displayFileNumber(int block_number);
     void scanTypeChosen(const QString& text);
     void startScan(void);
+    void configureServerScan(void);
+    void startServerScan(void);
     void stopScan(void);
+    void stopServerScan(void);
     void stopFiniteScan(void);
     void moveUp(void);
     void moveDown(void);

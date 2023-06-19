@@ -82,7 +82,7 @@ void OCTServer::slot_endConnection()
     std::cerr << "octserver::Closing the connection...";
     QByteArray response;
     QDataStream out(&response, QIODevice::WriteOnly);
-    out.setVersion(QDataStream::Qt_6_4);
+    out.setVersion(QDataStream::Qt_6_2);
     out << "OCT_done";
     qint64 n_bytes = clientConnection->write(response);
     std::cerr << "sent back " << n_bytes << "bytes" << std::endl;
@@ -144,7 +144,6 @@ void OCTServer::slot_performScan(int x, int y, int z)
     snprintf(buffer, 20, "tile_x%02d_y%02d_z%02d", x, y, z);
     QString fileName = QString(buffer);
     emit sig_change_filename(fileName);
-
     // Launch a single acquisition
     emit sig_start_scan();
 }

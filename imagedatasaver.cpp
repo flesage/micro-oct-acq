@@ -114,6 +114,7 @@ void ImageDataSaver::run()
         if(!p_started)
         {
             p_mutex.unlock();
+            // This insures buffers are empty at the end.
             if(p_used_spots.available() == 0) break;
         }
         else

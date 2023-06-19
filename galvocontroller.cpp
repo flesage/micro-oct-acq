@@ -1076,6 +1076,263 @@ void GalvoController::startScan()
     ui->pushButton_stop->setEnabled(true);
 }
 
+void GalvoController::configureServerScan()
+{
+    checkPath();
+    automaticCentering();
+    qApp->processEvents();
+
+    // Read values
+    int nx = ui->lineEdit_nx->text().toInt();
+    int ny = ui->lineEdit_ny->text().toInt();
+    float width = ui->lineEdit_width->text().toFloat();
+    float height = ui->lineEdit_height->text().toFloat();
+    int n_repeat = ui->lineEdit_fastaxisrepeat->text().toInt();
+    int n_extra = ui->lineEdit_extrapoints->text().toInt();
+    float line_rate = ui->lineEdit_linerate->text().toFloat();
+    float exposure = ui->lineEdit_exposure->text().toFloat();
+    int aline_repeat = ui->lineEdit_aline_repeat->text().toInt();
+    // Insuring that the factor is always a multiple of n_repeat to facilitate angios
+    int factor = n_repeat;
+    if (line_rate/n_repeat > 30) factor = ((int) ((line_rate/n_repeat/30)+1))*n_repeat;
+    int telescope = ui->comboBox_telescope->currentIndex();
+    double radians_per_volt = 2*3.14159265359/(360*0.8)*(3.0/4.0)/0.95;
+    double f1=50.0;
+    double f2=100.0;
+    bool show_line_flag=ui->checkBox_view_line->isChecked();
+    bool finite_acq_flag=ui->checkBox_finite_acq->isChecked();
+
+    // Only go here on first call if we do multiple volumes
+    if (finite_acq_flag)
+    {
+        p_n_volumes = ui->lineEdit_nvol->text().toInt();
+        p_finite_acquisition = true;
+    }
+
+
+    p_server_stop_asked = false;
+
+    switch(telescope)
+    {
+    case 0:
+        f1=54.0;
+        f2=300.0;
+        break;
+    case 1:
+        f1=36.0;
+        f2=18.0*0.83;
+        break;
+    case 2:
+        f1=50.0;
+        f2=100.0;
+        break;
+    case 3:
+        f1=75.0;
+        f2=75.0;
+        break;
+    case 4:
+        f1=200.0;
+        f2=300.0;
+        break;
+    case 5:
+        f1=10.0;
+        f2=10.0;
+        break;
+    }
+
+    int objective = ui->comboBox_objective->currentIndex();
+    double fobj=18.0;
+    switch(objective)
+    {
+    case 0:
+        fobj=36.0;
+        break;
+    case 1:
+        fobj=18.0;
+        break;
+    case 2:
+        fobj=20.0;
+        break;
+    case 3:
+        fobj=9.0;
+        break;
+    case 4:
+        fobj=7.2;
+        break;
+    case 5:
+        fobj=4.5;
+        break;
+    case 6:
+        fobj=54.0;
+        break;
+    default:
+        break;
+    }
+
+    double scale_um_per_volt=(2*fobj*f1/f2*radians_per_volt)*1000.0;
+    Converter unit_converter;
+    unit_converter.setScale(scale_um_per_volt,scale_um_per_volt);
+    p_galvos.setUnitConverter(unit_converter);
+
+    // Set Camera
+    if (p_camera != NULL) delete p_camera;
+    unsigned int n_frames_in_one_volume = (ny*n_repeat)*aline_repeat/factor+1;
+    if(n_frames_in_one_volume == 0) n_frames_in_one_volume =1;
+
+#ifndef SIMULATION
+    p_camera=new Camera((nx+n_extra)*factor,exposure,n_frames_in_one_volume);
+#else
+    p_camera=new SoftwareCamera((nx+n_extra)*factor,exposure,n_frames_in_one_volume);
+#endif
+    p_camera_stop_requested = false;
+    if(p_finite_acquisition || p_stack_acquisition)
+    {
+        connect(p_camera, SIGNAL(volume_done()), this, SLOT(stopServerScan()));
+    }
+
+    updateInfo();
+    qApp->processEvents();
+    p_start_viewline = ui->lineEdit_startLine->text().toInt();
+    p_stop_viewline = ui->lineEdit_stopLine->text().toInt();
+
+    if (ui->checkBox_save->isChecked())
+    {
+        p_block_size = (int) ((512.0*256.0)/nx/factor);
+        p_image_saver = new ImageDataSaver((nx+n_extra)*factor,p_block_size,p_start_viewline,p_stop_viewline);
+        p_image_saver->setDatasetName(ui->lineEdit_datasetname->text());
+        p_image_saver->setDatasetPath(p_save_dir.absolutePath());
+
+
+        // AI
+        if(p_ai != 0) delete p_ai;
+
+        p_ai=new AnalogInput(AIAOSAMPRATE);
+
+        p_ai_data_saver = new Float64DataSaver(N_AI_CHANNELS,AIAOSAMPRATE,256,"ai");
+        p_ai_data_saver->setDatasetName(ui->lineEdit_datasetname->text());
+        p_ai_data_saver->setDatasetPath(p_save_dir.absolutePath());
+
+
+
+        //QString info;
+        QString info = QString("nx: %1\n").arg(nx);
+        info=info+QString("ny: %1\n").arg(ny);
+        info=info+QString("n_repeat: %1\n").arg(n_repeat);
+        if (ui->comboBox_scantype->currentText() == "Line")
+        {
+            info=info+QString("width: %1\n").arg(p_line_length);
+        }
+        else
+        {
+            info=info+QString("width: %1\n").arg(width);
+        }
+        info=info+QString("height: %1\n").arg(height);
+        info=info+QString("n_extra: %1\n").arg(n_extra);
+        info=info+QString("line_rate: %1\n").arg(line_rate);
+        info=info+QString("exposure: %1\n").arg(exposure);
+        info=info+QString("alinerepeat: %1\n").arg(aline_repeat);
+        info=info+"scantype: "+ui->comboBox_scantype->currentText()+"\n";
+        info=info+QString("center_x: %1\n").arg(p_center_x);
+        info=info+QString("center_y: %1\n").arg(p_center_y);
+        info=info+QString("offset_x: %1\n").arg(p_offset_x);
+        info=info+QString("offset_y: %1\n").arg(p_offset_y);
+        info=info+QString("coeff_x: %1\n").arg(p_coeff_x);
+        info=info+QString("coeff_y: %1\n").arg(p_coeff_y);
+        info=info+QString("top_z: %1\n").arg(p_start_viewline);
+        info=info+QString("bottom_z: %1\n").arg(p_stop_viewline);
+
+        QString objective = ui->comboBox_objective->currentText();
+        info=info+QString("objective: %1\n").arg(objective.toUtf8().constData());
+
+
+        p_image_saver->addInfo(info);
+        connect(p_image_saver,SIGNAL(available(int)),ui->lcdNumber_saveqsize,SLOT(display(int)));
+        connect(p_image_saver,SIGNAL(filenumber(int)),this,SLOT(displayFileNumber(int)));
+    }
+    p_camera->Open();
+    p_camera->SetCameraString("FPA Sensitivity",ui->comboBox_sensitivity->currentText().toUtf8().constData());
+    p_camera->SetCameraString("Operational Setting",ui->comboBox_opr->currentText().toUtf8().constData());
+    p_camera->SetCameraString("Exposure Modes","Exp at Max Rate");
+    if (exposure < 8.45f) exposure = 8.45f;
+    if (exposure > 100.0f) exposure = 100.0f;
+    p_camera->SetCameraNumeric("Exposure Time",exposure);
+
+    p_camera->ConfigureForSingleGrab();
+
+    if (ui->checkBox_save->isChecked())
+    {
+        p_camera->setImageDataSaver(p_image_saver);
+        p_image_saver->writeInfoFile();
+        p_image_saver->startSaving();
+        p_ai->SetDataSaver(p_ai_data_saver);
+        p_ai_data_saver->startSaving();
+        p_ai->Start();
+    }
+
+    // Set ramp
+    if (ui->comboBox_scantype->currentText() == "SawTooth")
+    {
+        p_galvos.setSawToothRamp(-width/2,-height/2,+width/2,height/2,nx,ny,n_extra,n_repeat,line_rate,aline_repeat);
+        p_galvos.move(p_center_x, p_center_y);
+
+    }
+    else if (ui->comboBox_scantype->currentText() == "Triangular")
+    {
+        p_galvos.setTriangularRamp(p_center_x-width/2,p_center_y-height/2,p_center_x+width/2,p_center_y+height/2,nx,ny,n_extra,line_rate);
+    }
+    else if(ui->comboBox_scantype->currentText() == "Line")
+    {
+        p_galvos.setLineRamp(p_center_x+p_start_line_x,p_center_y+p_start_line_y,
+                             p_center_x+p_stop_line_x,p_center_y+p_stop_line_y,nx,ny,n_extra,line_rate);
+    }
+    p_galvos.setTrigDelay(ui->lineEdit_shift->text().toFloat());
+
+
+}
+
+void GalvoController::startServerScan()
+{
+    p_image_saver->setDatasetName(ui->lineEdit_datasetname->text());
+    p_ai_data_saver->setDatasetName(ui->lineEdit_datasetname->text());
+    p_image_saver->writeInfoFile();
+    p_image_saver->startSaving();
+    p_ai_data_saver->startSaving();
+
+    p_ai->Start();
+    p_camera->Start();
+    // Start generating
+    p_galvos.startTask();
+    ui->pushButton_start->setEnabled(false);
+    ui->pushButton_stop->setEnabled(true);
+}
+
+void GalvoController::stopServerScan()
+{
+    if(!p_server_stop_asked)
+    {
+        // Saver stop
+        // Needs to be stopped first due to potential deadlock, will
+        // stop when next block size if filled.
+        if(p_image_saver)
+        {
+            p_image_saver->stopSaving();
+            p_ai_data_saver->stopSaving();
+        }
+        // camera stop
+        // Slight danger of locking if buffer was full and camera is still putting fast
+        // Need to have a large acquire at end of thread maybe?
+        p_camera->Stop();
+        p_ai->Stop();
+        // Stop galvos, close camera
+        p_galvos.stopTask();
+        //p_camera->Close();
+        p_camera_stop_requested = true;
+        emit sig_serverEndScan();
+        p_server_stop_asked = true;
+    }
+    return;
+}
+
 void GalvoController::displayFileNumber(int block_number)
 {
     int ny = ui->lineEdit_ny->text().toInt();
@@ -1611,7 +1868,7 @@ void GalvoController::slot_server(void){
 
     // Configure Signals and Slots
     connect(&server, SIGNAL(sig_change_filename(QString)), this, SLOT(setFileName(QString)));
-    connect(&server, SIGNAL(sig_start_scan()), this, SLOT(startScan()));
+    connect(&server, SIGNAL(sig_start_scan()), this, SLOT(startServerScan()));
     connect(this, SIGNAL(sig_serverEndScan()), &server, SLOT(slot_endConnection()));
 
     // Executing the server

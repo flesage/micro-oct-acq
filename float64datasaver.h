@@ -160,7 +160,7 @@ inline void Float64DataSaver::run()
         if(!p_started)
         {
             p_mutex.unlock();
-            break;
+            if(p_used_spots.available() == 0) break;
         }
         else
         {

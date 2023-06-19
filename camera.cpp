@@ -159,6 +159,7 @@ void Camera::Stop()
     p_started = false;
     p_mutex.unlock();
     wait();
+    imgSessionStopAcquisition(sid);
 }
 
 void Camera::run()
