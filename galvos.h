@@ -26,6 +26,7 @@ public:
     void move(float center_x,float center_y);
     void startTask();
     void stopTask();
+    void stopNoClearTask();
     void clearTask();
 
 private:

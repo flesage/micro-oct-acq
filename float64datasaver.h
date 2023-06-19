@@ -168,6 +168,10 @@ inline void Float64DataSaver::run()
         }
     }
     if (fp) fclose(fp);
+    // Reset to be ready for next start
+    p_current_pos = 0;
+    p_used_spots.release(p_used_spots.available());
+    p_free_spots.acquire(2*p_save_block_size-p_free_spots.available());
 }
 
 #endif // FLOAT64DATASAVER_H

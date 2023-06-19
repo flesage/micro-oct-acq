@@ -1099,7 +1099,6 @@ void GalvoController::configureServerScan()
     double radians_per_volt = 2*3.14159265359/(360*0.8)*(3.0/4.0)/0.95;
     double f1=50.0;
     double f2=100.0;
-    bool show_line_flag=ui->checkBox_view_line->isChecked();
     bool finite_acq_flag=ui->checkBox_finite_acq->isChecked();
 
     // Only go here on first call if we do multiple volumes
@@ -1108,9 +1107,6 @@ void GalvoController::configureServerScan()
         p_n_volumes = ui->lineEdit_nvol->text().toInt();
         p_finite_acquisition = true;
     }
-
-
-    p_server_stop_asked = false;
 
     switch(telescope)
     {
@@ -1185,10 +1181,8 @@ void GalvoController::configureServerScan()
     p_camera=new SoftwareCamera((nx+n_extra)*factor,exposure,n_frames_in_one_volume);
 #endif
     p_camera_stop_requested = false;
-    if(p_finite_acquisition || p_stack_acquisition)
-    {
-        connect(p_camera, SIGNAL(volume_done()), this, SLOT(stopServerScan()));
-    }
+    connect(p_camera, SIGNAL(volume_done()), this, SLOT(stopServerScan()));
+
 
     updateInfo();
     qApp->processEvents();
@@ -1262,11 +1256,7 @@ void GalvoController::configureServerScan()
     if (ui->checkBox_save->isChecked())
     {
         p_camera->setImageDataSaver(p_image_saver);
-        p_image_saver->writeInfoFile();
-        p_image_saver->startSaving();
         p_ai->SetDataSaver(p_ai_data_saver);
-        p_ai_data_saver->startSaving();
-        p_ai->Start();
     }
 
     // Set ramp
@@ -1292,6 +1282,8 @@ void GalvoController::configureServerScan()
 
 void GalvoController::startServerScan()
 {
+    p_server_stop_asked = false;
+    // Change dataset name and restarts without camera reconfig
     p_image_saver->setDatasetName(ui->lineEdit_datasetname->text());
     p_ai_data_saver->setDatasetName(ui->lineEdit_datasetname->text());
     p_image_saver->writeInfoFile();
@@ -1302,8 +1294,6 @@ void GalvoController::startServerScan()
     p_camera->Start();
     // Start generating
     p_galvos.startTask();
-    ui->pushButton_start->setEnabled(false);
-    ui->pushButton_stop->setEnabled(true);
 }
 
 void GalvoController::stopServerScan()
@@ -1319,12 +1309,10 @@ void GalvoController::stopServerScan()
             p_ai_data_saver->stopSaving();
         }
         // camera stop
-        // Slight danger of locking if buffer was full and camera is still putting fast
-        // Need to have a large acquire at end of thread maybe?
         p_camera->Stop();
         p_ai->Stop();
         // Stop galvos, close camera
-        p_galvos.stopTask();
+        p_galvos.stopNoClearTask();
         //p_camera->Close();
         p_camera_stop_requested = true;
         emit sig_serverEndScan();
@@ -1862,7 +1850,8 @@ void GalvoController::slot_server(void){
     // Disable the main interface
     this->setDisabled(true);
 
-    // Creating the server
+    // Creating the server and configure acquisition.
+    configureServerScan();
     OCTServer server;
     p_server_mode = true;
 

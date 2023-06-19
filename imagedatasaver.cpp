@@ -123,4 +123,8 @@ void ImageDataSaver::run()
         }
     }
     if (fp) fclose(fp);
+    // Reset to be ready to restart
+    p_current_pos = 0;
+    p_used_spots.release(p_used_spots.available());
+    p_free_spots.acquire(2*p_save_block_size-p_free_spots.available());
 }

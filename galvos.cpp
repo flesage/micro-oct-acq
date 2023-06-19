@@ -342,6 +342,17 @@ void Galvos::startTask()
     }
 }
 
+void Galvos::stopNoClearTask()
+{
+    p_mutex.lock();
+    p_started = false;
+    p_mutex.unlock();
+    wait();
+    // Choice is to stop writing to galvos first, then stop galvo clock
+    DAQmxStopTask(p_task_handle);
+    DAQmxStopTask(p_clock_task_handle);
+}
+
 void Galvos::stopTask()
 {
     p_mutex.lock();
