@@ -1078,7 +1078,7 @@ void GalvoController::startScan()
 
 void GalvoController::configureServerScan()
 {
-    std::cerr << "Configuring the server scan mode" << std::endl;
+    std::cerr << "GalvoController::configureServerScan" << std::endl;
     checkPath();
     automaticCentering();
     qApp->processEvents();
@@ -1281,6 +1281,40 @@ void GalvoController::configureServerScan()
 
 }
 
+// To stop the OCT server
+void GalvoController::endServerScan()
+{
+    std::cerr << "GalvoController::endServerScan" << std::endl;
+
+    // Stop the scan, the camera, the data savers, etc.
+    p_image_saver->stopSaving();
+    p_ai_data_saver->stopSaving();
+
+    // camera stop
+    std::cerr << "GalvoController::endServerScan | Stopping the camera" << std::endl;
+    // Slight danger of locking if buffer was full and camera is still putting fast
+    // Need to have a large acquire at end of thread maybe?
+    p_camera->Stop();
+    // Deleting saver after camera stop because there will be some calls to put...
+
+    delete p_image_saver;
+    p_image_saver = 0;
+    p_ai->Stop();
+    delete p_ai;
+    p_ai=0;
+    delete p_ai_data_saver;
+    p_ai_data_saver=0;
+    view_timer->stop();
+
+    // Stop galvos, close camera
+    p_galvos.stopTask();
+    p_camera->Close();
+    p_camera_stop_requested = true;
+
+    // Disconnect the server related signals
+    disconnect(p_camera, SIGNAL(volume_done()), this, SLOT(stopServerScan()));
+}
+
 void GalvoController::startServerScan()
 {
     std::cerr << "GalvoController::startServerScan" << std::endl;
@@ -1302,7 +1336,7 @@ void GalvoController::stopServerScan()
 {
     if(!p_server_stop_asked)
     {
-        std::cerr << "Stoping a server scan" << std::endl;
+        std::cerr << "GalvoController::stopServerScan" << std::endl;
 
         // Saver stop
         // Needs to be stopped first due to potential deadlock, will
@@ -1372,7 +1406,7 @@ void GalvoController::stopScan()
         return;
     }
 
-    std::cout << "GalvoController::stopScan | Stopping the scan" << std::endl;
+    std::cerr << "GalvoController::stopScan" << std::endl;
 
     // Saver stop
     // Needs to be stopped first due to potential deadlock, will
@@ -1824,7 +1858,7 @@ void GalvoController::slot_test_orthoviewer(void){
 }
 
 void GalvoController::slot_server(void){
-    std::cerr << "Starting the OCT server" << std::endl;
+    std::cerr << "GalvoController::slot_server | Starting the OCT server" << std::endl;
 
     // TODO: Check that the save directory was set
 
@@ -1863,8 +1897,11 @@ void GalvoController::slot_server(void){
     // Executing the server
     server.exec();
 
-    std::cout<< "Stoping the server" << std::endl;
+    std::cerr << "GalvoController::slot_server | Stoping the server" << std::endl;
     p_server_mode = false;
+    endServerScan();
+
+    // Reset the UI
     this->setDisabled(false);
     ui->checkBox_save->setChecked(initial_save_state);
     ui->checkBox_finite_acq->setChecked(initial_finite_acq_state);

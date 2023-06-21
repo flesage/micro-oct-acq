@@ -54,6 +54,7 @@ private slots:
     void scanTypeChosen(const QString& text);
     void startScan(void);
     void configureServerScan(void);
+    void endServerScan(void);
     void startServerScan(void);
     void stopScan(void);
     void stopServerScan(void);

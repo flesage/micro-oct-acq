@@ -25,6 +25,7 @@ signals:
 private slots:
     void slot_startConnection();
     void slot_endConnection();
+    void slot_endConnection(QString);
     void slot_readTilePosition();
     void slot_performScan(int x, int y, int z);
 

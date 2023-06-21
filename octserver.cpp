@@ -6,6 +6,9 @@
 
 #include "octserver.h"
 
+// TODO: use tcpsocket timeouts to catch errors.
+// TODO: use a different thread for sockets
+
 OCTServer::OCTServer(QWidget *parent)
     : QDialog(parent)
     , statusLabel(new QLabel)
@@ -82,10 +85,21 @@ void OCTServer::slot_endConnection()
     std::cerr << "octserver::Closing the connection...";
     QByteArray response;
     QDataStream out(&response, QIODevice::WriteOnly);
-    out.setVersion(QDataStream::Qt_6_2);
-    out << "OCT_done";
-    qint64 n_bytes = clientConnection->write(response);
-    std::cerr << "sent back " << n_bytes << " bytes" << std::endl;
+    out << QString("OCT_done").toUtf8();
+    clientConnection->write(response);
+    std::cerr << " done!" << std::endl;
+    //delete clientConnection; // DEBUG: the connection should be deleted when it is closed by the client.
+}
+
+void OCTServer::slot_endConnection(QString message)
+{
+    std::cerr << "octserver::Closing the connection...";
+    QByteArray response;
+    QDataStream out(&response, QIODevice::WriteOnly);
+    out << message.toUtf8();
+    clientConnection->write(response);
+    std::cerr << " done!" << std::endl;
+    //delete clientConnection; // DEBUG: the connection should be deleted when it is closed by the client.
 }
 
 QString OCTServer::getHostAddress()
@@ -109,8 +123,6 @@ QString OCTServer::getHostAddress()
 
 void OCTServer::slot_readTilePosition()
 {
-    std::cerr << "octserver::Reading tile positions: (x,y,z)=";
-
     QByteArray total_data, buffer;
     while(1) {
         buffer = clientConnection->read(1024);
@@ -120,19 +132,35 @@ void OCTServer::slot_readTilePosition()
         total_data.append(buffer);
     }
     QString data = QString(total_data);
-    p_tile_x = data.split(" ")[0].toInt();
-    p_tile_y = data.split(" ")[1].toInt();
-    p_tile_z = data.split(" ")[2].toInt();
+    std::cerr << data.toStdString() << std::endl;
 
-    std::cerr << "(" << p_tile_x <<"," << p_tile_y << "," << p_tile_z << ")" << std::endl;
-    emit sig_start_acquisition(p_tile_x, p_tile_y, p_tile_z);
+   if ( data.startsWith("acquire_avg_fringe_intensity"))
+   {
+       std::cerr << "Case 1: Acquire a fringe without saving" << std::endl;
+       // TODO: Acquire a fringe, compute the AUC or max intensity and send back.
+       slot_endConnection(QString("4.20"));
+   }
+   else
+   {
+       std::cerr << "Case 2: Acquire and save a tile" << std::endl;
+       std::cerr << "octserver::Reading tile positions: (x,y,z)=";
+       // Read the tile position to acquire
+       p_tile_x = data.split(" ")[0].toInt();
+       p_tile_y = data.split(" ")[1].toInt();
+       p_tile_z = data.split(" ")[2].toInt();
+
+       std::cerr << "(" << p_tile_x <<"," << p_tile_y << "," << p_tile_z << ")" << std::endl;
+       emit sig_start_acquisition(p_tile_x, p_tile_y, p_tile_z);
+   }
 }
 
 void OCTServer::slot_startConnection()
 {
     std::cerr << "octserver::Fetching the next pending connection...";
-    clientConnection = tcpServer->nextPendingConnection();
-    std::cerr << "got it!" << std::endl;
+    clientConnection = tcpServer->nextPendingConnection(); // DEBUG: Try replacing by waitPendingConnection with timeout, or check if there are pending connections.
+    // DEBUG: test if the returned value is nullptr (if no pending connection)
+
+    std::cerr << " got it!" << std::endl;
 
     connect(clientConnection, &QIODevice::readyRead, this, &OCTServer::slot_readTilePosition);
 }
