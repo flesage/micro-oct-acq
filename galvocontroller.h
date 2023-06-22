@@ -154,6 +154,7 @@ private:
     QString p_datasetname;
     bool p_server_mode;
     bool p_server_stop_asked;
+    bool p_save_images;
 #ifndef SIMULATION
     Camera* p_camera;
 #else

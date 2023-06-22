@@ -132,7 +132,8 @@ void FringeFFT::image_reconstruction(unsigned short* in_fringe, float* out_data,
 
     // Multiply by dispersion compensation vector and hann window, store back in p_interpfringe
     gfor (af::seq i, p_nx)
-            p_interpfringe(af::span,i)=((p_interpfringe(af::span,i)-p_mean_fringe(af::span)/(p_mean_fringe(af::span)+p_hanning_threshold)))*p_hann_dispcomp;
+        //p_interpfringe(af::span,i)=((p_interpfringe(af::span,i)-p_mean_fringe(af::span)/(p_mean_fringe(af::span)+p_hanning_threshold)))*p_hann_dispcomp;
+        p_interpfringe(af::span,i)=(p_interpfringe(af::span,i)-p_mean_fringe(af::span))*p_hann_dispcomp;
 
     // Do fft
     p_signal = af::abs(af::fft(p_interpfringe));
