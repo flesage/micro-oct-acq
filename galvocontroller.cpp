@@ -1349,10 +1349,10 @@ void GalvoController::stopServerScan()
             p_ai_data_saver->stopSaving();
         }
         // camera stop
+        p_galvos.stopNoClearTask();
         p_camera->Stop();
         p_ai->StopWithoutClear();
         // Stop galvos, without closing the camera
-        p_galvos.stopNoClearTask();
         p_image_saver->resetDataSaver();
 
         p_camera_stop_requested = true;
