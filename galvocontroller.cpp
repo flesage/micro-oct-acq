@@ -1357,6 +1357,7 @@ void GalvoController::stopServerScan()
         p_camera_stop_requested = true;
         emit sig_serverEndScan();
         p_server_stop_asked = true;
+        p_image_saver->resetDataSaver();
     }
     return;
 }

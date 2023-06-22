@@ -21,6 +21,7 @@ public:
     void stopSaving();
     void put(unsigned short* frame);
     void run();    
+    void resetDataSaver();
 signals:
     void available(int);
     void filenumber(int);

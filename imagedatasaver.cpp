@@ -123,6 +123,10 @@ void ImageDataSaver::run()
         }
     }
     if (fp) fclose(fp);
+}
+
+void ImageDataSaver::resetDataSaver()
+{
     // Reset to be ready to restart
     p_current_pos = 0;
     p_used_spots.release(p_used_spots.available());
