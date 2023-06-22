@@ -1333,6 +1333,7 @@ void GalvoController::startServerScan()
     p_ai->Start();
     p_camera->Start();
     // Start generating
+    p_galvos.config();
     p_galvos.startTask();
 }
 
@@ -1354,7 +1355,7 @@ void GalvoController::stopServerScan()
         p_camera->Stop();
         p_ai->StopWithoutClear();
         // Stop galvos, without closing the camera
-        p_galvos.stopNoClearTask();
+        p_galvos.stopTask();
 
         p_camera_stop_requested = true;
         emit sig_serverEndScan();
