@@ -60,6 +60,7 @@ GalvoController::GalvoController() :
 
     p_server_mode = false;
     p_server_stop_asked = false;
+    p_save_images = false;
 
     motors = new MotorClass();
 
@@ -762,6 +763,7 @@ void GalvoController::startScan()
     double f2=100.0;
     bool show_line_flag=ui->checkBox_view_line->isChecked();
     bool finite_acq_flag=ui->checkBox_finite_acq->isChecked();
+    p_save_images = ui->checkBox_saveImages->isChecked();
 
     // Only go here on first call if we do multiple volumes
     if (finite_acq_flag)

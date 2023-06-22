@@ -3707,7 +3707,46 @@
         </widget>
        </item>
        <item>
+        <widget class="QPushButton" name="pushButton_startServer">
+         <property name="text">
+          <string>Start server (S-OCT)</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <layout class="QGridLayout" name="gridLayout_13">
+         <item row="0" column="1">
+          <spacer name="horizontalSpacer_18">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="1" column="2">
+          <widget class="QCheckBox" name="checkBox_autoFill">
+           <property name="minimumSize">
+            <size>
+             <width>100</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>100</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>Autofill ?</string>
+           </property>
+          </widget>
+         </item>
          <item row="0" column="2">
           <widget class="QCheckBox" name="checkBox_overwrite">
            <property name="minimumSize">
@@ -3746,42 +3785,10 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="2">
-          <widget class="QCheckBox" name="checkBox_autoFill">
-           <property name="minimumSize">
-            <size>
-             <width>100</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>100</width>
-             <height>16777215</height>
-            </size>
-           </property>
+         <item row="2" column="2">
+          <widget class="QCheckBox" name="checkBox_saveImages">
            <property name="text">
-            <string>Autofill ?</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <spacer name="horizontalSpacer_18">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item row="1" column="0">
-          <widget class="QPushButton" name="pushButton_startServer">
-           <property name="text">
-            <string>Start server (S-OCT)</string>
+            <string>Save images?</string>
            </property>
           </widget>
          </item>
