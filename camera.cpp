@@ -113,6 +113,8 @@ void Camera::ConfigureForSingleGrab()
 
 void Camera::Close()
 {
+    std::cerr << "Camera::Close()" << std::endl;
+
     // stop the acquisition
     imgSessionAbort(sid, NULL);
 
@@ -155,6 +157,7 @@ void Camera::Start()
 
 void Camera::Stop()
 {
+    std::cerr << "Camera::Stop" << std::endl;
     p_mutex.lock();
     p_started = false;
     p_mutex.unlock();

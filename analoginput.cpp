@@ -42,6 +42,7 @@ void AnalogInput::Start()
 
 void AnalogInput::Stop()
 {
+    std::cerr << "AnalogInput::Stop()" << std::endl;
     // Stop reading first as reading calls could block
     p_mutex.lock();
     p_started = false;

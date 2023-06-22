@@ -40,7 +40,23 @@ void FringeFFT::init(int nz, int nx, float dimz, float dimx)
     p_angio_stack=af::array(p_nz/2,p_nx,p_n_repeat,f32);
     p_norm_signal=af::constant(0.0,p_nz,p_nx,f32);
     p_angio_algo=0;
+    p_background = af::array(p_nz, 1, f32);
 
+    // Read the background
+    double* tmp_bg = new double[p_nz];
+    FILE* fp_bg = fopen("C:\\Users\\Public\\Documents\\background_fringe.dat", "rb");
+    if(fp_bg == 0)
+    {
+        std::cerr << "Check if background_fringe.dat file exists" << std::endl;
+        exit(-1);
+    }
+    fread(tmp_bg, sizeof(double), p_nz, fp_bg);
+    fclose(fp_bg);
+    float* background = new float[p_nz];
+    for(int i=0; i<p_nz; i++) background[i]=(float) (tmp_bg[i]);
+    p_background = af::array(p_nz, 1, background, afHost);
+
+    // Read the apodization function and convert to float
     double* tmp=new double[p_nz];
     FILE* fp=fopen("C:\\Users\\Public\\Documents\\filter.dat","rb");
     if(fp == 0)
@@ -48,8 +64,12 @@ void FringeFFT::init(int nz, int nx, float dimz, float dimx)
         std::cerr << "Check if filter file exists" << std::endl;
         exit(-1);
     }
-    fread(tmp,sizeof(double),p_nz,fp);
+    fread(tmp, sizeof(double), p_nz, fp);
+    fclose(fp);
+    float* filter = new float[p_nz];
+    for(int i=0;i<p_nz;i++) filter[i]=(float) (tmp[i]*0.00001); //FIXME: why is this multiplied by 1e-5?
 
+    // Read the phase and convert to float
     double* phase=new double[p_nz];
     FILE* fp2=fopen("C:\\Users\\Public\\Documents\\phase.dat","rb");
     if(fp2 == 0)
@@ -57,16 +77,17 @@ void FringeFFT::init(int nz, int nx, float dimz, float dimx)
         std::cerr << "Check if phase file exists" << std::endl;
         exit(-1);
     }
-    fread(phase,sizeof(double),p_nz,fp2);
+    fread(phase, sizeof(double), p_nz, fp2);
     fclose(fp2);
     float* f_phase = new float[p_nz];
     for(int i=0;i<p_nz;i++) f_phase[i]=(float) phase[i];
 
+    // Compute a complex window for simultaneous apodization and dispersion compensation
     af::cfloat h_unit = {0, 1};  // Host side
+    //af::cfloat h_unit = {0, -1};  // Host side
     af::array unit_j = af::constant(h_unit, 1, c32);
     af::array h_phase = af::complex(af::array(p_nz,1,f_phase,afHost));
-    float* filter = new float[p_nz];
-    for(int i=0;i<p_nz;i++) filter[i]=(float) (tmp[i]*0.00001);
+
     p_hann_dispcomp = af::complex(af::array(p_nz,1,filter,afHost));
     p_hann_dispcomp *= af::exp(tile(unit_j(0), h_phase.dims())*h_phase);
 
@@ -101,10 +122,12 @@ void FringeFFT::interp_and_do_fft(unsigned short* in_fringe,unsigned char* out_s
 
     // Compute reference
     p_mean_fringe = mean(p_interpfringe, 1);
+    //p_mean_fringe = p_background;
 
     // Multiply by dispersion compensation vector and hann window, store back in p_interpfringe
     gfor (af::seq i, p_nx)
-            p_interpfringe(af::span,i)=((p_interpfringe(af::span,i)-p_mean_fringe(af::span)/(p_mean_fringe(af::span)+p_hanning_threshold)))*p_hann_dispcomp;
+            //p_interpfringe(af::span,i)=((p_interpfringe(af::span,i)-p_mean_fringe(af::span)/(p_mean_fringe(af::span)+p_hanning_threshold)))*p_hann_dispcomp;
+            p_interpfringe(af::span,i)= (p_interpfringe(af::span,i)-p_mean_fringe(af::span))*p_hann_dispcomp;
 
     // Do fft
     p_signal = af::fft(p_interpfringe);
@@ -131,7 +154,8 @@ void FringeFFT::image_reconstruction(unsigned short* in_fringe, float* out_data,
 
     // Multiply by dispersion compensation vector and hann window, store back in p_interpfringe
     gfor (af::seq i, p_nx)
-            p_interpfringe(af::span,i)=((p_interpfringe(af::span,i)-p_mean_fringe(af::span)/(p_mean_fringe(af::span)+p_hanning_threshold)))*p_hann_dispcomp;
+            //p_interpfringe(af::span,i)=((p_interpfringe(af::span,i)-p_mean_fringe(af::span)/(p_mean_fringe(af::span)+p_hanning_threshold)))*p_hann_dispcomp;
+            p_interpfringe(af::span,i)=(p_interpfringe(af::span,i)-p_mean_fringe(af::span))*p_hann_dispcomp;
 
     // Do fft
     p_signal = af::abs(af::fft(p_interpfringe));

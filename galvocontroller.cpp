@@ -1105,8 +1105,8 @@ void GalvoController::stopFiniteScan()
         if(!p_server_stop_asked)
         {
             stopScan();
-            emit sig_serverEndScan();
             p_server_stop_asked = true;
+            emit sig_serverEndScan();
         }
         return;
     }
@@ -1127,7 +1127,7 @@ void GalvoController::stopScan()
         return;
     }
 
-    std::cout << "Stopping the scan" << std::endl;
+    std::cerr << "GalvoController::stopScan" << std::endl;
 
     // Saver stop
     // Needs to be stopped first due to potential deadlock, will
@@ -1158,8 +1158,8 @@ void GalvoController::stopScan()
     // Slight danger of locking if buffer was full and camera is still putting fast
     // Need to have a large acquire at end of thread maybe?
     p_camera->Stop();
-    // Deleting saver after camera stop because there will be some calls to put...
 
+    // Deleting saver after camera stop because there will be some calls to put...
     if(p_data_saver)
     {
         delete p_data_saver;
@@ -1180,8 +1180,11 @@ void GalvoController::stopScan()
         delete p_ai_data_saver;
         p_ai_data_saver=0;
     }
-    view_timer->stop();
 
+    // Only stop the the view time if it is running
+    if (ui->checkBox_fringe->isChecked() || ui->checkBox_view_image->isChecked()) {
+        view_timer->stop();
+    }
 
     if(p_fringe_view)
     {
@@ -1192,6 +1195,7 @@ void GalvoController::stopScan()
 
     if(p_image_view)
     {
+        std::cerr << "p_image_view" << std::endl;
         p_image_view->close();
 
         delete p_image_view;

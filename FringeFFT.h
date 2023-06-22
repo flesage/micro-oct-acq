@@ -55,6 +55,7 @@ private:
     af::array p_angio;
     af::array p_struct;
     af::array p_norm_signal;
+    af::array p_background;
     int p_hpf_npts;
     float p_line_period;
     int p_n_radial_pts;
