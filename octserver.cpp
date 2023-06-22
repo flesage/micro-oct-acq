@@ -132,7 +132,6 @@ void OCTServer::slot_readTilePosition()
         total_data.append(buffer);
     }
     QString data = QString(total_data);
-    std::cerr << data.toStdString() << std::endl;
 
    if ( data.startsWith("acquire_avg_fringe_intensity"))
    {
