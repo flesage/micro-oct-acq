@@ -1321,6 +1321,8 @@ void GalvoController::startServerScan()
 {
     std::cerr << "GalvoController::startServerScan" << std::endl;
     p_server_stop_asked = false;
+    p_image_saver->resetDataSaver();
+
     // Change dataset name and restarts without camera reconfig
     p_image_saver->setDatasetName(ui->lineEdit_datasetname->text());
     p_ai_data_saver->setDatasetName(ui->lineEdit_datasetname->text());
@@ -1349,11 +1351,10 @@ void GalvoController::stopServerScan()
             p_ai_data_saver->stopSaving();
         }
         // camera stop
-        p_galvos.stopNoClearTask();
         p_camera->Stop();
         p_ai->StopWithoutClear();
         // Stop galvos, without closing the camera
-        p_image_saver->resetDataSaver();
+        p_galvos.stopNoClearTask();
 
         p_camera_stop_requested = true;
         emit sig_serverEndScan();
