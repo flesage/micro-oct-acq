@@ -945,17 +945,16 @@ void GalvoController::startScan()
         if(dispersion == 4 && p_disp_comp_vec_25x != 0) p_image_view->set_disp_comp_vect(p_disp_comp_vec_25x);
         bool averageAngioFlag=ui->checkBox_averageFrames->isChecked();
         p_image_view->updateAngioAverageFlag(averageAngioFlag);
+
+        // Image Viewer Signals
         connect(view_timer,SIGNAL(timeout()),p_image_view,SLOT(updateView()));
         connect(this,SIGNAL(sig_updateAveragingFlag(bool)),p_image_view,SLOT(updateAngioAverageFlag(bool)));
         connect(this,SIGNAL(sig_updateAveragingAlgo(int)),p_image_view,SLOT(updateAngioAlgo(int)));
-
-
-
         connect(this,SIGNAL(sig_updateHanningThreshold(float)),p_image_view,SLOT(updateHanningThreshold(float)));
         connect(this,SIGNAL(sig_updateImageThreshold(float)),p_image_view,SLOT(updateImageThreshold(float)));
         connect(this,SIGNAL(sig_updateViewLinePositions(bool,int,int)),p_image_view,SLOT(updateViewLinePositions(bool,int,int)));
-
         connect(p_image_view,SIGNAL(sig_updateLineScanPos(int,int,int,int)),this,SLOT(setLineScanPos(int,int,int,int)));
+
         if(ui->checkBox_placeImage->isChecked())
             p_image_view->move(200,150);
         p_image_view->show();
@@ -965,6 +964,15 @@ void GalvoController::startScan()
         {
             p_image_view->setCurrentViewModeStruct();
         }
+    }
+    if(ui->checkBox_view_3d->isChecked()){
+        p_ortho_view = new oct3dOrthogonalViewer(0, nx+n_extra, ny, LINE_ARRAY_SIZE / 2.0);
+
+        // 3D Viewer Signals
+        connect(view_timer, SIGNAL(timeout()), p_ortho_view, SLOT(slot_update_view()));
+
+        // Display the viewer
+        p_ortho_view->show();
     }
     if (ui->checkBox_save->isChecked())
     {
@@ -1473,6 +1481,9 @@ void GalvoController::slot_rotation_update_position(void){
 }
 
 void GalvoController::slot_test_orthoviewer(void){
+    // Get the scan dimension
+
+
     p_ortho_view = new oct3dOrthogonalViewer(0);
     p_ortho_view->show();
     p_ortho_view->slot_update_view();

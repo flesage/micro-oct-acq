@@ -6,6 +6,7 @@
 #include <QPen>
 #include <QColor>
 #include <QTimer>
+#include "config.h"
 
 // TODO: Add mouse and keyboard interactions (scroll and mouse click position uptdate)
 // TODO: Show the projection range with the overlay
@@ -15,7 +16,7 @@
 // TODO: add option to perform averaging?
 // TODO: add simulation mode
 
-oct3dOrthogonalViewer::oct3dOrthogonalViewer(QWidget *parent) :
+oct3dOrthogonalViewer::oct3dOrthogonalViewer(QWidget *parent, int nx, int ny, int nz) :
     QWidget(parent),
     ui(new Ui::oct3dOrthogonalViewer)
 {
@@ -23,9 +24,9 @@ oct3dOrthogonalViewer::oct3dOrthogonalViewer(QWidget *parent) :
     ui->setupUi(this);
 
     // Setup Data
-    p_nx = 256;
-    p_ny = 256;
-    p_nz = 128;
+    p_nx = nx;
+    p_ny = ny;
+    p_nz = nz;
     p_line_thickness = 3;
     p_projection_mode = AVERAGE;
     p_log_transform = true;
@@ -37,6 +38,8 @@ oct3dOrthogonalViewer::oct3dOrthogonalViewer(QWidget *parent) :
     pen_z = QPen(QColor(0, 0, 255, 128), p_line_thickness); // z = blue
 
     //p_oct = af::array(p_nz, p_nx, p_ny, f32);
+    p_data_buffer = new unsigned short[p_nx*LINE_ARRAY_SIZE];
+    p_image_buffer = new unsigned short[p_nx*p_nz];
 
     // Simulating an OCT volume
     p_oct = af::randu(p_nz, p_nx, p_ny, f32);
@@ -78,10 +81,10 @@ oct3dOrthogonalViewer::oct3dOrthogonalViewer(QWidget *parent) :
     connect(ui->comboBox_projectionType, SIGNAL(currentIndexChanged(int)), this, SLOT(set_projection_mode(int)));
     connect(ui->checkBox_logTransform, SIGNAL(stateChanged(int)), this, SLOT(set_log_transform(int)));
     connect(ui->checkBox_xyzOverlay, SIGNAL(stateChanged(int)), this, SLOT(set_overlay(int)));
-    connect(simulation_timer, SIGNAL(timeout()), this, SLOT(simulate_bscan()));
+    //connect(simulation_timer, SIGNAL(timeout()), this, SLOT(simulate_bscan()));
 
     ui_is_ready = true;
-    simulation_timer->start(100);
+    //simulation_timer->start(30);
 }
 
 oct3dOrthogonalViewer::~oct3dOrthogonalViewer()
@@ -90,12 +93,22 @@ oct3dOrthogonalViewer::~oct3dOrthogonalViewer()
     delete ui;
 }
 
-// Replace a b-scan given a y frame number.
-void oct3dOrthogonalViewer::put(const af::array& data, unsigned int frame_number)
-{
-    p_oct(af::span, af::span, frame_number) = data;
-    slot_update_view();
+void oct3dOrthogonalViewer::put(unsigned short* fringe, unsigned int frame_number) {
+    if (p_mutex.tryLock())
+    {
+        memcpy(p_data_buffer, fringe, p_nx*LINE_ARRAY_SIZE*sizeof(unsigned short));
+        reconstruct(p_data_buffer, p_image_buffer);
+        p_oct(af::span, af::span, frame_number) = af::array(p_image_buffer);
+        p_mutex.unlock();
+    }
 }
+
+//// Replace a b-scan given a y frame number.
+//void oct3dOrthogonalViewer::put(const af::array& data, unsigned int frame_number)
+//{
+//    p_oct(af::span, af::span, frame_number) = data;
+//    //slot_update_view(); // TODO: view update should be called externally
+//}
 
 void oct3dOrthogonalViewer::set_x(int x)
 {
@@ -188,7 +201,7 @@ void oct3dOrthogonalViewer::set_overlay(int value)
 
 void oct3dOrthogonalViewer::slot_update_view()
 {
-    std::cout << "Updating the view" << std::endl;
+    std::cout << "Updating the 3D view" << std::endl;
 
     // Computing X projection
     // TODO: Change the behaviour of the slice_thickness to be centered.

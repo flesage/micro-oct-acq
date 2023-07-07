@@ -7,6 +7,7 @@
 #include <QPixmap>
 #include <QPen>
 #include "arrayfire.h"
+#include <QMutex>
 
 namespace Ui {
 class oct3dOrthogonalViewer;
@@ -25,9 +26,13 @@ class oct3dOrthogonalViewer : public QWidget
     Q_OBJECT
 
 public:
-    explicit oct3dOrthogonalViewer(QWidget *parent = nullptr);
+    explicit oct3dOrthogonalViewer(QWidget *parent = nullptr, int nx=64, int ny=64, int nz=64);
     ~oct3dOrthogonalViewer();
-    void put(const af::array& oct_data, unsigned int frame_number); // TODO: method to update the OCT data
+    void put(unsigned short* frame, unsigned int frame_number);
+    //void put(const af::array& oct_data, unsigned int frame_number); // TODO: method to update the OCT data
+    void reconstruct(unsigned short* in_fringe, unsigned short* out_image);
+
+    //void
     // bool eventFilter(QObject* watched, QEvent* event);
 
 public slots:
@@ -66,6 +71,9 @@ private:
     QPen pen_y;
     QPen pen_z;
     bool ui_is_ready;
+    unsigned short int* p_data_buffer;
+    unsigned short int* p_image_buffer;
+    QMutex p_mutex;
 
     // Simulation
     QTimer* simulation_timer;
