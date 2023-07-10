@@ -15,6 +15,7 @@ Camera::Camera(int n_lines, float exposure, unsigned int n_frames_per_volume)
     p_started=false;
     fv_ptr = 0;
     imv_ptr = 0;
+    im3dv_ptr = 0;
     dsaver_ptr=0;
     p_n_frames_per_volume=n_frames_per_volume;
 
@@ -29,6 +30,12 @@ void Camera::setImageViewer(ImageViewer* ptr)
 {
     imv_ptr = ptr;
 }
+
+void Camera::set3dViewer(oct3dOrthogonalViewer* ptr)
+{
+    im3dv_ptr = ptr;
+}
+
 
 void Camera::setDataSaver(DataSaver* ptr)
 {
@@ -204,6 +211,10 @@ void Camera::run()
         if(imv_ptr)
         {
             imv_ptr->put((unsigned short*) p_current_copied_buffer);
+        }
+        if (im3dv_ptr)
+        {
+            im3dv_ptr->put((unsigned short*) p_current_copied_buffer, n_frames_read);
         }
         if(dsaver_ptr)
         {
