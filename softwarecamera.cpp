@@ -10,6 +10,7 @@ SoftwareCamera::SoftwareCamera(int n_lines, float exposure, unsigned int n_frame
     p_started=false;
     fv_ptr = 0;
     imv_ptr = 0;
+    im3dv_ptr = 0;
     dsaver_ptr=0;
     p_current_copied_buffer = 0;
     p_n_frames_per_volume=n_frames_per_volume;
@@ -30,6 +31,12 @@ void SoftwareCamera::setImageViewer(ImageViewer* ptr)
 {
     imv_ptr = ptr;
 }
+
+void SoftwareCamera::set3dViewer(oct3dOrthogonalViewer* ptr)
+{
+    im3dv_ptr = ptr;
+}
+
 void SoftwareCamera::setDataSaver(DataSaver* ptr)
 {
    dsaver_ptr = ptr;
@@ -104,6 +111,10 @@ void SoftwareCamera::run()
         if(imv_ptr)
         {
             imv_ptr->put((unsigned short*) p_current_copied_buffer);
+        }
+        if (im3dv_ptr)
+        {
+            im3dv_ptr->put((unsigned short*) p_current_copied_buffer, n_frames_read);
         }
         if(dsaver_ptr)
         {

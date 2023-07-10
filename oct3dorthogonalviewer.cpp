@@ -15,10 +15,12 @@
 //  http://www.kennethmoreland.com/color-advice/
 // TODO: add option to perform averaging?
 // TODO: add simulation mode
+// TODO: use n_reapat and factor for the f_fft constructor
 
-oct3dOrthogonalViewer::oct3dOrthogonalViewer(QWidget *parent, int nx, int ny, int nz) :
+oct3dOrthogonalViewer::oct3dOrthogonalViewer(QWidget *parent, int nx, int n_extra, int ny, int nz) :
     QWidget(parent),
-    ui(new Ui::oct3dOrthogonalViewer)
+    ui(new Ui::oct3dOrthogonalViewer),
+    f_fft(1, 1) // TODO: use n_reapat and factor for the f_fft constructor
 {
     ui_is_ready = false;
     ui->setupUi(this);
@@ -27,10 +29,16 @@ oct3dOrthogonalViewer::oct3dOrthogonalViewer(QWidget *parent, int nx, int ny, in
     p_nx = nx;
     p_ny = ny;
     p_nz = nz;
+    p_n_extra = n_extra;
     p_line_thickness = 3;
     p_projection_mode = AVERAGE;
     p_log_transform = true;
     p_overlay = true;
+
+    // Prepare the data reconstruction
+    float dimz = 3.5; // dummy axial resolution
+    float dimx = 3.0; // dummy lateral resolution
+    f_fft.init(LINE_ARRAY_SIZE, p_nx + p_n_extra, dimz, dimx);
 
     // Prepare the pen
     pen_x = QPen(QColor(255, 0, 0, 128), p_line_thickness); // x = red
@@ -38,19 +46,14 @@ oct3dOrthogonalViewer::oct3dOrthogonalViewer(QWidget *parent, int nx, int ny, in
     pen_z = QPen(QColor(0, 0, 255, 128), p_line_thickness); // z = blue
 
     //p_oct = af::array(p_nz, p_nx, p_ny, f32);
-    p_data_buffer = new unsigned short[p_nx*LINE_ARRAY_SIZE];
-    p_image_buffer = new unsigned short[p_nx*p_nz];
+    p_data_buffer = new unsigned short[(p_nx + p_n_extra)*LINE_ARRAY_SIZE];
+    p_image_buffer = new unsigned char[(p_nx + p_n_extra)*p_nz];
+    p_oct_buffer = af::constant(0.0, p_nz, p_nx, p_ny, f32);
 
-    // Simulating an OCT volume
-    p_oct = af::randu(p_nz, p_nx, p_ny, f32);
-    for (int z=0; z<p_nz; z++){
-        p_oct(z,af::span,af::span) = p_oct(z,af::span,af::span) * exp(-z * 0.1);
-    }
+    // Prepare the buffer
     p_image_xy = QImage(p_nx, p_ny, QImage::Format_Indexed8);
     p_image_xz = QImage(p_nx, p_nz, QImage::Format_Indexed8);
     p_image_yz = QImage(p_nz, p_ny, QImage::Format_Indexed8);
-    simulation_timer = new QTimer();
-    p_y_sim = 0;
 
     // Adapt UI to volume size
     ui->horizontalSlider_x->setRange(0, p_nx-1);
@@ -68,7 +71,7 @@ oct3dOrthogonalViewer::oct3dOrthogonalViewer(QWidget *parent, int nx, int ny, in
     set_y(p_ny/2);
     set_z(p_nz/2);
     set_slice_thickness(p_nz * 0.05);
-
+    p_current_frame = 0;
 
     // Signals
     connect(ui->horizontalSlider_x, SIGNAL(valueChanged(int)), this, SLOT(set_x(int)));
@@ -81,34 +84,29 @@ oct3dOrthogonalViewer::oct3dOrthogonalViewer(QWidget *parent, int nx, int ny, in
     connect(ui->comboBox_projectionType, SIGNAL(currentIndexChanged(int)), this, SLOT(set_projection_mode(int)));
     connect(ui->checkBox_logTransform, SIGNAL(stateChanged(int)), this, SLOT(set_log_transform(int)));
     connect(ui->checkBox_xyzOverlay, SIGNAL(stateChanged(int)), this, SLOT(set_overlay(int)));
-    //connect(simulation_timer, SIGNAL(timeout()), this, SLOT(simulate_bscan()));
 
     ui_is_ready = true;
-    //simulation_timer->start(30);
 }
 
 oct3dOrthogonalViewer::~oct3dOrthogonalViewer()
 {
-    simulation_timer -> stop();
     delete ui;
 }
 
 void oct3dOrthogonalViewer::put(unsigned short* fringe, unsigned int frame_number) {
+    float p_image_threshold = 0.05; // TODO: read this from the interface
+    int p_hanning_threshold = 100; // TODO: read this from the interface
     if (p_mutex.tryLock())
     {
-        memcpy(p_data_buffer, fringe, p_nx*LINE_ARRAY_SIZE*sizeof(unsigned short));
-        reconstruct(p_data_buffer, p_image_buffer);
-        p_oct(af::span, af::span, frame_number) = af::array(p_image_buffer);
+        memcpy(p_data_buffer, fringe, (p_nx+p_n_extra)*LINE_ARRAY_SIZE*sizeof(unsigned short));
+        f_fft.interp_and_do_fft(p_data_buffer, p_image_buffer, p_image_threshold, p_hanning_threshold);
+        af::array bscan = af::array(p_nz, p_nx + p_n_extra, p_image_buffer, afHost).as(f32);
+        bscan = bscan(af::span, af::seq(p_nx));
+        p_current_frame = frame_number % p_ny;
+        p_oct_buffer(af::span, af::span, p_current_frame%p_ny) =  bscan(af::span, af::span, 0);
         p_mutex.unlock();
     }
 }
-
-//// Replace a b-scan given a y frame number.
-//void oct3dOrthogonalViewer::put(const af::array& data, unsigned int frame_number)
-//{
-//    p_oct(af::span, af::span, frame_number) = data;
-//    //slot_update_view(); // TODO: view update should be called externally
-//}
 
 void oct3dOrthogonalViewer::set_x(int x)
 {
@@ -202,6 +200,9 @@ void oct3dOrthogonalViewer::set_overlay(int value)
 void oct3dOrthogonalViewer::slot_update_view()
 {
     std::cout << "Updating the 3D view" << std::endl;
+    p_mutex.lock();
+    p_oct = p_oct_buffer.copy();
+    p_mutex.unlock();
 
     // Computing X projection
     // TODO: Change the behaviour of the slice_thickness to be centered.
@@ -326,6 +327,11 @@ void oct3dOrthogonalViewer::slot_update_view()
         painter_xy.setPen(pen_z);
         painter_xy.drawRect(0, 0, p_nx-1, p_ny-1);
     }
+    if (ui->checkBox_showBscan->isChecked()){
+        QPainter painter_xy = QPainter(&pix_xy);
+        painter_xy.setPen(QPen(QColor(255, 255, 255, 128), p_line_thickness));
+        painter_xy.drawLine(0, p_current_frame, p_nx, p_current_frame);
+    }
 
     pix_xz = QPixmap::fromImage(tmp_y);
     if (p_overlay == true){
@@ -373,20 +379,5 @@ void oct3dOrthogonalViewer::resizeEvent(QResizeEvent *)
     if (!pix_yz.isNull()){
         ui->label_yz->setPixmap(pix_yz.scaled(ui->label_yz->size(),
                                            Qt::IgnoreAspectRatio, Qt::FastTransformation));
-    }
-}
-
-void oct3dOrthogonalViewer::simulate_bscan(){
-    std::cout << "Simulating a b-scan for frame y=" << p_y_sim << std::endl;
-    simulated_bscan = af::randu(p_nz, p_nx, f32);
-    for (int z=0; z<p_nz; z++){
-        simulated_bscan(z, af::span) = simulated_bscan(z, af::span) * exp(-z * 0.1);
-    }
-    put(simulated_bscan, p_y_sim);
-
-    // Updating the simulated frame
-    p_y_sim++;
-    if (p_y_sim == p_ny){
-        p_y_sim = 0;
     }
 }

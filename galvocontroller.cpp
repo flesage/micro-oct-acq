@@ -966,13 +966,16 @@ void GalvoController::startScan()
         }
     }
     if(ui->checkBox_view_3d->isChecked()){
-        p_ortho_view = new oct3dOrthogonalViewer(0, nx+n_extra, ny, LINE_ARRAY_SIZE / 2.0);
+        p_ortho_view = new oct3dOrthogonalViewer(0, nx, n_extra, ny, LINE_ARRAY_SIZE / 2.0);
 
         // 3D Viewer Signals
         connect(view_timer, SIGNAL(timeout()), p_ortho_view, SLOT(slot_update_view()));
 
         // Display the viewer
         p_ortho_view->show();
+
+        // Set the 3D viewer in the camera
+        p_camera->set3dViewer(p_ortho_view);
     }
     if (ui->checkBox_save->isChecked())
     {
