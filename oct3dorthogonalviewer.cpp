@@ -8,14 +8,7 @@
 #include <QTimer>
 #include "config.h"
 
-// TODO: Add mouse and keyboard interactions (scroll and mouse click position uptdate)
 // TODO: Show the projection range with the overlay
-// TODO: Add colormap options
-//  https://stackoverflow.com/questions/41744654/is-there-a-default-color-table-colormap-available-in-qt
-//  http://www.kennethmoreland.com/color-advice/
-// TODO: add option to perform averaging?
-// TODO: add simulation mode
-// TODO: use n_reapat and factor for the f_fft constructor
 
 oct3dOrthogonalViewer::oct3dOrthogonalViewer(QWidget *parent, int nx, int n_extra, int ny, int nz) :
     QWidget(parent),
@@ -36,21 +29,19 @@ oct3dOrthogonalViewer::oct3dOrthogonalViewer(QWidget *parent, int nx, int n_extr
     p_overlay = true;
 
     // Prepare the data reconstruction
-    float dimz = 3.5; // dummy axial resolution
-    float dimx = 3.0; // dummy lateral resolution
+    float dimz = 3.5; // FIXME: dummy axial resolution
+    float dimx = 3.0; // FIXME: dummy lateral resolution
     f_fft.init(LINE_ARRAY_SIZE, p_nx + p_n_extra, dimz, dimx);
+    p_data_buffer = new unsigned short[(p_nx + p_n_extra)*LINE_ARRAY_SIZE];
+    p_image_buffer = new unsigned char[(p_nx + p_n_extra)*p_nz];
+    p_oct_buffer = af::constant(0.0, p_nz, p_nx, p_ny, f32);
 
     // Prepare the pen
     pen_x = QPen(QColor(255, 0, 0, 128), p_line_thickness); // x = red
     pen_y = QPen(QColor(0, 255, 0, 128), p_line_thickness); // y = green
     pen_z = QPen(QColor(0, 0, 255, 128), p_line_thickness); // z = blue
 
-    //p_oct = af::array(p_nz, p_nx, p_ny, f32);
-    p_data_buffer = new unsigned short[(p_nx + p_n_extra)*LINE_ARRAY_SIZE];
-    p_image_buffer = new unsigned char[(p_nx + p_n_extra)*p_nz];
-    p_oct_buffer = af::constant(0.0, p_nz, p_nx, p_ny, f32);
-
-    // Prepare the buffer
+    // Prepare the images
     p_image_xy = QImage(p_nx, p_ny, QImage::Format_Indexed8);
     p_image_xz = QImage(p_nx, p_nz, QImage::Format_Indexed8);
     p_image_yz = QImage(p_nz, p_ny, QImage::Format_Indexed8);
@@ -75,11 +66,8 @@ oct3dOrthogonalViewer::oct3dOrthogonalViewer(QWidget *parent, int nx, int n_extr
 
     // Signals
     connect(ui->horizontalSlider_x, SIGNAL(valueChanged(int)), this, SLOT(set_x(int)));
-    connect(ui->spinBox_x, SIGNAL(valueChanged(int)), this, SLOT(set_x(int)));
     connect(ui->horizontalSlider_y, SIGNAL(valueChanged(int)), this, SLOT(set_y(int)));
-    connect(ui->spinBox_y, SIGNAL(valueChanged(int)), this, SLOT(set_y(int)));
     connect(ui->horizontalSlider_z, SIGNAL(valueChanged(int)), this, SLOT(set_z(int)));
-    connect(ui->spinBox_z, SIGNAL(valueChanged(int)), this, SLOT(set_z(int)));
     connect(ui->spinBox_sliceThickness, SIGNAL(valueChanged(int)), this, SLOT(set_slice_thickness(int)));
     connect(ui->comboBox_projectionType, SIGNAL(currentIndexChanged(int)), this, SLOT(set_projection_mode(int)));
     connect(ui->checkBox_logTransform, SIGNAL(stateChanged(int)), this, SLOT(set_log_transform(int)));
@@ -94,7 +82,7 @@ oct3dOrthogonalViewer::~oct3dOrthogonalViewer()
 }
 
 void oct3dOrthogonalViewer::put(unsigned short* fringe, unsigned int frame_number) {
-    float p_image_threshold = 0.05; // TODO: read this from the interface
+    double p_image_threshold = 0.05; // TODO: read this from the interface
     int p_hanning_threshold = 100; // TODO: read this from the interface
     if (p_mutex.tryLock())
     {
@@ -110,7 +98,6 @@ void oct3dOrthogonalViewer::put(unsigned short* fringe, unsigned int frame_numbe
 
 void oct3dOrthogonalViewer::set_x(int x)
 {
-    std::cout << "Setting x=" << x << std::endl;
     p_current_x = x;
 
     // Update UI
@@ -123,7 +110,6 @@ void oct3dOrthogonalViewer::set_x(int x)
 
 void oct3dOrthogonalViewer::set_y(int y)
 {
-    std::cout << "Setting y=" << y << std::endl;
     p_current_y = y;
 
     // Update UI
@@ -136,7 +122,6 @@ void oct3dOrthogonalViewer::set_y(int y)
 
 void oct3dOrthogonalViewer::set_z(int z)
 {
-    std::cout << "Setting z=" << z << std::endl;
     p_current_z = z;
 
     // Update UI
@@ -149,7 +134,6 @@ void oct3dOrthogonalViewer::set_z(int z)
 
 void oct3dOrthogonalViewer::set_slice_thickness(int thickness)
 {
-    std::cout << "Setting slice_thickness=" << thickness << std::endl;
     p_slice_thickness = thickness;
 
     // Update UI
@@ -161,7 +145,6 @@ void oct3dOrthogonalViewer::set_slice_thickness(int thickness)
 
 void oct3dOrthogonalViewer::set_projection_mode(int mode)
 {
-    std::cout << "Setting projection_mode=" << mode << std::endl;
     p_projection_mode = mode;
 
     if (ui_is_ready){
@@ -171,7 +154,6 @@ void oct3dOrthogonalViewer::set_projection_mode(int mode)
 
 void oct3dOrthogonalViewer::set_log_transform(int value)
 {
-    std::cout << "Setting log_transform=" << value << std::endl;
     if (value == 0) {
         p_log_transform = false;
     } else{
@@ -185,7 +167,6 @@ void oct3dOrthogonalViewer::set_log_transform(int value)
 
 void oct3dOrthogonalViewer::set_overlay(int value)
 {
-    std::cout << "Setting overlay=" << value << std::endl;
     if (value == 0) {
         p_overlay = false;
     } else {
@@ -199,7 +180,6 @@ void oct3dOrthogonalViewer::set_overlay(int value)
 
 void oct3dOrthogonalViewer::slot_update_view()
 {
-    std::cout << "Updating the 3D view" << std::endl;
     p_mutex.lock();
     p_oct = p_oct_buffer.copy();
     p_mutex.unlock();
@@ -355,9 +335,7 @@ void oct3dOrthogonalViewer::slot_update_view()
         painter_yz.drawRect(0, 0, p_nz-1, p_ny-1);
     }
 
-
     // Set as pixmaps
-    // TODO: Check the image's orientations
     ui->label_yz->setPixmap(pix_yz.scaled(ui->label_yz->size(),
                                        Qt::IgnoreAspectRatio, Qt::FastTransformation));
     ui->label_xz->setPixmap(pix_xz.scaled(ui->label_xz->size(),
