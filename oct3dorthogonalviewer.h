@@ -51,7 +51,10 @@ private:
     int p_current_y;
     int p_current_z;
     int p_current_frame;
-    int p_line_thickness;
+    float p_line_thickness;
+    int p_x_thickness;
+    int p_y_thickness;
+    int p_z_thickness;
     int p_slice_thickness;
     int p_projection_mode;
     int p_nx;
@@ -66,9 +69,6 @@ private:
     QImage p_image_xy;
     QImage p_image_xz;
     QImage p_image_yz;
-    QPen pen_x;
-    QPen pen_y;
-    QPen pen_z;
     bool ui_is_ready;
     unsigned short int* p_data_buffer;
     unsigned char* p_image_buffer;

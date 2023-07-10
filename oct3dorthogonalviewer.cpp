@@ -23,7 +23,10 @@ oct3dOrthogonalViewer::oct3dOrthogonalViewer(QWidget *parent, int nx, int n_extr
     p_ny = ny;
     p_nz = nz;
     p_n_extra = n_extra;
-    p_line_thickness = 3;
+    p_line_thickness = 0.05;
+    p_x_thickness = int(p_line_thickness * p_nx);
+    p_y_thickness = int(p_line_thickness * p_ny);
+    p_z_thickness = int(p_line_thickness * p_nz);
     p_projection_mode = AVERAGE;
     p_log_transform = true;
     p_overlay = true;
@@ -35,11 +38,6 @@ oct3dOrthogonalViewer::oct3dOrthogonalViewer(QWidget *parent, int nx, int n_extr
     p_data_buffer = new unsigned short[(p_nx + p_n_extra)*LINE_ARRAY_SIZE];
     p_image_buffer = new unsigned char[(p_nx + p_n_extra)*p_nz];
     p_oct_buffer = af::constant(0.0, p_nz, p_nx, p_ny, f32);
-
-    // Prepare the pen
-    pen_x = QPen(QColor(255, 0, 0, 128), p_line_thickness); // x = red
-    pen_y = QPen(QColor(0, 255, 0, 128), p_line_thickness); // y = green
-    pen_z = QPen(QColor(0, 0, 255, 128), p_line_thickness); // z = blue
 
     // Prepare the images
     p_image_xy = QImage(p_nx, p_ny, QImage::Format_Indexed8);
@@ -300,39 +298,65 @@ void oct3dOrthogonalViewer::slot_update_view()
     pix_xy = QPixmap::fromImage(tmp_z);
     if (p_overlay == true){
         QPainter painter_xy = QPainter(&pix_xy);
-        painter_xy.setPen(pen_x);
-        painter_xy.drawLine(p_current_x, 0, p_current_x, p_ny);
-        painter_xy.setPen(pen_y);
-        painter_xy.drawLine(0, p_current_y, p_nx, p_current_y);
-        painter_xy.setPen(pen_z);
-        painter_xy.drawRect(0, 0, p_nx-1, p_ny-1);
+        painter_xy.setPen(QPen(QColor(255,0,0,128), p_x_thickness));
+        painter_xy.drawLine(p_current_x, 0, p_current_x, p_ny-1);
+        painter_xy.setPen(QPen(QColor(0,255,0,128), p_y_thickness));
+        painter_xy.drawLine(0, p_current_y, p_nx-1, p_current_y);
+
+        // Border
+        painter_xy.setPen(QPen(QColor(0,0,255,128), p_x_thickness));
+        painter_xy.drawLine(0, 0, 0, p_ny-1);
+        painter_xy.drawLine(p_nx-1, 0, p_nx-1, p_ny-1);
+        painter_xy.setPen(QPen(QColor(0,0,255,128), p_y_thickness));
+        painter_xy.drawLine(0, 0, p_nx-1, 0);
+        painter_xy.drawLine(0, p_ny-1, p_nx-1, p_ny-1);
+
     }
     if (ui->checkBox_showBscan->isChecked()){
         QPainter painter_xy = QPainter(&pix_xy);
-        painter_xy.setPen(QPen(QColor(255, 255, 255, 128), p_line_thickness));
-        painter_xy.drawLine(0, p_current_frame, p_nx, p_current_frame);
+        painter_xy.setPen(QPen(QColor(255, 255, 255, 128), p_y_thickness));
+        painter_xy.drawLine(0, p_current_frame, p_nx-1, p_current_frame);
     }
 
     pix_xz = QPixmap::fromImage(tmp_y);
     if (p_overlay == true){
         QPainter painter_xz = QPainter(&pix_xz);
-        painter_xz.setPen(pen_x);
-        painter_xz.drawLine(p_current_x, 0, p_current_x, p_nz);
-        painter_xz.setPen(pen_z);
-        painter_xz.drawLine(0, p_current_z, p_nx, p_current_z);
-        painter_xz.setPen(pen_y);
-        painter_xz.drawRect(0, 0, p_nx-1, p_nz-1);
+        painter_xz.setPen(QPen(QColor(255,0,0,128), p_x_thickness));
+        painter_xz.drawLine(p_current_x, 0, p_current_x, p_nz-1);
+        painter_xz.setPen(QPen(QColor(0,0,255,128), p_z_thickness));
+        painter_xz.drawLine(0, p_current_z, p_nx-1, p_current_z);
+
+        // Border
+        painter_xz.setPen(QPen(QColor(0,255,0,128), p_z_thickness));
+        painter_xz.drawLine(0, 0, p_nx-1, 0);
+        painter_xz.drawLine(0, p_nz-1, p_nx-1, p_nz-1);
+
+        painter_xz.setPen(QPen(QColor(0,255,0,128), p_x_thickness));
+        painter_xz.drawLine(0, 0, 0, p_nz-1);
+        painter_xz.drawLine(p_nx-1, 0, p_nx-1, p_nz-1);
     }
 
     pix_yz = QPixmap::fromImage(tmp_x);
     if (p_overlay == true){
         QPainter painter_yz = QPainter(&pix_yz);
-        painter_yz.setPen(pen_z);
+        painter_yz.setPen(QPen(QColor(0,0,255,128), p_z_thickness));
         painter_yz.drawLine(p_current_z, 0, p_current_z, p_ny);
-        painter_yz.setPen(pen_y);
+        painter_yz.setPen(QPen(QColor(0,255,0,128), p_y_thickness));
         painter_yz.drawLine(0, p_current_y, p_nz, p_current_y);
-        painter_yz.setPen(pen_x);
-        painter_yz.drawRect(0, 0, p_nz-1, p_ny-1);
+
+        // Border
+        painter_yz.setPen(QPen(QColor(255,0,0,128), p_y_thickness));
+        painter_yz.drawLine(0, 0, p_nz-1, 0);
+        painter_yz.drawLine(0, p_ny-1, p_nz-1, p_ny-1);
+        painter_yz.setPen(QPen(QColor(255,0,0,128), p_z_thickness));
+        painter_yz.drawLine(0, 0, 0, p_ny-1);
+        painter_yz.drawLine(p_nz-1, 0, p_nz-1, p_ny-1);
+    }
+
+    if (ui->checkBox_showBscan->isChecked()){
+        QPainter painter_yz = QPainter(&pix_yz);
+        painter_yz.setPen(QPen(QColor(255, 255, 255, 128), p_y_thickness));
+        painter_yz.drawLine(0, p_current_frame, p_nz-1, p_current_frame);
     }
 
     // Set as pixmaps
