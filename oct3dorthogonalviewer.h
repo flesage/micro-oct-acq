@@ -52,6 +52,9 @@ private:
     int p_current_z;
     int p_current_frame;
     float p_line_thickness;
+    int p_x_line_thickness;
+    int p_y_line_thickness;
+    int p_z_line_thickness;
     int p_x_thickness;
     int p_y_thickness;
     int p_z_thickness;

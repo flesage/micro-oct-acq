@@ -8,12 +8,11 @@
 #include <QTimer>
 #include "config.h"
 
-// TODO: Show the projection range with the overlay
 
 oct3dOrthogonalViewer::oct3dOrthogonalViewer(QWidget *parent, int nx, int n_extra, int ny, int nz) :
     QWidget(parent),
     ui(new Ui::oct3dOrthogonalViewer),
-    f_fft(1, 1) // TODO: use n_reapat and factor for the f_fft constructor
+    f_fft(1, 1) // TODO: use n_repeat and factor for the f_fft constructor
 {
     ui_is_ready = false;
     ui->setupUi(this);
@@ -23,10 +22,10 @@ oct3dOrthogonalViewer::oct3dOrthogonalViewer(QWidget *parent, int nx, int n_extr
     p_ny = ny;
     p_nz = nz;
     p_n_extra = n_extra;
-    p_line_thickness = 0.05;
-    p_x_thickness = int(p_line_thickness * p_nx);
-    p_y_thickness = int(p_line_thickness * p_ny);
-    p_z_thickness = int(p_line_thickness * p_nz);
+    p_line_thickness = 0.025;
+    p_x_line_thickness = int(p_line_thickness * p_nx);
+    p_y_line_thickness = int(p_line_thickness * p_ny);
+    p_z_line_thickness = int(p_line_thickness * p_nz);
     p_projection_mode = AVERAGE;
     p_log_transform = true;
     p_overlay = true;
@@ -46,12 +45,14 @@ oct3dOrthogonalViewer::oct3dOrthogonalViewer(QWidget *parent, int nx, int n_extr
 
     // Adapt UI to volume size
     ui->horizontalSlider_x->setRange(0, p_nx-1);
-    ui->spinBox_x->setRange(0, p_nx-1);
     ui->horizontalSlider_y->setRange(0, p_ny-1);
-    ui->spinBox_y->setRange(0, p_ny-1);
     ui->horizontalSlider_z->setRange(0, p_nz-1);
-    ui->spinBox_z->setRange(0, p_nz-1);
-    ui->spinBox_sliceThickness->setRange(1, std::max(std::min(p_nx, p_ny), p_nz));
+    ui->horizontalSlider_xRange->setRange(1, p_nx-1);
+    ui->horizontalSlider_xRange->setValue(p_nx-1);
+    ui->horizontalSlider_yRange->setRange(1, p_ny-1);
+    ui->horizontalSlider_yRange->setValue(p_ny-1);
+    ui->horizontalSlider_zRange->setRange(1, p_nz-1);
+    ui->horizontalSlider_zRange->setValue(p_nz-1);
     ui->comboBox_projectionType->addItem("Average");
     ui->comboBox_projectionType->addItem("Maximum");
     ui->comboBox_projectionType->addItem("Minimum");
@@ -66,10 +67,14 @@ oct3dOrthogonalViewer::oct3dOrthogonalViewer(QWidget *parent, int nx, int n_extr
     connect(ui->horizontalSlider_x, SIGNAL(valueChanged(int)), this, SLOT(set_x(int)));
     connect(ui->horizontalSlider_y, SIGNAL(valueChanged(int)), this, SLOT(set_y(int)));
     connect(ui->horizontalSlider_z, SIGNAL(valueChanged(int)), this, SLOT(set_z(int)));
-    connect(ui->spinBox_sliceThickness, SIGNAL(valueChanged(int)), this, SLOT(set_slice_thickness(int)));
+    connect(ui->horizontalSlider_xRange, SIGNAL(valueChanged(int)), this, SLOT(slot_update_view()));
+    connect(ui->horizontalSlider_yRange, SIGNAL(valueChanged(int)), this, SLOT(slot_update_view()));
+    connect(ui->horizontalSlider_zRange, SIGNAL(valueChanged(int)), this, SLOT(slot_update_view()));
     connect(ui->comboBox_projectionType, SIGNAL(currentIndexChanged(int)), this, SLOT(set_projection_mode(int)));
     connect(ui->checkBox_logTransform, SIGNAL(stateChanged(int)), this, SLOT(set_log_transform(int)));
     connect(ui->checkBox_xyzOverlay, SIGNAL(stateChanged(int)), this, SLOT(set_overlay(int)));
+    connect(ui->checkBox_showBscan, SIGNAL(stateChanged(int)), this, SLOT(slot_update_view()));
+    connect(ui->checkBox_showRange, SIGNAL(stateChanged(int)), this, SLOT(slot_update_view()));
 
     ui_is_ready = true;
 }
@@ -100,7 +105,6 @@ void oct3dOrthogonalViewer::set_x(int x)
 
     // Update UI
     ui->horizontalSlider_x->setValue(x);
-    ui->spinBox_x->setValue(x);
     if (ui_is_ready){
         slot_update_view();
     }
@@ -112,7 +116,6 @@ void oct3dOrthogonalViewer::set_y(int y)
 
     // Update UI
     ui->horizontalSlider_y->setValue(y);
-    ui->spinBox_y->setValue(y);
     if (ui_is_ready){
         slot_update_view();
     }
@@ -124,7 +127,6 @@ void oct3dOrthogonalViewer::set_z(int z)
 
     // Update UI
     ui->horizontalSlider_z->setValue(z);
-    ui->spinBox_z->setValue(z);
     if (ui_is_ready){
         slot_update_view();
     }
@@ -135,7 +137,6 @@ void oct3dOrthogonalViewer::set_slice_thickness(int thickness)
     p_slice_thickness = thickness;
 
     // Update UI
-    ui->spinBox_sliceThickness->setValue(p_slice_thickness);
     if (ui_is_ready){
         slot_update_view();
     }
@@ -183,88 +184,79 @@ void oct3dOrthogonalViewer::slot_update_view()
     p_mutex.unlock();
 
     // Computing X projection
-    // TODO: Change the behaviour of the slice_thickness to be centered.
-    int n_slices_x;
-    if (p_current_x + p_slice_thickness > p_nx - 1)
-    {
-        n_slices_x = p_nx - p_current_x;
-    }
-    else {
-        n_slices_x = p_slice_thickness;
-    }
+    int rx = ui->horizontalSlider_xRange->sliderPosition() / 2;
+    int x_min = p_current_x - rx;
+    x_min = x_min > 0 ? x_min : 0;
+    int x_max = p_current_x + rx;
+    x_max = x_max < p_nx-1 ? x_max : p_nx - 1;
+
     af::array mip_x;
     switch (p_projection_mode) {
     case AVERAGE:
-        mip_x = af::mean(p_oct(af::span, af::seq(p_current_x, p_current_x + n_slices_x-1), af::span), 1);
+        mip_x = af::mean(p_oct(af::span, af::seq(x_min, x_max), af::span), 1);
         break;
     case MAXIMUM:
-        mip_x = af::max(p_oct(af::span, af::seq(p_current_x, p_current_x + n_slices_x-1), af::span), 1);
+        mip_x = af::max(p_oct(af::span, af::seq(x_min, x_max), af::span), 1);
         break;
     case MINIMUM:
-        mip_x = af::min(p_oct(af::span, af::seq(p_current_x, p_current_x + n_slices_x-1), af::span), 1);
+        mip_x = af::min(p_oct(af::span, af::seq(x_min, x_max), af::span), 1);
         break;
     case VARIANCE:
-        mip_x = af::var(p_oct(af::span, af::seq(p_current_x, p_current_x + n_slices_x-1), af::span), AF_VARIANCE_DEFAULT, 1);
+        mip_x = af::var(p_oct(af::span, af::seq(x_min, x_max), af::span), AF_VARIANCE_DEFAULT, 1);
         break;
     default:
-        mip_x = af::mean(p_oct(af::span, af::seq(p_current_x, p_current_x + n_slices_x-1), af::span), 1);
+        mip_x = af::mean(p_oct(af::span, af::seq(x_min, x_max), af::span), 1);
         break;
     }
 
     // Computing Y projection
-    int n_slices_y;
-    if (p_current_y + p_slice_thickness > p_ny - 1)
-    {
-        n_slices_y = p_ny - p_current_y;
-    }
-    else {
-        n_slices_y = p_slice_thickness;
-    }
+    int ry = ui->horizontalSlider_yRange->sliderPosition() / 2;
+    int y_min = p_current_y - ry;
+    y_min = y_min > 0 ? y_min : 0;
+    int y_max = p_current_y + ry;
+    y_max = y_max < p_ny-1 ? y_max : p_ny - 1;
     af::array mip_y;
     switch (p_projection_mode) {
     case AVERAGE:
-        mip_y = af::mean(p_oct(af::span, af::span, af::seq(p_current_y, p_current_y + n_slices_y-1)), 2);
+        mip_y = af::mean(p_oct(af::span, af::span, af::seq(y_min, y_max)), 2);
         break;
     case MAXIMUM:
-        mip_y = af::max(p_oct(af::span, af::span, af::seq(p_current_y, p_current_y + n_slices_y-1)), 2);
+        mip_y = af::max(p_oct(af::span, af::span, af::seq(y_min, y_max)), 2);
         break;
     case MINIMUM:
-        mip_y = af::min(p_oct(af::span, af::span, af::seq(p_current_y, p_current_y + n_slices_y-1)), 2);
+        mip_y = af::min(p_oct(af::span, af::span, af::seq(y_min, y_max)), 2);
         break;
     case VARIANCE:
-        mip_y = af::var(p_oct(af::span, af::span, af::seq(p_current_y, p_current_y + n_slices_y-1)), AF_VARIANCE_DEFAULT, 2);
+        mip_y = af::var(p_oct(af::span, af::span, af::seq(y_min, y_max)), AF_VARIANCE_DEFAULT, 2);
         break;
     default:
-        mip_y = af::mean(p_oct(af::span, af::span, af::seq(p_current_y, p_current_y + n_slices_y-1)), 2);
+        mip_y = af::mean(p_oct(af::span, af::span, af::seq(y_min, y_max)), 2);
         break;
     }
     mip_y = af::transpose(mip_y);
 
     // Computing Z projection
-    int n_slices_z;
-    if (p_current_z + p_slice_thickness > p_nz - 1)
-    {
-        n_slices_z = p_nz - p_current_z;
-    }
-    else {
-        n_slices_z = p_slice_thickness;
-    }
+    int rz = ui->horizontalSlider_zRange->sliderPosition() / 2;
+    int z_min = p_current_z - rz;
+    z_min = z_min > 0 ? z_min : 0;
+    int z_max = p_current_z + rz;
+    z_max = z_max < p_nz-1 ? z_max : p_nz - 1;
     af::array mip_z;
     switch (p_projection_mode) {
     case AVERAGE:
-        mip_z = af::mean(p_oct(af::seq(p_current_z, p_current_z + n_slices_z-1), af::span, af::span), 0);
+        mip_z = af::mean(p_oct(af::seq(z_min, z_max), af::span, af::span), 0);
         break;
     case MAXIMUM:
-        mip_z = af::max(p_oct(af::seq(p_current_z, p_current_z + n_slices_z-1), af::span, af::span), 0);
+        mip_z = af::max(p_oct(af::seq(z_min, z_max), af::span, af::span), 0);
         break;
     case MINIMUM:
-        mip_z = af::min(p_oct(af::seq(p_current_z, p_current_z + n_slices_z-1), af::span, af::span), 0);
+        mip_z = af::min(p_oct(af::seq(z_min, z_max), af::span, af::span), 0);
         break;
     case VARIANCE:
-        mip_z = af::var(p_oct(af::seq(p_current_z, p_current_z + n_slices_z-1), af::span, af::span), AF_VARIANCE_DEFAULT, 0);
+        mip_z = af::var(p_oct(af::seq(z_min, z_max), af::span, af::span), AF_VARIANCE_DEFAULT, 0);
         break;
     default:
-        mip_z = af::mean(p_oct(af::seq(p_current_z, p_current_z + n_slices_z-1), af::span, af::span), 0);
+        mip_z = af::mean(p_oct(af::seq(z_min, z_max), af::span, af::span), 0);
         break;
     }
 
@@ -276,6 +268,7 @@ void oct3dOrthogonalViewer::slot_update_view()
     }
 
     // Adjusting contrast
+    // TODO: Adjust contrast separately for eacy aip
     float l_max = std::max(af::max<float>(mip_x), af::max<float>(mip_y));
     l_max = std::max(l_max, af::max<float>(mip_z));
 
@@ -296,66 +289,100 @@ void oct3dOrthogonalViewer::slot_update_view()
 
     // Drawing annotations
     pix_xy = QPixmap::fromImage(tmp_z);
+    if (ui->checkBox_showRange->isChecked()) // Range display
+    {
+        QPainter painter_xy = QPainter(&pix_xy);
+        painter_xy.setPen(QPen(QColor(255,0,0,64)));
+        painter_xy.setBrush(QBrush(QColor(255,0,0,32)));
+        painter_xy.drawRect(x_min, 0, (x_max - x_min), p_ny);
+
+        painter_xy.setPen(QPen(QColor(0,255,0,64)));
+        painter_xy.setBrush(QBrush(QColor(0,255,0,32)));
+        painter_xy.drawRect(0, y_min, p_nx, (y_max - y_min));
+    }
+
     if (p_overlay == true){
         QPainter painter_xy = QPainter(&pix_xy);
-        painter_xy.setPen(QPen(QColor(255,0,0,128), p_x_thickness));
+        painter_xy.setPen(QPen(QColor(255,0,0,128), p_x_line_thickness));
         painter_xy.drawLine(p_current_x, 0, p_current_x, p_ny-1);
-        painter_xy.setPen(QPen(QColor(0,255,0,128), p_y_thickness));
+        painter_xy.setPen(QPen(QColor(0,255,0,128), p_y_line_thickness));
         painter_xy.drawLine(0, p_current_y, p_nx-1, p_current_y);
 
         // Border
-        painter_xy.setPen(QPen(QColor(0,0,255,128), p_x_thickness));
+        painter_xy.setPen(QPen(QColor(0,0,255,128), p_x_line_thickness));
         painter_xy.drawLine(0, 0, 0, p_ny-1);
         painter_xy.drawLine(p_nx-1, 0, p_nx-1, p_ny-1);
-        painter_xy.setPen(QPen(QColor(0,0,255,128), p_y_thickness));
+        painter_xy.setPen(QPen(QColor(0,0,255,128), p_y_line_thickness));
         painter_xy.drawLine(0, 0, p_nx-1, 0);
         painter_xy.drawLine(0, p_ny-1, p_nx-1, p_ny-1);
 
     }
     if (ui->checkBox_showBscan->isChecked()){
         QPainter painter_xy = QPainter(&pix_xy);
-        painter_xy.setPen(QPen(QColor(255, 255, 255, 128), p_y_thickness));
+        painter_xy.setPen(QPen(QColor(255, 255, 255, 128), p_y_line_thickness));
         painter_xy.drawLine(0, p_current_frame, p_nx-1, p_current_frame);
     }
 
     pix_xz = QPixmap::fromImage(tmp_y);
+    if (ui->checkBox_showRange->isChecked()) // Range display
+    {
+        QPainter painter_xz = QPainter(&pix_xz);
+        painter_xz.setPen(QPen(QColor(255,0,0,64)));
+        painter_xz.setBrush(QBrush(QColor(255,0,0,32)));
+        painter_xz.drawRect(x_min, 0, (x_max - x_min), p_nz);
+        painter_xz.setPen(QPen(QColor(0,0,255,64)));
+        painter_xz.setBrush(QBrush(QColor(0,0,255,32)));
+        painter_xz.drawRect(0, z_min, p_nx, (z_max - z_min));
+    }
     if (p_overlay == true){
         QPainter painter_xz = QPainter(&pix_xz);
-        painter_xz.setPen(QPen(QColor(255,0,0,128), p_x_thickness));
+        painter_xz.setPen(QPen(QColor(255,0,0,128), p_x_line_thickness));
         painter_xz.drawLine(p_current_x, 0, p_current_x, p_nz-1);
-        painter_xz.setPen(QPen(QColor(0,0,255,128), p_z_thickness));
+        painter_xz.setPen(QPen(QColor(0,0,255,128), p_z_line_thickness));
         painter_xz.drawLine(0, p_current_z, p_nx-1, p_current_z);
 
         // Border
-        painter_xz.setPen(QPen(QColor(0,255,0,128), p_z_thickness));
+        painter_xz.setPen(QPen(QColor(0,255,0,128), p_z_line_thickness));
         painter_xz.drawLine(0, 0, p_nx-1, 0);
         painter_xz.drawLine(0, p_nz-1, p_nx-1, p_nz-1);
 
-        painter_xz.setPen(QPen(QColor(0,255,0,128), p_x_thickness));
+        painter_xz.setPen(QPen(QColor(0,255,0,128), p_x_line_thickness));
         painter_xz.drawLine(0, 0, 0, p_nz-1);
         painter_xz.drawLine(p_nx-1, 0, p_nx-1, p_nz-1);
     }
 
     pix_yz = QPixmap::fromImage(tmp_x);
+
+    if (ui->checkBox_showRange->isChecked()) // Range display
+    {
+        QPainter painter_yz = QPainter(&pix_yz);
+        painter_yz.setPen(QPen(QColor(0,255,0,64)));
+        painter_yz.setBrush(QBrush(QColor(0,255,0,32)));
+        painter_yz.drawRect(0, y_min, p_nz, (y_max-y_min));
+        painter_yz.setPen(QPen(QColor(0,0,255,64)));
+        painter_yz.setBrush(QBrush(QColor(0,0,255,32)));
+        painter_yz.drawRect(z_min, 0, (z_max - z_min), p_ny);
+    }
+
     if (p_overlay == true){
         QPainter painter_yz = QPainter(&pix_yz);
-        painter_yz.setPen(QPen(QColor(0,0,255,128), p_z_thickness));
+        painter_yz.setPen(QPen(QColor(0,0,255,128), p_z_line_thickness));
         painter_yz.drawLine(p_current_z, 0, p_current_z, p_ny);
-        painter_yz.setPen(QPen(QColor(0,255,0,128), p_y_thickness));
+        painter_yz.setPen(QPen(QColor(0,255,0,128), p_y_line_thickness));
         painter_yz.drawLine(0, p_current_y, p_nz, p_current_y);
 
         // Border
-        painter_yz.setPen(QPen(QColor(255,0,0,128), p_y_thickness));
+        painter_yz.setPen(QPen(QColor(255,0,0,128), p_y_line_thickness));
         painter_yz.drawLine(0, 0, p_nz-1, 0);
         painter_yz.drawLine(0, p_ny-1, p_nz-1, p_ny-1);
-        painter_yz.setPen(QPen(QColor(255,0,0,128), p_z_thickness));
+        painter_yz.setPen(QPen(QColor(255,0,0,128), p_z_line_thickness));
         painter_yz.drawLine(0, 0, 0, p_ny-1);
         painter_yz.drawLine(p_nz-1, 0, p_nz-1, p_ny-1);
     }
 
     if (ui->checkBox_showBscan->isChecked()){
         QPainter painter_yz = QPainter(&pix_yz);
-        painter_yz.setPen(QPen(QColor(255, 255, 255, 128), p_y_thickness));
+        painter_yz.setPen(QPen(QColor(255, 255, 255, 128), p_y_line_thickness));
         painter_yz.drawLine(0, p_current_frame, p_nz-1, p_current_frame);
     }
 
