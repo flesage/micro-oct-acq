@@ -268,22 +268,21 @@ void oct3dOrthogonalViewer::slot_update_view()
     }
 
     // Adjusting contrast
-    // TODO: Adjust contrast separately for eacy aip
-    float l_max = std::max(af::max<float>(mip_x), af::max<float>(mip_y));
-    l_max = std::max(l_max, af::max<float>(mip_z));
-
-    float l_min = std::min(af::min<float>(mip_x), af::min<float>(mip_y));
-    l_min = std::min(l_min, af::min<float>(mip_z));
-
-    mip_x = 255.0 * (mip_x - l_min) / (l_max - l_min);
+    float l_max_x = af::max<float>(mip_x);
+    float l_min_x = af::min<float>(mip_x);
+    mip_x = 255.0 * (mip_x - l_min_x) / (l_max_x - l_min_x);
     mip_x.as(u8).host(p_image_yz.bits());
     QImage tmp_x = p_image_yz.convertToFormat(QImage::Format_ARGB32);
 
-    mip_y = 255.0 * (mip_y - l_min) / (l_max - l_min);
+    float l_max_y = af::max<float>(mip_y);
+    float l_min_y = af::min<float>(mip_y);
+    mip_y = 255.0 * (mip_y - l_min_y) / (l_max_y - l_min_y);
     mip_y.as(u8).host(p_image_xz.bits());
     QImage tmp_y = p_image_xz.convertToFormat(QImage::Format_ARGB32);
 
-    mip_z = 255.0 * (mip_z - l_min) / (l_max - l_min);
+    float l_max_z = af::max<float>(mip_z);
+    float l_min_z = af::min<float>(mip_z);
+    mip_z = 255.0 * (mip_z - l_min_z) / (l_max_z - l_min_z);
     mip_z.as(u8).host(p_image_xy.bits());
     QImage tmp_z = p_image_xy.convertToFormat(QImage::Format_ARGB32);
 
