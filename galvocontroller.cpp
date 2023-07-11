@@ -112,8 +112,6 @@ GalvoController::GalvoController() :
     connect(ui->pushButton_rotation_stop, SIGNAL(clicked()), this, SLOT(slot_rotation_stop()));
     connect(ui->pushButton_rotation_stop_immediately, SIGNAL(clicked()), this, SLOT(slot_rotation_stop_immediately()));
     connect(rotation_timer, SIGNAL(timeout()), this, SLOT(slot_rotation_update_position()));
-    connect(ui->pushButton_test_orthoViewer, SIGNAL(clicked()), this, SLOT(slot_test_orthoviewer()));
-
 
     connect(ui->lineEdit_startLine,SIGNAL(editingFinished()),this,SLOT(slot_updateViewLinePositions()));
     connect(ui->lineEdit_stopLine,SIGNAL(editingFinished()),this,SLOT(slot_updateViewLinePositions()));
@@ -1481,13 +1479,4 @@ void GalvoController::slot_rotation_stop_immediately(void){
 void GalvoController::slot_rotation_update_position(void){
     float pos_deg = thorlabs_rotation->get_position();
     ui->doubleSpinBox_rotation_current_position->setValue(pos_deg);
-}
-
-void GalvoController::slot_test_orthoviewer(void){
-    // Get the scan dimension
-
-
-    p_ortho_view = new oct3dOrthogonalViewer(0);
-    p_ortho_view->show();
-    p_ortho_view->slot_update_view();
 }

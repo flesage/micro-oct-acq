@@ -3381,13 +3381,6 @@
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
-        <widget class="QPushButton" name="pushButton_test_orthoViewer">
-         <property name="text">
-          <string>Test OrthoViewer</string>
-         </property>
-        </widget>
-       </item>
-       <item>
         <widget class="QPushButton" name="pushButton_start">
          <property name="minimumSize">
           <size>

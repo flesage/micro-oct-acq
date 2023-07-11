@@ -8,6 +8,7 @@
 #include <QTimer>
 #include "config.h"
 
+// TODO: test with a real cameraß
 
 oct3dOrthogonalViewer::oct3dOrthogonalViewer(QWidget *parent, int nx, int n_extra, int ny, int nz) :
     QWidget(parent),

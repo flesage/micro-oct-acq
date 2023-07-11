@@ -104,7 +104,6 @@ private slots:
     void slot_rotation_stop(void);
     void slot_rotation_stop_immediately(void);
     void slot_rotation_update_position(void);
-    void slot_test_orthoviewer(void);
 
 private:
     Ui::OCTGalvosForm *ui;
