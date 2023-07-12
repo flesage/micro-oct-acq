@@ -10,6 +10,7 @@
 #include "camera.h"
 #include "softwarecamera.h"
 #include "datasaver.h"
+#include "imagedatasaver.h"
 #include "fringeviewer.h"
 #include "imageviewer.h"
 #include "float64datasaver.h"
@@ -17,6 +18,7 @@
 #include "motorclass.h"
 #include "thorlabsrotation.h"
 #include "oct3dorthogonalviewer.h"
+#include "octserver.h"
 
 namespace Ui {
 class OCTGalvosForm;
@@ -35,6 +37,7 @@ signals:
     void sig_updateViewLinePositions(bool,int,int);
     void sig_updateAveragingFlag(bool);
     void sig_updateAveragingAlgo(int);
+    void sig_serverEndScan();
 
 private slots:
     void updateSpeedPiezo(void);
@@ -75,6 +78,7 @@ private slots:
     void updateOffset(void);
     void goHome(void);
     void setSaveDir(void);
+    void setFileName(QString);
     void addDefaultScan(void);
     void setDefaultScan(void);
     void clearCurrentScan(void);
@@ -104,9 +108,11 @@ private slots:
     void slot_rotation_stop(void);
     void slot_rotation_stop_immediately(void);
     void slot_rotation_update_position(void);
+    void slot_server(void);
 
 private:
     Ui::OCTGalvosForm *ui;
+    //OCTServer *server;
     QString dataDir;
     float p_center_x;
     float p_center_y;
@@ -141,11 +147,14 @@ private:
     int p_acq_index;
     int p_n_volumes;
     QString p_datasetname;
+    bool p_server_mode;
+    bool p_server_stop_asked;
 #ifndef SIMULATION
     Camera* p_camera;
 #else
     SoftwareCamera* p_camera;
 #endif
+    bool p_camera_stop_requested;
     QDir p_save_dir;
     QSettings p_settings;
     QStringList p_saved_scans;
@@ -153,6 +162,7 @@ private:
     ImageViewer* p_image_view;
     oct3dOrthogonalViewer* p_ortho_view;
     DataSaver* p_data_saver;
+    ImageDataSaver* p_image_saver;
     QTimer* view_timer;
     QTimer* rotation_timer;
     AnalogInput* p_ai;

@@ -16,6 +16,7 @@ Camera::Camera(int n_lines, float exposure, unsigned int n_frames_per_volume)
     fv_ptr = 0;
     imv_ptr = 0;
     im3dv_ptr = 0;
+    imsaver_ptr=0;
     dsaver_ptr=0;
     p_n_frames_per_volume=n_frames_per_volume;
 
@@ -40,6 +41,11 @@ void Camera::set3dViewer(oct3dOrthogonalViewer* ptr)
 void Camera::setDataSaver(DataSaver* ptr)
 {
     dsaver_ptr = ptr;
+}
+
+void Camera::setImageDataSaver(ImageDataSaver* ptr)
+{
+    imsaver_ptr = ptr;
 }
 
 void Camera::SetCameraString(const char* attribute, const char* value)
@@ -114,6 +120,8 @@ void Camera::ConfigureForSingleGrab()
 
 void Camera::Close()
 {
+    std::cerr << "Camera::Close()" << std::endl;
+
     // stop the acquisition
     imgSessionAbort(sid, NULL);
 
@@ -156,6 +164,7 @@ void Camera::Start()
 
 void Camera::Stop()
 {
+    std::cerr << "Camera::Stop" << std::endl;
     p_mutex.lock();
     p_started = false;
     p_mutex.unlock();
@@ -220,6 +229,11 @@ void Camera::run()
         {
             dsaver_ptr->put((unsigned short*) p_current_copied_buffer);
         }
+        if(imsaver_ptr)
+        {
+            imsaver_ptr->put((unsigned short*) p_current_copied_buffer);
+        }
+
         // Needs to be fast
         p_mutex.lock();
         n_frames_read++;

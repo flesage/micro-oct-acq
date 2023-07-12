@@ -80,6 +80,7 @@ private:
     bool p_line_status;
     int p_start_line;
     int p_stop_line;
+    QPen p_line_pen;
     unsigned int p_frame_number;
     int p_ny;
     af::array p_angio;

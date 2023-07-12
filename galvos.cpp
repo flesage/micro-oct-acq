@@ -74,6 +74,7 @@ void Galvos::config()
 
 void Galvos::clearTask()
 {
+    std::cerr << "Galvos::clearTask" << std::endl;
     p_mutex.lock();
     if (p_started)
     {
@@ -333,6 +334,7 @@ void Galvos::move(float center_x,float center_y)
 
 void Galvos::startTask()
 {
+    std::cerr << "Galvos::startTask()" << std::endl;
     if (!p_started)
     {
         p_started = true;
@@ -344,6 +346,7 @@ void Galvos::startTask()
 
 void Galvos::stopTask()
 {
+    std::cerr << "Galvos::stopTask()" << std::endl;
     p_mutex.lock();
     p_started = false;
     p_mutex.unlock();

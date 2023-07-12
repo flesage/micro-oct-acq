@@ -36,6 +36,7 @@ ImageViewer::ImageViewer(QWidget *parent, int n_alines, int n_extra, int ny, int
     p_line_status = false;
     p_start_line = 0;
     p_stop_line = 10;
+    p_line_pen = QPen(QColor(255, 0, 0, 128), 3); // x = red
     p_frame_number = 0;
 
     pix = QPixmap::fromImage(p_fringe_image);
@@ -347,17 +348,9 @@ void ImageViewer::updateView()
     if (p_line_status == true)
     {
         QPainter painter(&pix);
-        int Width = 2;
-        QImage start_line(p_n_alines,Width,QImage::Format_RGB32);
-        start_line.fill(Qt::green);
-        QPixmap start_line_pixmap;
-        start_line_pixmap=QPixmap::fromImage(start_line);
-        painter.drawPixmap(0, p_start_line-1, p_n_alines, Width, start_line_pixmap);
-        QImage stop_line(p_n_alines,Width,QImage::Format_RGB32);
-        stop_line.fill(Qt::yellow);
-        QPixmap stop_line_pixmap;
-        stop_line_pixmap=QPixmap::fromImage(stop_line);
-        painter.drawPixmap(0, p_stop_line-1, p_n_alines, Width, stop_line_pixmap);
+        painter.setPen(p_line_pen);
+        painter.drawLine(p_start_line-1, 0,  p_start_line-1, p_n_alines);
+        painter.drawLine(p_stop_line-1, 0,  p_stop_line-1, p_n_alines);
     }
 
     // Set as pixmap
