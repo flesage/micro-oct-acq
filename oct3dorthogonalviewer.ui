@@ -34,39 +34,6 @@
      <property name="sizeConstraint">
       <enum>QLayout::SetDefaultConstraint</enum>
      </property>
-     <item row="0" column="0">
-      <widget class="QLabel" name="label_xy">
-       <property name="text">
-        <string>xy</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="0">
-      <widget class="QSlider" name="horizontalSlider_y">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="toolTip">
-        <string>Y Position (px)</string>
-       </property>
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="0">
-      <widget class="QSlider" name="horizontalSlider_z">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="toolTip">
-        <string>Z position (px)</string>
-       </property>
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-      </widget>
-     </item>
      <item row="2" column="1">
       <layout class="QFormLayout" name="formLayout">
        <item row="0" column="0">
@@ -84,69 +51,55 @@
         </widget>
        </item>
        <item row="1" column="0">
-        <widget class="QLabel" name="label_4">
+        <widget class="QLabel" name="label_5">
          <property name="text">
-          <string>Slice thickness (px)</string>
+          <string>X Projection Range (px)</string>
          </property>
         </widget>
        </item>
        <item row="1" column="1">
-        <widget class="QSpinBox" name="spinBox_sliceThickness">
-         <property name="enabled">
-          <bool>true</bool>
+        <widget class="QSlider" name="horizontalSlider_xRange">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>
        <item row="2" column="0">
-        <widget class="QLabel" name="label_5">
+        <widget class="QLabel" name="label_6">
          <property name="text">
-          <string>X Position (px)</string>
+          <string>Y Projection Range (px)</string>
          </property>
         </widget>
        </item>
        <item row="2" column="1">
-        <widget class="QSpinBox" name="spinBox_x">
-         <property name="enabled">
-          <bool>true</bool>
+        <widget class="QSlider" name="horizontalSlider_yRange">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>
        <item row="3" column="0">
-        <widget class="QLabel" name="label_6">
+        <widget class="QLabel" name="label_7">
          <property name="text">
-          <string>Y Position (px)</string>
+          <string>Z Projection Range (px)</string>
          </property>
         </widget>
        </item>
        <item row="3" column="1">
-        <widget class="QSpinBox" name="spinBox_y">
-         <property name="enabled">
-          <bool>true</bool>
+        <widget class="QSlider" name="horizontalSlider_zRange">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>
        <item row="4" column="0">
-        <widget class="QLabel" name="label_7">
-         <property name="text">
-          <string>Z Position (px)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="1">
-        <widget class="QSpinBox" name="spinBox_z">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0">
         <widget class="QLabel" name="label_2">
          <property name="text">
           <string>Log Transform</string>
          </property>
         </widget>
        </item>
-       <item row="5" column="1">
+       <item row="4" column="1">
         <widget class="QCheckBox" name="checkBox_logTransform">
          <property name="enabled">
           <bool>true</bool>
@@ -159,14 +112,14 @@
          </property>
         </widget>
        </item>
-       <item row="6" column="0">
+       <item row="5" column="0">
         <widget class="QLabel" name="label">
          <property name="text">
           <string>XYZ Slice Overlay</string>
          </property>
         </widget>
        </item>
-       <item row="6" column="1">
+       <item row="5" column="1">
         <widget class="QCheckBox" name="checkBox_xyzOverlay">
          <property name="enabled">
           <bool>true</bool>
@@ -179,19 +132,56 @@
          </property>
         </widget>
        </item>
+       <item row="6" column="0">
+        <widget class="QLabel" name="label_3">
+         <property name="text">
+          <string>Current B-Scan</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="1">
+        <widget class="QCheckBox" name="checkBox_showBscan">
+         <property name="text">
+          <string>Show</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0">
+        <widget class="QLabel" name="label_4">
+         <property name="text">
+          <string>AIP Range</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="1">
+        <widget class="QCheckBox" name="checkBox_showRange">
+         <property name="text">
+          <string>Show</string>
+         </property>
+        </widget>
+       </item>
       </layout>
-     </item>
-     <item row="2" column="0">
-      <widget class="QLabel" name="label_xz">
-       <property name="text">
-        <string>xz</string>
-       </property>
-      </widget>
      </item>
      <item row="0" column="1">
       <widget class="QLabel" name="label_yz">
        <property name="text">
         <string>yz</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QSlider" name="horizontalSlider_z">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="toolTip">
+        <string>Z position (px)</string>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
        </property>
       </widget>
      </item>
@@ -205,6 +195,33 @@
        </property>
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0">
+      <widget class="QSlider" name="horizontalSlider_y">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="toolTip">
+        <string>Y Position (px)</string>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <widget class="QLabel" name="label_xy">
+       <property name="text">
+        <string>xy</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="label_xz">
+       <property name="text">
+        <string>xz</string>
        </property>
       </widget>
      </item>

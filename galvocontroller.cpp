@@ -118,8 +118,6 @@ GalvoController::GalvoController() :
     connect(ui->pushButton_rotation_stop, SIGNAL(clicked()), this, SLOT(slot_rotation_stop()));
     connect(ui->pushButton_rotation_stop_immediately, SIGNAL(clicked()), this, SLOT(slot_rotation_stop_immediately()));
     connect(rotation_timer, SIGNAL(timeout()), this, SLOT(slot_rotation_update_position()));
-    connect(ui->pushButton_test_orthoViewer, SIGNAL(clicked()), this, SLOT(slot_test_orthoviewer()));
-
 
     connect(ui->lineEdit_startLine,SIGNAL(editingFinished()),this,SLOT(slot_updateViewLinePositions()));
     connect(ui->lineEdit_stopLine,SIGNAL(editingFinished()),this,SLOT(slot_updateViewLinePositions()));
@@ -995,17 +993,16 @@ void GalvoController::startScan()
         if(dispersion == 4 && p_disp_comp_vec_25x != 0) p_image_view->set_disp_comp_vect(p_disp_comp_vec_25x);
         bool averageAngioFlag=ui->checkBox_averageFrames->isChecked();
         p_image_view->updateAngioAverageFlag(averageAngioFlag);
+
+        // Image Viewer Signals
         connect(view_timer,SIGNAL(timeout()),p_image_view,SLOT(updateView()));
         connect(this,SIGNAL(sig_updateAveragingFlag(bool)),p_image_view,SLOT(updateAngioAverageFlag(bool)));
         connect(this,SIGNAL(sig_updateAveragingAlgo(int)),p_image_view,SLOT(updateAngioAlgo(int)));
-
-
-
         connect(this,SIGNAL(sig_updateHanningThreshold(float)),p_image_view,SLOT(updateHanningThreshold(float)));
         connect(this,SIGNAL(sig_updateImageThreshold(float)),p_image_view,SLOT(updateImageThreshold(float)));
         connect(this,SIGNAL(sig_updateViewLinePositions(bool,int,int)),p_image_view,SLOT(updateViewLinePositions(bool,int,int)));
-
         connect(p_image_view,SIGNAL(sig_updateLineScanPos(int,int,int,int)),this,SLOT(setLineScanPos(int,int,int,int)));
+
         if(ui->checkBox_placeImage->isChecked())
             p_image_view->move(200,150);
         p_image_view->show();
@@ -1016,13 +1013,18 @@ void GalvoController::startScan()
             p_image_view->setCurrentViewModeStruct();
         }
     }
-    if (ui->checkBox_view_3d->isChecked())
-    {
-        // Preparing the volume parameters
-        //int nx = 512;
-        //int ny = 512;
-        //int nz = 64;
 
+    if(ui->checkBox_view_3d->isChecked()){
+        p_ortho_view = new oct3dOrthogonalViewer(0, nx, n_extra, ny, LINE_ARRAY_SIZE / 2.0);
+
+        // 3D Viewer Signals
+        connect(view_timer, SIGNAL(timeout()), p_ortho_view, SLOT(slot_update_view()));
+
+        // Display the viewer
+        p_ortho_view->show();
+
+        // Set the 3D viewer in the camera
+        p_camera->set3dViewer(p_ortho_view);
     }
 
     if (ui->checkBox_save->isChecked())
@@ -1574,12 +1576,6 @@ void GalvoController::slot_rotation_stop_immediately(void){
 void GalvoController::slot_rotation_update_position(void){
     float pos_deg = thorlabs_rotation->get_position();
     ui->doubleSpinBox_rotation_current_position->setValue(pos_deg);
-}
-
-void GalvoController::slot_test_orthoviewer(void){
-    p_ortho_view = new oct3dOrthogonalViewer(0);
-    p_ortho_view->show();
-    p_ortho_view->slot_update_view();
 }
 
 void GalvoController::slot_server(void){

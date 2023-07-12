@@ -4,6 +4,7 @@
 #include <Qthread>
 #include "fringeviewer.h"
 #include "imageviewer.h"
+#include "oct3dorthogonalviewer.h"
 #include "datasaver.h"
 
 class SoftwareCamera : public QThread
@@ -22,6 +23,7 @@ public:
     void SetCameraNumeric(const char* attribute, double value);
     void setFringeViewer(FringeViewer* ptr);
     void setImageViewer(ImageViewer* ptr);
+    void set3dViewer(oct3dOrthogonalViewer* ptr);
     void setDataSaver(DataSaver* ptr);
 signals:
     void volume_done();
@@ -34,6 +36,7 @@ private:
     unsigned short* p_current_copied_buffer;
     FringeViewer* fv_ptr;
     ImageViewer* imv_ptr;
+    oct3dOrthogonalViewer* im3dv_ptr;
     DataSaver* dsaver_ptr;
     unsigned int p_n_frames_per_volume;
 };

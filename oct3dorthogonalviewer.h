@@ -7,6 +7,8 @@
 #include <QPixmap>
 #include <QPen>
 #include "arrayfire.h"
+#include <QMutex>
+#include "FringeFFT.h"
 
 namespace Ui {
 class oct3dOrthogonalViewer;
@@ -25,10 +27,9 @@ class oct3dOrthogonalViewer : public QWidget
     Q_OBJECT
 
 public:
-    explicit oct3dOrthogonalViewer(QWidget *parent = nullptr);
+    explicit oct3dOrthogonalViewer(QWidget *parent = nullptr, int nx=64, int n_extra=40, int ny=64, int nz=64);
     ~oct3dOrthogonalViewer();
-    void put(const af::array& oct_data, unsigned int frame_number); // TODO: method to update the OCT data
-    // bool eventFilter(QObject* watched, QEvent* event);
+    void put(unsigned short* frame, unsigned int frame_number);
 
 public slots:
     void slot_update_view();
@@ -40,20 +41,29 @@ public slots:
     void set_projection_mode(int type);
     void set_log_transform(int value);
     void set_overlay(int value);
-    void simulate_bscan();
 
 private:
     Ui::oct3dOrthogonalViewer *ui;
     af::array p_oct;
+    af::array p_oct_buffer;
+    FringeFFT f_fft;
     int p_current_x;
     int p_current_y;
     int p_current_z;
-    int p_line_thickness;
+    int p_current_frame;
+    float p_line_thickness;
+    int p_x_line_thickness;
+    int p_y_line_thickness;
+    int p_z_line_thickness;
+    int p_x_thickness;
+    int p_y_thickness;
+    int p_z_thickness;
     int p_slice_thickness;
     int p_projection_mode;
     int p_nx;
     int p_ny;
     int p_nz;
+    int p_n_extra;
     bool p_log_transform;
     bool p_overlay;
     QPixmap pix_xy;
@@ -62,15 +72,10 @@ private:
     QImage p_image_xy;
     QImage p_image_xz;
     QImage p_image_yz;
-    QPen pen_x;
-    QPen pen_y;
-    QPen pen_z;
     bool ui_is_ready;
-
-    // Simulation
-    QTimer* simulation_timer;
-    af::array simulated_bscan;
-    int p_y_sim;
+    unsigned short int* p_data_buffer;
+    unsigned char* p_image_buffer;
+    QMutex p_mutex;
 
 };
 
