@@ -6,6 +6,7 @@
 #include <QSettings>
 #include <QStringList>
 #include <QTimer>
+#include <QMutex>
 #include "galvos.h"
 #include "camera.h"
 #include "softwarecamera.h"
@@ -38,6 +39,7 @@ signals:
     void sig_updateAveragingFlag(bool);
     void sig_updateAveragingAlgo(int);
     void sig_serverEndScan();
+
 
 private slots:
     void updateSpeedPiezo(void);
@@ -108,7 +110,10 @@ private slots:
     void slot_rotation_stop(void);
     void slot_rotation_stop_immediately(void);
     void slot_rotation_update_position(void);
+
+    // Server
     void slot_server(void);
+    void slot_server_set_type(QString);
 
 private:
     Ui::OCTGalvosForm *ui;
@@ -148,6 +153,7 @@ private:
     int p_n_volumes;
     QString p_datasetname;
     bool p_server_mode;
+    QString p_server_type;
     bool p_server_stop_asked;
 #ifndef SIMULATION
     Camera* p_camera;
@@ -173,6 +179,7 @@ private:
     bool flagMotor;
     float* p_disp_comp_vec_10x;
     float* p_disp_comp_vec_25x;
+    QMutex p_mutex;
 };
 
 

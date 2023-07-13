@@ -6,22 +6,34 @@
 
 #include "octserver.h"
 
-OCTServer::OCTServer(QWidget *parent)
+// TODO: Refactor to remove the fft reconstruction from the server.
+
+OCTServer::OCTServer(QWidget *parent, int nx, int n_extra, unsigned int n_alines)
     : QDialog(parent)
     , statusLabel(new QLabel)
-    , tcpServer(new QTcpServer)
+    , tcpServer(new QTcpServer),
+      f_fft(1, 1) // TODO: use n_repeat and factor for the f_fft constructor
 {
     statusLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
+    p_request_type = REQUEST_TILE;
+    p_nx = nx;
+    p_n_extra = n_extra;
+    p_n_alines = n_alines;
 
     initServer();
     auto quitButton = new QPushButton(tr("Quit"));
     quitButton->setAutoDefault(false);
 
+    // Prepare the data reconstruction
+    float dimz = 3.5; // FIXME: dummy axial resolution
+    float dimx = 3.0; // FIXME: dummy lateral resolution
+    f_fft.init(LINE_ARRAY_SIZE, p_nx + p_n_extra, dimz, dimx);
+    p_fringe_buffer = new unsigned short[(p_nx + p_n_extra)*LINE_ARRAY_SIZE];
+    p_image_buffer = new float[(p_nx + p_n_extra)*LINE_ARRAY_SIZE/2];
+
     // Connections
     connect(quitButton, &QAbstractButton::clicked, this, &QWidget::close);
     connect(tcpServer, &QTcpServer::newConnection, this, &OCTServer::slot_startConnection);
-    connect(this, SIGNAL(sig_start_acquisition(int,int,int)), this, SLOT(slot_performScan(int,int,int)));
-    connect(this, SIGNAL(sig_end_acquisition()), this, SLOT(slot_endConnection()));
 
     // Layout
     auto buttonLayout = new QHBoxLayout;
@@ -77,15 +89,37 @@ void OCTServer::initServer()
 
 }
 
+void OCTServer::put(unsigned short* fringe)
+{
+    // TODO: Remove those hardcoded values
+    int top_z = 0;
+    int bottom_z = LINE_ARRAY_SIZE/2 -1;
+    int hanning_threshold = 100;
+
+    if (p_mutex.tryLock())
+    {
+        memcpy(p_fringe_buffer, fringe, p_n_alines*LINE_ARRAY_SIZE*sizeof(unsigned short));
+        f_fft.image_reconstruction(p_fringe_buffer, p_image_buffer, top_z, bottom_z, hanning_threshold );
+        p_mutex.unlock();
+    }
+}
+
 void OCTServer::slot_endConnection()
 {
     std::cerr << "octserver::Closing the connection...";
     QByteArray response;
     QDataStream out(&response, QIODevice::WriteOnly);
-    out.setVersion(QDataStream::Qt_6_4);
-    out << "OCT_done";
-    qint64 n_bytes = clientConnection->write(response);
-    std::cerr << "sent back " << n_bytes << "bytes" << std::endl;
+    switch (p_request_type) {
+    case REQUEST_TILE:
+        out << "OCT_done";
+        break;
+    case REQUEST_BSCAN_NOSAVE:
+        // send back the number of alines, z values, and then the data.
+        out << p_image_buffer;
+        break;
+    }
+    clientConnection->write(response);
+    std::cerr << " done!" << std::endl;
 }
 
 QString OCTServer::getHostAddress()
@@ -107,10 +141,8 @@ QString OCTServer::getHostAddress()
     return ipAddress;
 }
 
-void OCTServer::slot_readTilePosition()
+void OCTServer::slot_parseRequest()
 {
-    std::cerr << "octserver::Reading tile positions: (x,y,z)=";
-
     QByteArray total_data, buffer;
     while(1) {
         buffer = clientConnection->read(1024);
@@ -120,13 +152,30 @@ void OCTServer::slot_readTilePosition()
         total_data.append(buffer);
     }
     QString data = QString(total_data);
-    p_tile_x = data.split(" ")[0].toInt();
-    p_tile_y = data.split(" ")[1].toInt();
-    p_tile_z = data.split(" ")[2].toInt();
 
-    std::cerr << "(" << p_tile_x <<"," << p_tile_y << "," << p_tile_z << ")" << std::endl;
-    emit sig_start_acquisition(p_tile_x, p_tile_y, p_tile_z);
+   if ( data.startsWith("request_autofocus_bscan"))
+   {
+       std::cerr << "Case 1: Autofocus B-Scan Request" << std::endl;
+       p_request_type = REQUEST_BSCAN_NOSAVE;
+       emit sig_set_request_type(QString("autofocus"));
+       setup_and_request_scan(-1, -1, -1);
+   }
+   else
+   {
+       std::cerr << "Case 2: Tile Request" << std::endl;
+       p_request_type = REQUEST_TILE;
+       emit sig_set_request_type(QString("tile"));
+       std::cerr << "octserver::Reading tile positions: (x,y,z)=";
+       // Read the tile position to acquire
+       p_tile_x = data.split(" ")[0].toInt();
+       p_tile_y = data.split(" ")[1].toInt();
+       p_tile_z = data.split(" ")[2].toInt();
+
+       std::cerr << "(" << p_tile_x <<"," << p_tile_y << "," << p_tile_z << ")" << std::endl;
+        setup_and_request_scan(p_tile_x, p_tile_y, p_tile_z);
+   }
 }
+
 
 void OCTServer::slot_startConnection()
 {
@@ -134,10 +183,10 @@ void OCTServer::slot_startConnection()
     clientConnection = tcpServer->nextPendingConnection();
     std::cerr << "got it!" << std::endl;
 
-    connect(clientConnection, &QIODevice::readyRead, this, &OCTServer::slot_readTilePosition);
+    connect(clientConnection, &QIODevice::readyRead, this, &OCTServer::slot_parseRequest);
 }
 
-void OCTServer::slot_performScan(int x, int y, int z)
+void OCTServer::setup_and_request_scan(int x, int y, int z)
 {
     // Create the tile filename
     char buffer [20];

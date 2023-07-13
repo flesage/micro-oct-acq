@@ -59,6 +59,7 @@ GalvoController::GalvoController() :
     p_stop_viewline = ui->lineEdit_stopLine->text().toInt();
 
     p_server_mode = false;
+    p_server_type = QString("tile");
     p_server_stop_asked = false;
 
     motors = new MotorClass();
@@ -1581,8 +1582,9 @@ void GalvoController::slot_rotation_update_position(void){
 void GalvoController::slot_server(void){
     std::cout<< "Starting the server" << std::endl;
 
-    // TODO: Check that the save directory was set
 
+    // TODO: Check that the save directory was set
+    p_server_type = QString("tile");
     p_finite_acquisition = true;
     // Set the acquisition in "save" mode.
     bool initial_save_state = ui->checkBox_save->isChecked();
@@ -1613,6 +1615,7 @@ void GalvoController::slot_server(void){
     connect(&server, SIGNAL(sig_change_filename(QString)), this, SLOT(setFileName(QString)));
     connect(&server, SIGNAL(sig_start_scan()), this, SLOT(startScan()));
     connect(this, SIGNAL(sig_serverEndScan()), &server, SLOT(slot_endConnection()));
+    connect(&server, SIGNAL(sig_set_request_type(QString)), this, SLOT(slot_server_set_type(QString)));
 
     // Executing the server
     server.exec();
@@ -1628,4 +1631,20 @@ void GalvoController::slot_server(void){
     ui->checkBox_view_3d->setChecked(initial_view_3d);
     ui->pushButton_start->setEnabled(true);
     ui->pushButton_stop->setDisabled(true);
+}
+
+void GalvoController::slot_server_set_type(QString mode){
+    if (mode == QString("tile")) {
+        std::cerr << "Setting the OCT Server in 'Tile mode'" << std::endl;
+        p_mutex.lock();
+        p_server_type = mode;
+        p_mutex.unlock();
+    }
+    else if (mode == QString("autofocus")) {
+        std::cerr << "Setting the OCT Server in 'Autofocus mode'" << std::endl;
+        p_server_type = mode;
+        p_mutex.lock();
+        p_server_type = mode;
+        p_mutex.unlock();
+    }
 }
