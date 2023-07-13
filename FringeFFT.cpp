@@ -14,9 +14,9 @@
 #define PI ((float)3.1415926)
 
 FringeFFT::FringeFFT(unsigned int n_repeat, int factor) : p_nz(0),
-    p_nx (0), p_n_repeat(n_repeat), p_factor(factor), p_fringe(0,0,f32), p_interpfringe(0,0,f32), p_mean_fringe(0,0,f32),p_signal(0,0,f32),
-    p_sparse_interp(0,0,f32),  p_hann_dispcomp(0,0,f32), p_phase(0,0,f32),
-    p_hp_filter(0,0,f32), p_filt_signal(0,0,c32), p_pos0(0,0,f32), p_pos1(0,0,f32), p_angio_stack(0,0,0,f32), p_angio(0,0,f32),p_struct(0,0,f32), p_norm_signal(0,0,f32)
+    p_nx (0), p_n_repeat(n_repeat), p_factor(factor), p_fringe(0,0,f32), p_interpfringe(0,0,f32), p_signal(0,0,f32),p_filt_signal(0,0,c32),
+    p_phase(0,0,f32),  p_hann_dispcomp(0,0,f32), p_mean_fringe(0,0,f32),
+    p_hp_filter(0,0,f32), p_sparse_interp(0,0,f32), p_pos0(0,0,f32), p_pos1(0,0,f32), p_angio_stack(0,0,0,f32), p_angio(0,0,f32),p_struct(0,0,f32), p_norm_signal(0,0,f32)
 {
     p_hpf_npts=0;
 }

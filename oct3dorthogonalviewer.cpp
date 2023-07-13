@@ -57,7 +57,7 @@ oct3dOrthogonalViewer::oct3dOrthogonalViewer(QWidget *parent, int nx, int n_extr
     ui->comboBox_projectionType->addItem("Average");
     ui->comboBox_projectionType->addItem("Maximum");
     ui->comboBox_projectionType->addItem("Minimum");
-    ui->comboBox_projectionType->addItem("Variance");
+    //ui->comboBox_projectionType->addItem("Variance");
     set_x(p_nx/2);
     set_y(p_ny/2);
     set_z(p_nz/2);
@@ -94,8 +94,9 @@ void oct3dOrthogonalViewer::put(unsigned short* fringe, unsigned int frame_numbe
         f_fft.interp_and_do_fft(p_data_buffer, p_image_buffer, p_image_threshold, p_hanning_threshold);
         af::array bscan = af::array(p_nz, p_nx + p_n_extra, p_image_buffer, afHost).as(f32);
         bscan = bscan(af::span, af::seq(p_nx));
+        bscan =  bscan(af::span, af::span, 0);
         p_current_frame = frame_number % p_ny;
-        p_oct_buffer(af::span, af::span, p_current_frame%p_ny) =  bscan(af::span, af::span, 0);
+        p_oct_buffer(af::span, af::span, p_current_frame) = bscan;
         p_mutex.unlock();
     }
 }
@@ -202,9 +203,9 @@ void oct3dOrthogonalViewer::slot_update_view()
     case MINIMUM:
         mip_x = af::min(p_oct(af::span, af::seq(x_min, x_max), af::span), 1);
         break;
-    case VARIANCE:
-        mip_x = af::var(p_oct(af::span, af::seq(x_min, x_max), af::span), AF_VARIANCE_DEFAULT, 1);
-        break;
+//    case VARIANCE:
+//        mip_x = af::var(p_oct(af::span, af::seq(x_min, x_max), af::span), AF_VARIANCE_DEFAULT, 1);
+//        break;
     default:
         mip_x = af::mean(p_oct(af::span, af::seq(x_min, x_max), af::span), 1);
         break;
@@ -227,9 +228,9 @@ void oct3dOrthogonalViewer::slot_update_view()
     case MINIMUM:
         mip_y = af::min(p_oct(af::span, af::span, af::seq(y_min, y_max)), 2);
         break;
-    case VARIANCE:
-        mip_y = af::var(p_oct(af::span, af::span, af::seq(y_min, y_max)), AF_VARIANCE_DEFAULT, 2);
-        break;
+//    case VARIANCE:
+//        mip_y = af::var(p_oct(af::span, af::span, af::seq(y_min, y_max)), AF_VARIANCE_DEFAULT, 2);
+//        break;
     default:
         mip_y = af::mean(p_oct(af::span, af::span, af::seq(y_min, y_max)), 2);
         break;
@@ -253,9 +254,9 @@ void oct3dOrthogonalViewer::slot_update_view()
     case MINIMUM:
         mip_z = af::min(p_oct(af::seq(z_min, z_max), af::span, af::span), 0);
         break;
-    case VARIANCE:
-        mip_z = af::var(p_oct(af::seq(z_min, z_max), af::span, af::span), AF_VARIANCE_DEFAULT, 0);
-        break;
+//    case VARIANCE:
+//        mip_z = af::var(p_oct(af::seq(z_min, z_max), af::span, af::span), AF_VARIANCE_DEFAULT, 0);
+//        break;
     default:
         mip_z = af::mean(p_oct(af::seq(z_min, z_max), af::span, af::span), 0);
         break;
