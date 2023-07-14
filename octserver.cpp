@@ -82,7 +82,7 @@ void OCTServer::slot_endConnection()
     std::cerr << "octserver::Closing the connection...";
     QByteArray response;
     QDataStream out(&response, QIODevice::WriteOnly);
-    out.setVersion(QDataStream::Qt_6_4);
+    //out.setVersion(QDataStream::Qt_6_4);
     out << "OCT_done";
     qint64 n_bytes = clientConnection->write(response);
     std::cerr << "sent back " << n_bytes << "bytes" << std::endl;
