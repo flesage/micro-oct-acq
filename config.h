@@ -1,6 +1,8 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#define OCT_LOCATION "ICM" // you can also use "POLYMTL"
+
 #define GALVOS_DEV "/OCT"
 #define GALVOS_AOX "ao0"
 #define GALVOS_AOY "ao1"

@@ -43,18 +43,18 @@ void FringeFFT::init(int nz, int nx, float dimz, float dimx)
     p_background = af::array(p_nz, 1, f32);
 
     // Read the background
-    double* tmp_bg = new double[p_nz];
-    FILE* fp_bg = fopen("C:\\Users\\Public\\Documents\\background_fringe.dat", "rb");
-    if(fp_bg == 0)
-    {
-        std::cerr << "Check if background_fringe.dat file exists" << std::endl;
-        exit(-1);
-    }
-    fread(tmp_bg, sizeof(double), p_nz, fp_bg);
-    fclose(fp_bg);
-    float* background = new float[p_nz];
-    for(int i=0; i<p_nz; i++) background[i]=(float) (tmp_bg[i]);
-    p_background = af::array(p_nz, 1, background, afHost);
+//    double* tmp_bg = new double[p_nz];
+//    FILE* fp_bg = fopen("C:\\Users\\Public\\Documents\\background_fringe.dat", "rb");
+//    if(fp_bg == 0)
+//    {
+//        std::cerr << "Check if background_fringe.dat file exists" << std::endl;
+//        exit(-1);
+//    }
+//    fread(tmp_bg, sizeof(double), p_nz, fp_bg);
+//    fclose(fp_bg);
+//    float* background = new float[p_nz];
+//    for(int i=0; i<p_nz; i++) background[i]=(float) (tmp_bg[i]);
+//    p_background = af::array(p_nz, 1, background, afHost);
 
     // Read the apodization function and convert to float
     double* tmp=new double[p_nz];
