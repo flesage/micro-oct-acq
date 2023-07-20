@@ -152,6 +152,7 @@ private:
     int p_acq_index;
     int p_n_volumes;
     QString p_datasetname;
+    OCTServer* p_server;
     bool p_server_mode;
     QString p_server_type;
     bool p_server_stop_asked;

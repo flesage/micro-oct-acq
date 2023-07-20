@@ -11,6 +11,7 @@
 #include "datasaver.h"
 #include "imagedatasaver.h"
 #include "niimaq.h"
+#include "octserver.h"
 
 
 class Camera : public QThread
@@ -30,6 +31,7 @@ public:
     void setImageViewer(ImageViewer* ptr);
     void set3dViewer(oct3dOrthogonalViewer* ptr);
     void setDataSaver(DataSaver* ptr);
+    void setServerDataSaver(OCTServer* ptr);
     void setImageDataSaver(ImageDataSaver* ptr);
 
 signals:
@@ -52,6 +54,7 @@ private:
     oct3dOrthogonalViewer* im3dv_ptr;
     DataSaver* dsaver_ptr;
     ImageDataSaver* imsaver_ptr;
+    OCTServer* server_saver_ptr;
     unsigned int p_n_frames_per_volume;
 };
 

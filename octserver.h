@@ -56,6 +56,9 @@ private:
     unsigned int p_n_alines;
     int p_nx;
     int p_n_extra;
+    int p_nvalues_per_fringe;
+    int p_nvalues_per_image;
+    bool p_put_done;
 
 };
 

@@ -18,6 +18,7 @@ Camera::Camera(int n_lines, float exposure, unsigned int n_frames_per_volume)
     im3dv_ptr = 0;
     imsaver_ptr=0;
     dsaver_ptr=0;
+    server_saver_ptr=0;
     p_n_frames_per_volume=n_frames_per_volume;
 
 }
@@ -46,6 +47,11 @@ void Camera::setDataSaver(DataSaver* ptr)
 void Camera::setImageDataSaver(ImageDataSaver* ptr)
 {
     imsaver_ptr = ptr;
+}
+
+void Camera::setServerDataSaver(OCTServer* ptr)
+{
+    server_saver_ptr = ptr;
 }
 
 void Camera::SetCameraString(const char* attribute, const char* value)
@@ -232,6 +238,9 @@ void Camera::run()
         if(imsaver_ptr)
         {
             imsaver_ptr->put((unsigned short*) p_current_copied_buffer);
+        }
+        if(server_saver_ptr){
+            server_saver_ptr->put((unsigned short*) p_current_copied_buffer);
         }
 
         // Needs to be fast

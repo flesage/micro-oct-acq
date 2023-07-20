@@ -20,7 +20,6 @@ ImageDataSaver::ImageDataSaver(int n_alines, int save_block_size, int top_z, int
     //TODO Move dimz dimx to doppler call
     f_fft.init(LINE_ARRAY_SIZE,p_n_alines,3.5, 3.5);
     p_truncated_image = new float[(p_bottom_z-p_top_z+1)*p_n_alines];
-    //p_truncated_image = new float[2048*p_n_alines];
 }
 
 ImageDataSaver::~ImageDataSaver()

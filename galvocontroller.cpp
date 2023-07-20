@@ -58,6 +58,7 @@ GalvoController::GalvoController() :
     p_start_viewline = ui->lineEdit_startLine->text().toInt();
     p_stop_viewline = ui->lineEdit_stopLine->text().toInt();
 
+    p_server = 0;
     p_server_mode = false;
     p_server_type = QString("tile");
     p_server_stop_asked = false;
@@ -1032,9 +1033,13 @@ void GalvoController::startScan()
     {
         if(p_server_mode)
         {
-            p_camera->setImageDataSaver(p_image_saver);
-            p_image_saver->writeInfoFile();
-            p_image_saver->startSaving();
+            if(p_server_type == QString("autofocus")) {
+                p_camera->setServerDataSaver(p_server);
+            } else {
+                p_camera->setImageDataSaver(p_image_saver);
+                p_image_saver->writeInfoFile();
+                p_image_saver->startSaving();
+            }
         }
         else
         {
@@ -1042,9 +1047,11 @@ void GalvoController::startScan()
             p_data_saver->writeInfoFile();
             p_data_saver->startSaving();
         }
-        p_ai->SetDataSaver(p_ai_data_saver);
-        p_ai_data_saver->startSaving();
-        p_ai->Start();
+        if (!p_server_mode){
+            p_ai->SetDataSaver(p_ai_data_saver);
+            p_ai_data_saver->startSaving();
+            p_ai->Start();
+        }
 
     }
     std::cerr << "galvocontroller::Start Camera" << std::endl;
@@ -1608,17 +1615,17 @@ void GalvoController::slot_server(void){
     this->setDisabled(true);
 
     // Creating the server
-    OCTServer server;
+    p_server = new OCTServer();
     p_server_mode = true;
 
     // Configure Signals and Slots
-    connect(&server, SIGNAL(sig_change_filename(QString)), this, SLOT(setFileName(QString)));
-    connect(&server, SIGNAL(sig_start_scan()), this, SLOT(startScan()));
-    connect(this, SIGNAL(sig_serverEndScan()), &server, SLOT(slot_endConnection()));
-    connect(&server, SIGNAL(sig_set_request_type(QString)), this, SLOT(slot_server_set_type(QString)));
+    connect(p_server, SIGNAL(sig_change_filename(QString)), this, SLOT(setFileName(QString)));
+    connect(p_server, SIGNAL(sig_start_scan()), this, SLOT(startScan()));
+    connect(this, SIGNAL(sig_serverEndScan()), p_server, SLOT(slot_endConnection()));
+    connect(p_server, SIGNAL(sig_set_request_type(QString)), this, SLOT(slot_server_set_type(QString)));
 
     // Executing the server
-    server.exec();
+    p_server->exec();
 
     std::cout<< "Stoping the server" << std::endl;
     p_server_mode = false;
@@ -1642,7 +1649,6 @@ void GalvoController::slot_server_set_type(QString mode){
     }
     else if (mode == QString("autofocus")) {
         std::cerr << "Setting the OCT Server in 'Autofocus mode'" << std::endl;
-        p_server_type = mode;
         p_mutex.lock();
         p_server_type = mode;
         p_mutex.unlock();
