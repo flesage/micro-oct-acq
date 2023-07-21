@@ -66,6 +66,7 @@ GalvoController::GalvoController() :
     // Rotation
     thorlabs_rotation = new ThorlabsRotation();
     rotation_timer = new QTimer();
+    p_ocrt_acquisition = false;
 
     double radians_per_volt = 2*3.14159265359/(360*0.8);
     double f1=50.0;
@@ -117,6 +118,7 @@ GalvoController::GalvoController() :
     connect(ui->doubleSpinBox_rotation_position, SIGNAL(editingFinished()), this, SLOT(slot_rotation_absoluteMove()));
     connect(ui->pushButton_rotation_stop, SIGNAL(clicked()), this, SLOT(slot_rotation_stop()));
     connect(ui->pushButton_rotation_stop_immediately, SIGNAL(clicked()), this, SLOT(slot_rotation_stop_immediately()));
+    connect(ui->pushButton_ocrt_acquisition, SIGNAL(clicked()), this, SLOT(slot_start_ocrt_acquisition()));
     connect(rotation_timer, SIGNAL(timeout()), this, SLOT(slot_rotation_update_position()));
 
     connect(ui->lineEdit_startLine,SIGNAL(editingFinished()),this,SLOT(slot_updateViewLinePositions()));
@@ -854,6 +856,9 @@ void GalvoController::startScan()
     {
         connect(p_camera, SIGNAL(volume_done()), this, SLOT(stopFiniteScan()));
     }
+    if (p_ocrt_acquisition) {
+        connect(p_camera, SIGNAL(volume_done()), thorlabs_rotation, SLOT(slot_ocrt_next_position()));
+    }
 
     // If we are saving, setup for it
     if (show_line_flag)
@@ -1575,7 +1580,36 @@ void GalvoController::slot_rotation_stop_immediately(void){
 
 void GalvoController::slot_rotation_update_position(void){
     float pos_deg = thorlabs_rotation->get_position();
-    ui->doubleSpinBox_rotation_current_position->setValue(pos_deg);
+    while (pos_deg > 360 or pos_deg < 0) {
+        int sign = (pos_deg > 0 ? 1 : -1);
+        pos_deg -= sign * 360;
+    }
+
+   ui->doubleSpinBox_rotation_current_position->setValue(pos_deg);
+}
+
+// TODO: update the ocrt rotation / angle step
+// TODO: disable the ocrt buttons if not using the motor
+
+// TODO: move this to the rotation class and emit signals instead.
+void GalvoController::slot_start_ocrt_acquisition(void){
+    std::cerr << "Starting an OCRT acquisition" << std::endl;
+    // TODO: make sure the save mode is activated
+    p_ocrt_acquisition = true;
+
+    // Getting the number of rotations
+    int n_rotations = ui->spinBox_ocrt_nsteps->value();
+
+    // Configure the OCRT positions
+    thorlabs_rotation->configure_ocrt(n_rotations);
+
+    // Create the connections
+    connect(thorlabs_rotation, SIGNAL(sig_change_filename(QString)), this, SLOT(setFileName(QString)));
+    connect(thorlabs_rotation, SIGNAL(sig_start_scan()), this, SLOT(startScan()));
+    connect(this, SIGNAL(sig_start_acquisition()), thorlabs_rotation, SLOT(slot_ocrt_next_position()));
+
+    // Start the acquisition
+    emit sig_start_acquisition();
 }
 
 void GalvoController::slot_server(void){

@@ -38,6 +38,7 @@ signals:
     void sig_updateAveragingFlag(bool);
     void sig_updateAveragingAlgo(int);
     void sig_serverEndScan();
+    void sig_start_acquisition();
 
 private slots:
     void updateSpeedPiezo(void);
@@ -109,6 +110,7 @@ private slots:
     void slot_rotation_stop_immediately(void);
     void slot_rotation_update_position(void);
     void slot_server(void);
+    void slot_start_ocrt_acquisition(void);
 
 private:
     Ui::OCTGalvosForm *ui;
@@ -170,6 +172,8 @@ private:
     int p_block_size;
     MotorClass* motors;
     ThorlabsRotation* thorlabs_rotation;
+    bool p_ocrt_acquisition;
+    bool p_ocrt_next_moved_asked;
     bool flagMotor;
     float* p_disp_comp_vec_10x;
     float* p_disp_comp_vec_25x;

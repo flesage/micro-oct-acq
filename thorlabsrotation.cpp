@@ -5,7 +5,8 @@
 #include "Thorlabs.MotionControl.TCube.DCServo.h"
 
 // Constructor
-ThorlabsRotation::ThorlabsRotation()
+ThorlabsRotation::ThorlabsRotation() :
+     p_n_ocrt_angles(4), p_current_ocrt_angle(0), p_next_ocrt_asked(false)
 {
     // Initialization
     is_open = false;
@@ -138,4 +139,62 @@ void ThorlabsRotation::identify()
     } else {
         std::cout << "Device is not open, can't identify." << std::endl;
     }
+}
+
+void ThorlabsRotation::wait_for_completion()
+{
+    if (is_open) {
+        std::cerr << "Waiting for completion... ";
+        WORD messageType;
+        WORD messageId;
+        DWORD messageData;
+
+        CC_WaitForMessage(serialNo, &messageType, &messageId, &messageData);
+        while(messageType != 2 || messageId != 1)
+        {
+            CC_WaitForMessage(serialNo, &messageType, &messageId, &messageData);
+        }
+        std::cerr << "done!" << std::endl;
+    }
+}
+
+void ThorlabsRotation::configure_ocrt(int n_angles){
+    p_n_ocrt_angles = n_angles;
+    p_current_ocrt_angle = 0;
+}
+
+void ThorlabsRotation::slot_ocrt_next_position(){
+    p_mutex.lock();
+    if (p_next_ocrt_asked) {
+        p_mutex.unlock();
+        return;
+    } else {
+        p_next_ocrt_asked = true;
+        p_mutex.unlock();
+    }
+
+    if (p_current_ocrt_angle == p_n_ocrt_angles){
+        // emit ocrt_acquisition_done;
+        return;
+    }
+
+    float angle = 360 / p_n_ocrt_angles * p_current_ocrt_angle;
+    std::cerr << "Moving to angle=" << angle << std::endl;
+    move_absolute(angle);
+    wait_for_completion(); // FIXME: this freezes the GUI.
+
+    // Change the filename
+    char buffer [20];
+    snprintf(buffer, 20, "ocrt_deg%02.4f", angle);
+    QString fileName = QString(buffer);
+    emit sig_change_filename(fileName);
+
+    // Update the next slice
+    p_current_ocrt_angle++;
+
+    // Request an acquisition
+    emit sig_start_scan();
+    p_mutex.lock();
+    p_next_ocrt_asked = false;
+    p_mutex.unlock();
 }
