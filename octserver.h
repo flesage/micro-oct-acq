@@ -23,7 +23,7 @@ class OCTServer : public QDialog
     Q_OBJECT
 
 public:
-    explicit OCTServer(QWidget *parent = nullptr, int nx=400, int n_extra=40, unsigned int n_alines=64);
+    explicit OCTServer(QWidget *parent = nullptr, int nx=400, int n_extra=40, int n_alines=64, int n_repeat=1, int factor=1);
     ~OCTServer();
     void put(unsigned short* fringe);
     void setup_and_request_scan(int x, int y, int z);
@@ -58,7 +58,8 @@ private:
     int p_n_extra;
     int p_nvalues_per_fringe;
     int p_nvalues_per_image;
-    bool p_put_done;
+    int p_put_done;
+    int p_factor;
 
 };
 

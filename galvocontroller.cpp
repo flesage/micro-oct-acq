@@ -763,6 +763,7 @@ void GalvoController::startScan()
     bool show_line_flag=ui->checkBox_view_line->isChecked();
     bool finite_acq_flag=ui->checkBox_finite_acq->isChecked();
 
+    std::cerr << "n_repeat:" << n_repeat << ",factor=" << factor << std::endl;
     // Only go here on first call if we do multiple volumes
     if (finite_acq_flag)
     {
@@ -837,7 +838,7 @@ void GalvoController::startScan()
     unit_converter.setScale(scale_um_per_volt,scale_um_per_volt);
     p_galvos.setUnitConverter(unit_converter);
 
-    if (ui->checkBox_fringe->isChecked() || ui->checkBox_view_image->isChecked())
+    if (ui->checkBox_fringe->isChecked() || ui->checkBox_view_image->isChecked() || ui->checkBox_view_3d->isChecked())
     {
         view_timer = new QTimer();
     }
@@ -1057,7 +1058,7 @@ void GalvoController::startScan()
     std::cerr << "galvocontroller::Start Camera" << std::endl;
     p_camera->Start();
 
-    if (ui->checkBox_fringe->isChecked() || ui->checkBox_view_image->isChecked())
+    if (ui->checkBox_fringe->isChecked() || ui->checkBox_view_image->isChecked() || ui->checkBox_view_3d->isChecked())
     {
         view_timer->start(30);
     }
@@ -1587,8 +1588,7 @@ void GalvoController::slot_rotation_update_position(void){
 }
 
 void GalvoController::slot_server(void){
-    std::cout<< "Starting the server" << std::endl;
-
+    std::cout<< "GalvoController::slot_server : Starting the server" << std::endl;
 
     // TODO: Check that the save directory was set
     p_server_type = QString("tile");
@@ -1615,7 +1615,17 @@ void GalvoController::slot_server(void){
     this->setDisabled(true);
 
     // Creating the server
-    p_server = new OCTServer();
+    // Read values
+    int nx = ui->lineEdit_nx->text().toInt();
+    int ny = ui->lineEdit_ny->text().toInt();
+    int n_repeat = ui->lineEdit_fastaxisrepeat->text().toInt();
+    int n_extra = ui->lineEdit_extrapoints->text().toInt();
+    float line_rate = ui->lineEdit_linerate->text().toFloat();
+    // Insuring that the factor is always a multiple of n_repeat to facilitate angios
+    int factor = n_repeat;
+    if (line_rate/n_repeat > 30) factor = ((int) ((line_rate/n_repeat/30)+1))*n_repeat;
+    p_server = new OCTServer(nullptr, nx, n_extra, ny, n_repeat, factor);
+    //p_server = new OCTServer(nx, n_extra, ny, factor);
     p_server_mode = true;
 
     // Configure Signals and Slots

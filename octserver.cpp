@@ -8,18 +8,19 @@
 
 // TODO: Refactor to remove the fft reconstruction from the server.
 
-OCTServer::OCTServer(QWidget *parent, int nx, int n_extra, unsigned int n_alines)
+OCTServer::OCTServer(QWidget *parent, int nx, int n_extra, int n_alines, int n_repeat, int factor)
     : QDialog(parent)
     , statusLabel(new QLabel)
     , tcpServer(new QTcpServer),
-      f_fft(1, 1) // TODO: use n_repeat and factor for the f_fft constructor
+      f_fft(n_repeat, factor) // TODO: use n_repeat and factor for the f_fft constructor
 {
     statusLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
     p_request_type = REQUEST_TILE;
     p_nx = nx;
     p_n_extra = n_extra;
     p_n_alines = n_alines;
-    p_put_done = false;
+    p_put_done = 0;
+    p_factor = factor;
 
 
     initServer();
@@ -29,9 +30,9 @@ OCTServer::OCTServer(QWidget *parent, int nx, int n_extra, unsigned int n_alines
     // Prepare the data reconstruction
     float dimz = 3.5; // FIXME: dummy axial resolution
     float dimx = 3.0; // FIXME: dummy lateral resolution
-    f_fft.init(LINE_ARRAY_SIZE, p_nx + p_n_extra, dimz, dimx);
-    p_fringe_buffer = new unsigned short[(p_nx + p_n_extra)*LINE_ARRAY_SIZE];
-    p_image_buffer = new float[(p_nx + p_n_extra)*LINE_ARRAY_SIZE/2];
+    f_fft.init(LINE_ARRAY_SIZE, factor*(p_nx + p_n_extra), dimz, dimx);
+    p_fringe_buffer = new unsigned short[(p_nx + p_n_extra)*LINE_ARRAY_SIZE * p_factor];
+    p_image_buffer = new float[(p_nx + p_n_extra)*LINE_ARRAY_SIZE/2 * p_factor];
 
     // Connections
     connect(quitButton, &QAbstractButton::clicked, this, &QWidget::close);
@@ -97,17 +98,23 @@ void OCTServer::put(unsigned short* fringe)
     int top_z = 1;
     int bottom_z = LINE_ARRAY_SIZE/2;
     int hanning_threshold = 100;
-
+    std::cerr << "in put" << std::endl;
     if (p_mutex.tryLock())
     {
-        if (!p_put_done) {
+        if (p_put_done==0) {
+            p_put_done++;
+            p_mutex.unlock();
+        } else if (p_put_done == 1) {
             std::cerr << "Updating put" << std::endl;
-            memcpy(p_fringe_buffer, fringe, p_n_alines*LINE_ARRAY_SIZE*sizeof(unsigned short));
+            memcpy(p_fringe_buffer, fringe, p_n_alines*LINE_ARRAY_SIZE*p_factor*sizeof(unsigned short));
             f_fft.image_reconstruction(p_fringe_buffer, p_image_buffer, top_z, bottom_z, hanning_threshold );
-            p_put_done = true;
+            p_put_done++;
+            p_mutex.unlock();
+        } else {
+            p_put_done++;
+            p_mutex.unlock();
         }
     }
-    p_mutex.unlock();
 }
 
 void OCTServer::slot_endConnection()
@@ -123,11 +130,10 @@ void OCTServer::slot_endConnection()
         break;
     case REQUEST_BSCAN_NOSAVE:
         // send back the number of alines, z values, and then the data.
-        int n = (p_nx + p_n_extra) * (LINE_ARRAY_SIZE/2);
+        int n = (p_nx + p_n_extra) * (LINE_ARRAY_SIZE/2) * p_factor;
         int n_bytes = n * sizeof(float);
         std::cerr << n << "," << n_bytes << std::endl;
         out << n_bytes;
-        //out << p_image_buffer;
         for (int i=0; i<n; i++) {
            out << p_image_buffer[i];
         }
@@ -136,7 +142,7 @@ void OCTServer::slot_endConnection()
     clientConnection->write(response);
     std::cerr << " done!" << std::endl;
     p_mutex.lock();
-    p_put_done = false;
+    p_put_done = 0;
     p_mutex.unlock();
 }
 

@@ -19,6 +19,8 @@ FringeFFT::FringeFFT(unsigned int n_repeat, int factor) : p_nz(0),
     p_hp_filter(0,0,f32), p_sparse_interp(0,0,f32), p_pos0(0,0,f32), p_pos1(0,0,f32), p_angio_stack(0,0,0,f32), p_angio(0,0,f32),p_struct(0,0,f32), p_norm_signal(0,0,f32)
 {
     p_hpf_npts=0;
+    std::cerr << "fringefft n_repeat:" << n_repeat << std::endl;
+    std::cerr << "fringefft factor:" << factor << std::endl;
 }
 
 FringeFFT::~FringeFFT() {
@@ -113,7 +115,7 @@ void FringeFFT::set_disp_comp_vect(float* disp_comp_vector)
     std::cerr << "Vecteur de compensation fait pour calcul sur gpu" << std::endl;
 }
 
-void FringeFFT::interp_and_do_fft(unsigned short* in_fringe,unsigned char* out_signal, float p_image_threshold, float p_hanning_threshold)
+void FringeFFT::interp_and_do_fft(unsigned short* in_fringe, unsigned char* out_signal, float p_image_threshold, float p_hanning_threshold)
 {
     // Interpolation by sparse matrix multiplication
     af::dim4 dims(2048,p_nx,1,1);
@@ -164,7 +166,14 @@ void FringeFFT::image_reconstruction(unsigned short* in_fringe, float* out_data,
     p_signal = p_signal.rows(p_top_z, p_bottom_z);
 
     // Set as output
-    p_signal.host(out_data);
+    p_signal.as(f32).host(out_data);
+
+    //DEBUG
+    std::cerr << p_signal.dims() << std::endl;
+    std::cerr << p_signal.type() << std::endl;
+    std::cerr << "max:" << af::max<float>(p_signal) << std::endl;
+    std::cerr << "min:" << af::min<float>(p_signal) << std::endl;
+
 }
 
 void FringeFFT::setAngioAlgo(int angio_algo)
