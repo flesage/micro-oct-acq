@@ -1585,7 +1585,7 @@ void GalvoController::slot_server(void){
     // Set the acquisition in "save" mode.
     bool initial_save_state = ui->checkBox_saveFringes->isChecked();
     ui->checkBox_saveFringes->setChecked(false);
-    ui->checkBox_saveImages->setChecked(false);
+    ui->checkBox_saveImages->setChecked(true);
 
     // Perform a single acquisition
     bool initial_finite_acq_state = ui->checkBox_finite_acq->isChecked();
