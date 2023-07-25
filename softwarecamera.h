@@ -6,6 +6,8 @@
 #include "imageviewer.h"
 #include "oct3dorthogonalviewer.h"
 #include "datasaver.h"
+#include "saver_image.h"
+#include "octserver.h"
 
 class SoftwareCamera : public QThread
 {
@@ -25,6 +27,8 @@ public:
     void setImageViewer(ImageViewer* ptr);
     void set3dViewer(oct3dOrthogonalViewer* ptr);
     void setDataSaver(DataSaver* ptr);
+    void setServerDataSaver(OCTServer* ptr);
+    void setImageDataSaver(SaverImage* ptr);
 signals:
     void volume_done();
 private:
@@ -38,6 +42,8 @@ private:
     ImageViewer* imv_ptr;
     oct3dOrthogonalViewer* im3dv_ptr;
     DataSaver* dsaver_ptr;
+    SaverImage* imsaver_ptr;
+    OCTServer* server_saver_ptr;
     unsigned int p_n_frames_per_volume;
 };
 

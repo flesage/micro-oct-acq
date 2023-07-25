@@ -152,13 +152,12 @@ GalvoController::GalvoController() :
     connect(ui->pushButton_loadCoeff,SIGNAL(clicked()),this,SLOT(readCoeffTxt()));
     connect(ui->pushButton_saveCoeff,SIGNAL(clicked()),this,SLOT(writeCoeffTxt()));
 
-    connect(ui->lineEdit_datasetname,SIGNAL(editingFinished(void)),this,SLOT(checkPath()));
+    connect(ui->lineEdit_datasetname, SIGNAL(editingFinished()), this, SLOT(checkPath()));
+    connect(ui->checkBox_overwrite, SIGNAL(stateChanged(int)), this, SLOT(checkPath()));
 
     connect(ui->checkBox_averageFrames,SIGNAL(clicked(bool)),this,SLOT(slot_updateAverageAngiogram()));
 
     connect(ui->comboBox_angio,SIGNAL(currentIndexChanged(int)),this,SLOT(slot_updateAngiogramAlgo()));
-
-
 
     connect(ui->checkBox_motorport,SIGNAL(clicked(bool)),this,SLOT(slot_openMotorPort(bool)));
     connect(ui->pushButton_doMosaic,SIGNAL(clicked()),this,SLOT(slot_doMosaic()));
@@ -166,13 +165,13 @@ GalvoController::GalvoController() :
 
     connect(ui->lineEdit_hanningeps,SIGNAL(editingFinished()),this,SLOT(slot_updateHanningThreshold()));
     connect(ui->lineEdit_logeps,SIGNAL(editingFinished()),this,SLOT(slot_updateImageThreshold()));
-    connect(ui->checkBox_autoFill,SIGNAL(stateChanged(int)),this,SLOT(autoFillName()));
+    connect(ui->checkBox_autoFill, SIGNAL(stateChanged(int)), this, SLOT(checkPath()));
 
     connect(ui->pushButton_startServer, SIGNAL(clicked()), this, SLOT(slot_server()));
     this->updateInfo();
 
     p_save_dir = QString("C:\\Data");
-    ui->label_directory->setText(p_save_dir.absolutePath());
+    ui->lineEdit_directory->setText(p_save_dir.absolutePath());
     connect(ui->pushButton_savedir,SIGNAL(clicked()),this,SLOT(setSaveDir()));
 
     if (p_settings.contains("default_scans"))
@@ -480,8 +479,9 @@ void GalvoController::setSaveDir()
                                                 QFileDialog::ShowDirsOnly
                                                 | QFileDialog::DontResolveSymlinks);
     p_save_dir.setPath(dataDir);
-    ui->label_directory->setText(p_save_dir.absolutePath());
+    ui->lineEdit_directory->setText(p_save_dir.absolutePath());
     ui->lineEdit_datasetname->setEnabled(true);
+    checkPath();
 }
 
 void GalvoController::setFileName(QString fileName)
@@ -572,7 +572,7 @@ void GalvoController::clearCurrentScan(void)
 void GalvoController::updateInfo(void)
 {
 
-    QString text("Info:\n");
+    QString text("");
     int aline_repeat = ui->lineEdit_aline_repeat->text().toInt();
     int nx = ui->lineEdit_nx->text().toInt();
     float width = ui->lineEdit_width->text().toFloat();
@@ -653,7 +653,7 @@ void GalvoController::slot_updateHanningThreshold()
 
 void GalvoController::autoFillName()
 {
-    bool autoFillFlag=ui->checkBox_autoFill->checkState();
+    bool autoFillFlag = ui->checkBox_autoFill->checkState();
     if(autoFillFlag)
     {
         checkPath();
@@ -665,16 +665,13 @@ void GalvoController::checkPath()
     readOffset();
     bool autoFillFlag=ui->checkBox_autoFill->checkState();
     QString folderName = ui->lineEdit_datasetname->text();
-    if(autoFillFlag)
+    if (autoFillFlag)
     {
         folderName = ui->comboBox_scanlist->currentText();
     }
 
-
-
     QString newfolderName = folderName;
-    QDir pathToData = QDir::cleanPath(dataDir + QDir::separator() + folderName +QDir::separator());
-    QString pathToDataTest = pathToData.absolutePath();
+    QDir pathToData = QDir::cleanPath(dataDir + QDir::separator() + folderName + QDir::separator());
     bool folderFlag = true;
     int counter=1;
     bool overwriteFlag=ui->checkBox_overwrite->checkState();
@@ -687,9 +684,10 @@ void GalvoController::checkPath()
             if (pathToData.exists())
             {
                 QString numberStr;
-                numberStr=QString("%1").arg(counter,3);
+                numberStr = QStringLiteral("%1").arg(counter, 3, 10, QLatin1Char('0'));
+
                 newfolderName = folderName+"_"+numberStr;
-                pathToData = QDir::cleanPath(dataDir + QDir::separator() + newfolderName +QDir::separator());
+                pathToData = QDir::cleanPath(dataDir + QDir::separator() + newfolderName + QDir::separator());
                 counter++;
             }
             else
@@ -700,19 +698,19 @@ void GalvoController::checkPath()
                     std::cout<<"in line update"<<std::endl;
                     p_line_number_str = readLineNumber();
                     QString linenumber;
-                    linenumber=QString("%1").arg(p_line_number_str.toInt(),3);
+                    linenumber = QStringLiteral("%1").arg(p_line_number_str.toInt(), 3, 10, QLatin1Char('0'));
                     newfolderName = folderName+"_"+linenumber;
-                    ui->lineEdit_datasetname->setText(newfolderName);
+                    ui->lineEdit_filename->setText(newfolderName);
                 }
                 else
                 {
                     folderFlag=false;
-                    ui->lineEdit_datasetname->setText(newfolderName);
                 }
-
             }
         }
     }
+
+    ui->lineEdit_filename->setText(newfolderName);
 }
 
 void GalvoController::automaticCentering()
@@ -738,7 +736,7 @@ void GalvoController::automaticCentering()
 
 void GalvoController::startScan()
 {
-    std::cout << "Starting a scan" << std::endl;
+    std::cout << "GalvoController::startScan" << std::endl;
     checkPath();
     automaticCentering();
     qApp->processEvents();
@@ -763,7 +761,6 @@ void GalvoController::startScan()
     bool show_line_flag=ui->checkBox_view_line->isChecked();
     bool finite_acq_flag=ui->checkBox_finite_acq->isChecked();
 
-    std::cerr << "n_repeat:" << n_repeat << ",factor=" << factor << std::endl;
     // Only go here on first call if we do multiple volumes
     if (finite_acq_flag)
     {
@@ -776,6 +773,8 @@ void GalvoController::startScan()
     {
         p_server_stop_asked = false;
     }
+
+    // Configure the microscope optics
     switch(telescope)
     {
     case 0:
@@ -838,32 +837,21 @@ void GalvoController::startScan()
     unit_converter.setScale(scale_um_per_volt,scale_um_per_volt);
     p_galvos.setUnitConverter(unit_converter);
 
-    if (ui->checkBox_fringe->isChecked() || ui->checkBox_view_image->isChecked() || ui->checkBox_view_3d->isChecked())
-    {
-        view_timer = new QTimer();
-    }
     // Set Camera
     if (p_camera != NULL) delete p_camera;
     unsigned int n_frames_in_one_volume = (ny*n_repeat)*aline_repeat/factor+1;
     if(n_frames_in_one_volume == 0) n_frames_in_one_volume =1;
 
-#ifndef SIMULATION
-    p_camera=new Camera((nx+n_extra)*factor,exposure,n_frames_in_one_volume);
-#else
-    p_camera=new SoftwareCamera((nx+n_extra)*factor,exposure,n_frames_in_one_volume);
-#endif
+    #ifndef SIMULATION
+        p_camera=new Camera((nx+n_extra)*factor, exposure, n_frames_in_one_volume);
+    #else
+        p_camera=new SoftwareCamera((nx+n_extra)*factor, exposure, n_frames_in_one_volume);
+    #endif
+
     p_camera_stop_requested = false;
     if(p_finite_acquisition || p_stack_acquisition)
     {
         connect(p_camera, SIGNAL(volume_done()), this, SLOT(stopFiniteScan()));
-    }
-
-    // If we are saving, setup for it
-    if (show_line_flag)
-    {
-        std::cout<<"show flag!"<<std::endl;
-        p_start_viewline=ui->lineEdit_startLine->text().toInt();
-        p_stop_viewline=ui->lineEdit_stopLine->text().toInt();
     }
 
     if (ui->checkBox_adjustLength->isChecked())
@@ -874,92 +862,113 @@ void GalvoController::startScan()
     }
     updateInfo();
     qApp->processEvents();
-    p_start_viewline = ui->lineEdit_startLine->text().toInt();
-    p_stop_viewline = ui->lineEdit_stopLine->text().toInt();
 
-    if (ui->checkBox_save->isChecked())
+    /* Configure the data savers */
+
+    // Prepare the info file
+    QString info = QString("nx: %1\n").arg(nx);
+    info=info+QString("ny: %1\n").arg(ny);
+    info=info+QString("n_repeat: %1\n").arg(n_repeat);
+    if (ui->comboBox_scantype->currentText() == "Line") {
+        info=info+QString("width: %1\n").arg(p_line_length);
+    } else {
+        info=info+QString("width: %1\n").arg(width);
+    }
+    info=info+QString("height: %1\n").arg(height);
+    info=info+QString("n_extra: %1\n").arg(n_extra);
+    info=info+QString("line_rate: %1\n").arg(line_rate);
+    info=info+QString("exposure: %1\n").arg(exposure);
+    info=info+QString("alinerepeat: %1\n").arg(aline_repeat);
+    info=info+"scantype: "+ui->comboBox_scantype->currentText()+"\n";
+    info=info+QString("center_x: %1\n").arg(p_center_x);
+    info=info+QString("center_y: %1\n").arg(p_center_y);
+    info=info+QString("offset_x: %1\n").arg(p_offset_x);
+    info=info+QString("offset_y: %1\n").arg(p_offset_y);
+    info=info+QString("coeff_x: %1\n").arg(p_coeff_x);
+    info=info+QString("coeff_y: %1\n").arg(p_coeff_y);
+    if( ui->checkBox_saveImages->isChecked())
     {
-        if(p_server_mode)
-        {
-            p_block_size = (int) ((512.0*256.0)/nx/factor);
-            p_image_saver = new ImageDataSaver((nx+n_extra)*factor,p_block_size,p_start_viewline,p_stop_viewline);
-            p_image_saver->setDatasetName(ui->lineEdit_datasetname->text());
-            p_image_saver->setDatasetPath(p_save_dir.absolutePath());
-        }
-        else
-        {
-            p_block_size = (int) ((512.0*256.0)/nx/factor);
-            p_data_saver = new DataSaver((nx+n_extra)*factor,p_block_size);
-            p_data_saver->setDatasetName(ui->lineEdit_datasetname->text());
-            p_data_saver->setDatasetPath(p_save_dir.absolutePath());
-        }
+        p_start_viewline = ui->lineEdit_startLine->text().toInt();
+        p_stop_viewline = ui->lineEdit_stopLine->text().toInt();
+        info=info+QString("top_z: %1\n").arg(p_start_viewline);
+        info=info+QString("bottom_z: %1\n").arg(p_stop_viewline);
+    }
+    QString currentObjective = ui->comboBox_objective->currentText();
+    info=info+QString("objective: %1\n").arg(currentObjective.toUtf8().constData());
+    if (ui->checkBox_adjustLength->isChecked())
+    {
+        info=info+QString("start_line_x: %1\n").arg(p_start_line_x);
+        info=info+QString("stop_line_x: %1\n").arg(p_stop_line_x);
+        info=info+QString("start_line_y: %1\n").arg(p_start_line_y);
+        info=info+QString("stop_line_y: %1\n").arg(p_stop_line_y);
+        info=info+QString("line_length: %1\n").arg(p_line_length);
+    }
 
+    // TODO: create a different saver for the OCT info
+    if (ui->checkBox_saveFringes->isChecked())
+    {
+        p_block_size = (int) ((512.0*256.0)/nx/factor);
+        p_data_saver = new DataSaver((nx+n_extra)*factor, p_block_size);
+        p_data_saver->setDatasetName(ui->lineEdit_filename->text());
+        p_data_saver->setDatasetPath(p_save_dir.absolutePath());
+        p_data_saver->addInfo(info);
+
+        p_camera->setDataSaver(p_data_saver);
+        p_data_saver->writeInfoFile();
+        p_data_saver->startSaving();
+    }
+
+    if (ui->checkBox_saveAI->isChecked())
+    {
         // AI
         if(p_ai != 0) delete p_ai;
 
-        p_ai=new AnalogInput(AIAOSAMPRATE);
+        p_ai = new AnalogInput(AIAOSAMPRATE);
 
-        p_ai_data_saver = new Float64DataSaver(N_AI_CHANNELS,AIAOSAMPRATE,256,"ai");
-        p_ai_data_saver->setDatasetName(ui->lineEdit_datasetname->text());
+        p_ai_data_saver = new Float64DataSaver(N_AI_CHANNELS, AIAOSAMPRATE, 256, "ai");
+        p_ai_data_saver->setDatasetName(ui->lineEdit_filename->text());
         p_ai_data_saver->setDatasetPath(p_save_dir.absolutePath());
 
-
-
-        //QString info;
-        QString info = QString("nx: %1\n").arg(nx);
-        info=info+QString("ny: %1\n").arg(ny);
-        info=info+QString("n_repeat: %1\n").arg(n_repeat);
-        if (ui->comboBox_scantype->currentText() == "Line")
-        {
-            info=info+QString("width: %1\n").arg(p_line_length);
-        }
-        else
-        {
-            info=info+QString("width: %1\n").arg(width);
-        }
-        info=info+QString("height: %1\n").arg(height);
-        info=info+QString("n_extra: %1\n").arg(n_extra);
-        info=info+QString("line_rate: %1\n").arg(line_rate);
-        info=info+QString("exposure: %1\n").arg(exposure);
-        info=info+QString("alinerepeat: %1\n").arg(aline_repeat);
-        info=info+"scantype: "+ui->comboBox_scantype->currentText()+"\n";
-        info=info+QString("center_x: %1\n").arg(p_center_x);
-        info=info+QString("center_y: %1\n").arg(p_center_y);
-        info=info+QString("offset_x: %1\n").arg(p_offset_x);
-        info=info+QString("offset_y: %1\n").arg(p_offset_y);
-        info=info+QString("coeff_x: %1\n").arg(p_coeff_x);
-        info=info+QString("coeff_y: %1\n").arg(p_coeff_y);        
-        if( p_server_mode )
-        {
-            info=info+QString("top_z: %1\n").arg(p_start_viewline);
-            info=info+QString("bottom_z: %1\n").arg(p_stop_viewline);
-        }
-        QString objective = ui->comboBox_objective->currentText();
-        info=info+QString("objective: %1\n").arg(objective.toUtf8().constData());
-
-        if (ui->checkBox_adjustLength->isChecked())
-        {
-            info=info+QString("start_line_x: %1\n").arg(p_start_line_x);
-            info=info+QString("stop_line_x: %1\n").arg(p_stop_line_x);
-            info=info+QString("start_line_y: %1\n").arg(p_start_line_y);
-            info=info+QString("stop_line_y: %1\n").arg(p_stop_line_y);
-            info=info+QString("line_length: %1\n").arg(p_line_length);
-        }
-
-        if( p_server_mode )
-        {
-            p_image_saver->addInfo(info);
-            connect(p_image_saver,SIGNAL(available(int)),ui->lcdNumber_saveqsize,SLOT(display(int)));
-            connect(p_image_saver,SIGNAL(filenumber(int)),this,SLOT(displayFileNumber(int)));
-
-        }
-        else
-        {
-            p_data_saver->addInfo(info);
-            connect(p_data_saver,SIGNAL(available(int)),ui->lcdNumber_saveqsize,SLOT(display(int)));
-            connect(p_data_saver,SIGNAL(filenumber(int)),this,SLOT(displayFileNumber(int)));
-        }
+        p_ai->SetDataSaver(p_ai_data_saver);
+        p_ai_data_saver->startSaving();
+        p_ai->Start();
     }
+
+    if (ui->checkBox_saveImages->isChecked())
+    {
+        p_block_size = (int) ((512.0*256.0)/nx/factor);
+        p_image_saver = new SaverImage((nx+n_extra)*factor, p_block_size, p_start_viewline, p_stop_viewline);
+        p_image_saver->setDatasetName(ui->lineEdit_filename->text());
+        p_image_saver->setDatasetPath(p_save_dir.absolutePath());
+        p_image_saver->addInfo(info);
+
+        p_camera->setImageDataSaver(p_image_saver);
+        p_image_saver->writeInfoFile();
+        p_image_saver->startSaving();
+    }
+
+    // TODO: Configure the remote saver, making sure the server mode is on.
+    if (p_server_mode && ui->checkBox_saveRemote->isChecked()) {
+        std::cerr << "Configuring the remote data saver" << std::endl;
+        p_camera->setServerDataSaver(p_server);
+    }
+
+    if (ui->checkBox_saveImages->isChecked())
+    {
+        connect(p_image_saver,SIGNAL(available(int)),ui->lcdNumber_saveqsize,SLOT(display(int)));
+        connect(p_image_saver,SIGNAL(filenumber(int)),this,SLOT(displayFileNumber(int)));
+
+    }
+    else if (ui->checkBox_saveFringes->isChecked())
+    {
+        p_data_saver->addInfo(info);
+        connect(p_data_saver,SIGNAL(available(int)),ui->lcdNumber_saveqsize,SLOT(display(int)));
+        connect(p_data_saver,SIGNAL(filenumber(int)),this,SLOT(displayFileNumber(int)));
+    }
+
+
+
+    /* Configure the camera */
     p_camera->Open();
     p_camera->SetCameraString("FPA Sensitivity",ui->comboBox_sensitivity->currentText().toUtf8().constData());
     p_camera->SetCameraString("Operational Setting",ui->comboBox_opr->currentText().toUtf8().constData());
@@ -967,12 +976,18 @@ void GalvoController::startScan()
     if (exposure < 8.45f) exposure = 8.45f;
     if (exposure > 100.0f) exposure = 100.0f;
     p_camera->SetCameraNumeric("Exposure Time",exposure);
-
     p_camera->ConfigureForSingleGrab();
+
+    /* Configure the viewers */
+    if (ui->checkBox_fringe->isChecked() || ui->checkBox_view_image->isChecked() || ui->checkBox_view_3d->isChecked())
+    {
+        view_timer = new QTimer();
+    }
+
     if(ui->checkBox_fringe->isChecked())
     {
         p_fringe_view = new FringeViewer(0,nx+n_extra);
-        connect(view_timer,SIGNAL(timeout()),p_fringe_view,SLOT(updateView()));
+        connect(view_timer, SIGNAL(timeout()), p_fringe_view, SLOT(updateView()));
         p_fringe_view->show();
         if(ui->checkBox_placeImage->isChecked())
             p_fringe_view->move(75,150);
@@ -1030,31 +1045,7 @@ void GalvoController::startScan()
         p_camera->set3dViewer(p_ortho_view);
     }
 
-    if (ui->checkBox_save->isChecked())
-    {
-        if(p_server_mode)
-        {
-            if(p_server_type == QString("autofocus")) {
-                p_camera->setServerDataSaver(p_server);
-            } else {
-                p_camera->setImageDataSaver(p_image_saver);
-                p_image_saver->writeInfoFile();
-                p_image_saver->startSaving();
-            }
-        }
-        else
-        {
-            p_camera->setDataSaver(p_data_saver);
-            p_data_saver->writeInfoFile();
-            p_data_saver->startSaving();
-        }
-        if (!p_server_mode){
-            p_ai->SetDataSaver(p_ai_data_saver);
-            p_ai_data_saver->startSaving();
-            p_ai->Start();
-        }
-
-    }
+    /* Start the scan */
     std::cerr << "galvocontroller::Start Camera" << std::endl;
     p_camera->Start();
 
@@ -1140,7 +1131,7 @@ void GalvoController::stopScan()
 
     std::cerr << "GalvoController::stopScan" << std::endl;
 
-    // Saver stop
+    /* Stop all data savers */
     // Needs to be stopped first due to potential deadlock, will
     // stop when next block size if filled.
     if(p_data_saver)
@@ -1154,17 +1145,17 @@ void GalvoController::stopScan()
             p_data_saver->addInfo(info);
             p_data_saver->writeInfoFile();
         }
-
-
-
         p_data_saver->stopSaving();
+    }
+    if(p_ai_data_saver) {
         p_ai_data_saver->stopSaving();
+
     }
     if(p_image_saver)
     {
         p_image_saver->stopSaving();
-        p_ai_data_saver->stopSaving();
     }
+
     // camera stop
     // Slight danger of locking if buffer was full and camera is still putting fast
     // Need to have a large acquire at end of thread maybe?
@@ -1175,16 +1166,9 @@ void GalvoController::stopScan()
     {
         delete p_data_saver;
         p_data_saver = 0;
-        p_ai->Stop();
-        delete p_ai;
-        p_ai=0;
-        delete p_ai_data_saver;
-        p_ai_data_saver=0;
     }
-    if(p_image_saver)
-    {
-        delete p_image_saver;
-        p_image_saver = 0;
+
+    if (p_ai_data_saver) {
         p_ai->Stop();
         delete p_ai;
         p_ai=0;
@@ -1192,8 +1176,14 @@ void GalvoController::stopScan()
         p_ai_data_saver=0;
     }
 
+    if(p_image_saver)
+    {
+        delete p_image_saver;
+        p_image_saver = 0;
+    }
+
     // Only stop the the view time if it is running
-    if (ui->checkBox_fringe->isChecked() || ui->checkBox_view_image->isChecked()) {
+    if (ui->checkBox_fringe->isChecked() || ui->checkBox_view_image->isChecked() || ui->checkBox_view_3d->isChecked() ) {
         view_timer->stop();
     }
 
@@ -1206,9 +1196,7 @@ void GalvoController::stopScan()
 
     if(p_image_view)
     {
-        std::cerr << "p_image_view" << std::endl;
         p_image_view->close();
-
         delete p_image_view;
         p_image_view = 0;
     }
@@ -1240,6 +1228,7 @@ void GalvoController::stopScan()
         }
     }
     p_camera_stop_requested = true;
+    checkPath();
 }
 
 void GalvoController::moveUp(void)
@@ -1594,8 +1583,9 @@ void GalvoController::slot_server(void){
     p_server_type = QString("tile");
     p_finite_acquisition = true;
     // Set the acquisition in "save" mode.
-    bool initial_save_state = ui->checkBox_save->isChecked();
-    ui->checkBox_save->setChecked(true);
+    bool initial_save_state = ui->checkBox_saveFringes->isChecked();
+    ui->checkBox_saveFringes->setChecked(false);
+    ui->checkBox_saveImages->setChecked(false);
 
     // Perform a single acquisition
     bool initial_finite_acq_state = ui->checkBox_finite_acq->isChecked();
@@ -1640,7 +1630,7 @@ void GalvoController::slot_server(void){
     std::cout<< "Stoping the server" << std::endl;
     p_server_mode = false;
     this->setDisabled(false);
-    ui->checkBox_save->setChecked(initial_save_state);
+    ui->checkBox_saveFringes->setChecked(initial_save_state);
     ui->checkBox_finite_acq->setChecked(initial_finite_acq_state);
     ui->checkBox_view_image->setChecked(initial_view_image);
     ui->checkBox_view_line->setChecked(initial_view_aline);

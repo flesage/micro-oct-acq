@@ -44,7 +44,7 @@ void Camera::setDataSaver(DataSaver* ptr)
     dsaver_ptr = ptr;
 }
 
-void Camera::setImageDataSaver(ImageDataSaver* ptr)
+void Camera::setImageDataSaver(SaverImage* ptr)
 {
     imsaver_ptr = ptr;
 }

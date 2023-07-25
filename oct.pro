@@ -33,9 +33,11 @@ SOURCES += main.cpp \
     camera.cpp \
     datasaver.cpp \
     fringeviewer.cpp \
-    imagedatasaver.cpp \
     imageviewer.cpp \
     oct3dorthogonalviewer.cpp \
+    saver_abstract.cpp \
+    saver_image.cpp \
+    saver_remote.cpp \
     softwarecamera.cpp \
     analoginput.cpp \
     FringeFFT.cpp \
@@ -52,12 +54,14 @@ HEADERS  += \
     daqexception.h \
     config.h \
     camera.h \
-    imagedatasaver.h \
     imaqexception.h \
     datasaver.h \
     fringeviewer.h \
     imageviewer.h \
     oct3dorthogonalviewer.h \
+    saver_abstract.h \
+    saver_image.h \
+    saver_remote.h \
     softwarecamera.h \
     fringeviewer.h \
     analoginput.h \

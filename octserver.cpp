@@ -107,7 +107,7 @@ void OCTServer::put(unsigned short* fringe)
         } else if (p_put_done == 1) {
             std::cerr << "Updating put" << std::endl;
             memcpy(p_fringe_buffer, fringe, p_n_alines*LINE_ARRAY_SIZE*p_factor*sizeof(unsigned short));
-            f_fft.image_reconstruction(p_fringe_buffer, p_image_buffer, top_z, bottom_z, hanning_threshold );
+            f_fft.image_reconstruction(p_fringe_buffer, p_image_buffer, top_z, bottom_z);
             p_put_done++;
             p_mutex.unlock();
         } else {

@@ -1,54 +1,54 @@
-#include "imagedatasaver.h"
+#include "saver_remote.h"
 #include <stdio.h>
 #include <QDir>
 #include <iostream>
 #include "config.h"
 
-ImageDataSaver::ImageDataSaver(int n_alines, int save_block_size, int top_z, int bottom_z, unsigned int n_repeat, int factor) : p_n_alines(n_alines), p_save_block_size(save_block_size),
+
+Saver_Remote::Saver_Remote(int n_alines, int save_block_size, unsigned int n_repeat, int factor) : p_n_alines(n_alines), p_save_block_size(save_block_size),
     p_free_spots(2*p_save_block_size), p_used_spots(0), p_current_pos(0), f_fft(n_repeat,factor)
 
 {
-    p_frame_size = n_alines*2048;
+    p_frame_size = n_alines*LINE_ARRAY_SIZE;
     p_buffer_size = 2*p_save_block_size;
-    p_data_buffer = new unsigned short[p_frame_size*p_buffer_size];
-    p_top_z=top_z;
-    p_bottom_z=bottom_z;
+    p_fringe_buffer = new unsigned short[p_frame_size*p_buffer_size];
     p_started = false;
     p_dataset_name = "dummy";
     p_path_name = QDir::homePath();
     p_info_txt="Scan info\n";
-    //TODO Move dimz dimx to doppler call
-    f_fft.init(LINE_ARRAY_SIZE,p_n_alines,3.5, 3.5);
-    p_truncated_image = new float[(p_bottom_z-p_top_z+1)*p_n_alines];
+    f_fft.init(LINE_ARRAY_SIZE, p_n_alines, 3.5, 3.5);     //TODO Move dimz dimx to doppler call
+    p_image_buffer = new float[(LINE_ARRAY_SIZE/2)*p_n_alines];
 }
 
-ImageDataSaver::~ImageDataSaver()
+Saver_Remote::~Saver_Remote()
 {
-    delete [] p_data_buffer;
-    delete [] p_truncated_image;
+    delete [] p_fringe_buffer;
+    delete [] p_image_buffer;
 }
 
-void ImageDataSaver::addInfo(QString new_info)
+void Saver_Remote::addInfo(QString new_info)
 {
     p_info_txt += new_info;
 }
 
-void ImageDataSaver::setDatasetName(QString name)
+void Saver_Remote::setDatasetName(QString name)
 {
     p_dataset_name = name;
 }
-void ImageDataSaver::setDatasetPath(QString path)
+void Saver_Remote::setDatasetPath(QString path)
 {
     p_path_name = path;
 }
 
-void ImageDataSaver::startSaving()
+void Saver_Remote::startSaving()
 {
+    p_mutex.lock();
     p_started = true;
+    p_mutex.unlock();
     start();
 }
 
-void ImageDataSaver::stopSaving()
+void Saver_Remote::stopSaving()
 {
     p_mutex.lock();
     p_started = false;
@@ -56,17 +56,20 @@ void ImageDataSaver::stopSaving()
     wait();
 }
 
-void ImageDataSaver::put(unsigned short* frame)
+void Saver_Remote::put(unsigned short* frame)
 {
     p_free_spots.acquire();
-    memcpy(&p_data_buffer[(p_current_pos % p_buffer_size)*p_frame_size],frame,p_frame_size*sizeof(unsigned short));
+
+    // Copying the frame in the next available space of the rolling buffer
+    memcpy(&p_fringe_buffer[(p_current_pos % p_buffer_size)*p_frame_size], frame, p_frame_size*sizeof(unsigned short));
+
     p_used_spots.release();
-    p_current_pos+=1;
+    p_current_pos++;
 
     emit available(p_free_spots.available());
 }
 
-void ImageDataSaver::writeInfoFile()
+void Saver_Remote::writeInfoFile()
 {
     QDir parent_dir = QDir::cleanPath(p_path_name);
     parent_dir.mkdir(p_dataset_name);
@@ -79,7 +82,7 @@ void ImageDataSaver::writeInfoFile()
     fclose(fp);
 }
 
-void ImageDataSaver::run()
+void Saver_Remote::run()
 {
     QDir parent_dir = QDir::cleanPath(p_path_name);
     parent_dir.mkdir(p_dataset_name);
@@ -99,12 +102,12 @@ void ImageDataSaver::run()
             fp = fopen(tmp.toUtf8().constData(), "wb");
             emit filenumber(file_num);
             file_num++;
-           
+
         }
         // Acquire a block of data
         p_used_spots.acquire();
-        f_fft.image_reconstruction(&p_data_buffer[(index % p_buffer_size)*p_frame_size], p_truncated_image,p_top_z, p_bottom_z, 100);
-        fwrite(p_truncated_image, sizeof(float), (p_bottom_z-p_top_z+1)*p_n_alines, fp);
+        f_fft.image_reconstruction(&p_fringe_buffer[(index % p_buffer_size)*p_frame_size], p_image_buffer, 0, LINE_ARRAY_SIZE/2);
+        fwrite(p_image_buffer, sizeof(float), (LINE_ARRAY_SIZE/2)*p_n_alines, fp);
         fflush(fp);
         p_free_spots.release();
         index++;
@@ -122,3 +125,4 @@ void ImageDataSaver::run()
     }
     if (fp) fclose(fp);
 }
+

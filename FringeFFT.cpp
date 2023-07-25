@@ -19,8 +19,6 @@ FringeFFT::FringeFFT(unsigned int n_repeat, int factor) : p_nz(0),
     p_hp_filter(0,0,f32), p_sparse_interp(0,0,f32), p_pos0(0,0,f32), p_pos1(0,0,f32), p_angio_stack(0,0,0,f32), p_angio(0,0,f32),p_struct(0,0,f32), p_norm_signal(0,0,f32)
 {
     p_hpf_npts=0;
-    std::cerr << "fringefft n_repeat:" << n_repeat << std::endl;
-    std::cerr << "fringefft factor:" << factor << std::endl;
 }
 
 FringeFFT::~FringeFFT() {
@@ -44,19 +42,19 @@ void FringeFFT::init(int nz, int nx, float dimz, float dimx)
     p_angio_algo=0;
     p_background = af::array(p_nz, 1, f32);
 
-    // Read the background
-    double* tmp_bg = new double[p_nz];
-    FILE* fp_bg = fopen("C:\\Users\\Public\\Documents\\background_fringe.dat", "rb");
-    if(fp_bg == 0)
-    {
-        std::cerr << "Check if background_fringe.dat file exists" << std::endl;
-        exit(-1);
-    }
-    fread(tmp_bg, sizeof(double), p_nz, fp_bg);
-    fclose(fp_bg);
-    float* background = new float[p_nz];
-    for(int i=0; i<p_nz; i++) background[i]=(float) (tmp_bg[i]);
-    p_background = af::array(p_nz, 1, background, afHost);
+//    // Read the background
+//    double* tmp_bg = new double[p_nz];
+//    FILE* fp_bg = fopen("C:\\Users\\Public\\Documents\\background_fringe.dat", "rb");
+//    if(fp_bg == 0)
+//    {
+//        std::cerr << "Check if background_fringe.dat file exists" << std::endl;
+//        exit(-1);
+//    }
+//    fread(tmp_bg, sizeof(double), p_nz, fp_bg);
+//    fclose(fp_bg);
+//    float* background = new float[p_nz];
+//    for(int i=0; i<p_nz; i++) background[i]=(float) (tmp_bg[i]);
+//    p_background = af::array(p_nz, 1, background, afHost);
 
     // Read the apodization function and convert to float
     double* tmp=new double[p_nz];
@@ -118,13 +116,11 @@ void FringeFFT::set_disp_comp_vect(float* disp_comp_vector)
 void FringeFFT::interp_and_do_fft(unsigned short* in_fringe, unsigned char* out_signal, float p_image_threshold, float p_hanning_threshold)
 {
     // Interpolation by sparse matrix multiplication
-    af::dim4 dims(2048,p_nx,1,1);
     af::array tmp(p_nz,p_nx,in_fringe,afHost);
     p_interpfringe = matmul(p_sparse_interp.as(c32),tmp.as(c32));
 
     // Compute reference
     p_mean_fringe = mean(p_interpfringe, 1);
-    //p_mean_fringe = p_background;
 
     // Multiply by dispersion compensation vector and hann window, store back in p_interpfringe
     gfor (af::seq i, p_nx)
@@ -133,21 +129,24 @@ void FringeFFT::interp_and_do_fft(unsigned short* in_fringe, unsigned char* out_
 
     // Do fft
     p_signal = af::fft(p_interpfringe);
+
     // Since it is now a complex fft, only keep half the values (positive freqs)
     p_signal = p_signal.rows(1,1024);
+
     // Here we have the complex signal available, compute its magnitude, take log on GPU to go faster
     // Transfer half as much data back to CPU
     p_norm_signal = af::log(af::abs(p_signal)+p_image_threshold);
+
+    // Min-Max Normalization
     float l_max = af::max<float>(p_norm_signal);
     float l_min = af::min<float>(p_norm_signal);
     p_norm_signal=255.0*(p_norm_signal-l_min)/(l_max-l_min);
     p_norm_signal.as(u8).host(out_signal);
 }
 
-void FringeFFT::image_reconstruction(unsigned short* in_fringe, float* out_data, int p_top_z, int p_bottom_z, float p_hanning_threshold )
+void FringeFFT::image_reconstruction(unsigned short* in_fringe, float* out_image, int z_top, int z_bottom)
 {
     // Interpolation by sparse matrix multiplication
-    af::dim4 dims(2048, p_nx, 1, 1);
     af::array tmp(p_nz, p_nx, in_fringe, afHost);
     p_interpfringe = matmul(p_sparse_interp.as(c32), tmp.as(c32));
 
@@ -156,24 +155,16 @@ void FringeFFT::image_reconstruction(unsigned short* in_fringe, float* out_data,
 
     // Multiply by dispersion compensation vector and hann window, store back in p_interpfringe
     gfor (af::seq i, p_nx)
-            //p_interpfringe(af::span,i)=((p_interpfringe(af::span,i)-p_mean_fringe(af::span)/(p_mean_fringe(af::span)+p_hanning_threshold)))*p_hann_dispcomp;
             p_interpfringe(af::span,i)=(p_interpfringe(af::span,i)-p_mean_fringe(af::span))*p_hann_dispcomp;
 
     // Do fft
     p_signal = af::abs(af::fft(p_interpfringe));
 
     // Crop the bscan
-    p_signal = p_signal.rows(p_top_z, p_bottom_z);
+    p_signal = p_signal.rows(z_top, z_bottom);
 
     // Set as output
-    p_signal.as(f32).host(out_data);
-
-    //DEBUG
-    std::cerr << p_signal.dims() << std::endl;
-    std::cerr << p_signal.type() << std::endl;
-    std::cerr << "max:" << af::max<float>(p_signal) << std::endl;
-    std::cerr << "min:" << af::min<float>(p_signal) << std::endl;
-
+    p_signal.as(f32).host(out_image);
 }
 
 void FringeFFT::setAngioAlgo(int angio_algo)
