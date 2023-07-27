@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>719</width>
+    <width>821</width>
     <height>1042</height>
    </rect>
   </property>
@@ -3414,7 +3414,11 @@
        <item>
         <widget class="QPushButton" name="pushButton_startServer">
          <property name="text">
-          <string>Start server mode (S-OCT)</string>
+          <string>Start server (S-OCT)</string>
+         </property>
+         <property name="icon">
+          <iconset resource="icons.qrc">
+           <normaloff>:/icons/img/start_icon.png</normaloff>:/icons/img/start_icon.png</iconset>
          </property>
         </widget>
        </item>

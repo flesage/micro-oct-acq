@@ -6,7 +6,10 @@
 
 #include "octserver.h"
 
-// TODO: Refactor to remove the fft reconstruction from the server.
+// TODO: Refactor to remove the fft reconstruction from the server, send the f_fft as input
+// TODO: Set the server in overwrite mode.
+// TODO: add method to reset scan parameters and fft
+// TODO: move the remote saver to a separate class
 
 OCTServer::OCTServer(QWidget *parent, int nx, int n_extra, int n_alines, int n_repeat, int factor)
     : QDialog(parent)
@@ -21,6 +24,9 @@ OCTServer::OCTServer(QWidget *parent, int nx, int n_extra, int n_alines, int n_r
     p_n_alines = n_alines;
     p_put_done = 0;
     p_factor = factor;
+    p_current_pos = 0;
+    p_frame_size = (p_nx + p_n_extra)*LINE_ARRAY_SIZE * p_factor;
+    p_buffer_size = p_frame_size * 2;
 
 
     initServer();
@@ -31,8 +37,8 @@ OCTServer::OCTServer(QWidget *parent, int nx, int n_extra, int n_alines, int n_r
     float dimz = 3.5; // FIXME: dummy axial resolution
     float dimx = 3.0; // FIXME: dummy lateral resolution
     f_fft.init(LINE_ARRAY_SIZE, factor*(p_nx + p_n_extra), dimz, dimx);
-    p_fringe_buffer = new unsigned short[(p_nx + p_n_extra)*LINE_ARRAY_SIZE * p_factor];
-    p_image_buffer = new float[(p_nx + p_n_extra)*LINE_ARRAY_SIZE/2 * p_factor];
+    p_fringe_buffer = new unsigned short[p_buffer_size];
+    p_image_buffer = new float[p_frame_size/2];
 
     // Connections
     connect(quitButton, &QAbstractButton::clicked, this, &QWidget::close);
@@ -94,51 +100,46 @@ void OCTServer::initServer()
 
 void OCTServer::put(unsigned short* fringe)
 {
-    // TODO: Remove those hardcoded values
-    int top_z = 1;
-    int bottom_z = LINE_ARRAY_SIZE/2;
-    int hanning_threshold = 100;
-    std::cerr << "in put" << std::endl;
-    if (p_mutex.tryLock())
-    {
-        if (p_put_done==0) {
-            p_put_done++;
-            p_mutex.unlock();
-        } else if (p_put_done == 1) {
-            std::cerr << "Updating put" << std::endl;
-            memcpy(p_fringe_buffer, fringe, p_n_alines*LINE_ARRAY_SIZE*p_factor*sizeof(unsigned short));
-            f_fft.image_reconstruction(p_fringe_buffer, p_image_buffer, top_z, bottom_z);
-            p_put_done++;
-            p_mutex.unlock();
-        } else {
-            p_put_done++;
-            p_mutex.unlock();
-        }
-    }
+    memcpy(&p_fringe_buffer[(p_current_pos % p_buffer_size)*p_frame_size], fringe, p_frame_size*sizeof(unsigned short));
+    p_current_pos++;
 }
 
 void OCTServer::slot_endConnection()
 {
-    std::cerr << "octserver::Closing the connection...";
+    std::cerr << "octserver::Closing the connection ";
     QByteArray response;
     QDataStream out(&response, QIODevice::WriteOnly);
+    int n_bytes;
     out.setVersion(QDataStream::Qt_6_4);
     out.setFloatingPointPrecision(QDataStream::SinglePrecision);
     switch (p_request_type) {
     case REQUEST_TILE:
+        // TODO: send the number of bytes
+        n_bytes = 9 * sizeof(char) + 2 * sizeof(int); // QDataStream magic number + n_bytes + Message
+        out << n_bytes;
         out << "OCT_done";
         break;
     case REQUEST_BSCAN_NOSAVE:
-        // send back the number of alines, z values, and then the data.
-        int n = (p_nx + p_n_extra) * (LINE_ARRAY_SIZE/2) * p_factor;
-        int n_bytes = n * sizeof(float);
-        std::cerr << n << "," << n_bytes << std::endl;
+        f_fft.image_reconstruction(p_fringe_buffer, p_image_buffer, 1, 1024);
+
+        int n_x = p_nx + p_n_extra;
+        int n_y = p_factor;
+        int n_z = (LINE_ARRAY_SIZE / 2);
+        n_bytes = n_x * n_y * n_z * sizeof(float) + 4 * sizeof(int);
+
+        // Add the data to the byte array
         out << n_bytes;
-        for (int i=0; i<n; i++) {
+        out << n_x;
+        out << n_y;
+        out << n_z;
+
+        for (int i=0; i< n_x * n_y * n_z; i++) {
            out << p_image_buffer[i];
         }
+        p_current_pos = 0;
         break;
     }
+    std::cerr << "(transmitting " << n_bytes << " bytes)... ";
     clientConnection->write(response);
     std::cerr << " done!" << std::endl;
     p_mutex.lock();
@@ -182,7 +183,7 @@ void OCTServer::slot_parseRequest()
        std::cerr << "Case 1: Autofocus B-Scan Request" << std::endl;
        p_request_type = REQUEST_BSCAN_NOSAVE;
        emit sig_set_request_type(QString("autofocus"));
-       setup_and_request_scan(-1, -1, -1);
+       setup_and_request_scan();
    }
    else
    {
@@ -221,3 +222,14 @@ void OCTServer::setup_and_request_scan(int x, int y, int z)
     // Launch a single acquisition
     emit sig_start_scan();
 }
+
+void OCTServer::setup_and_request_scan()
+{
+    // Create the tile filename
+    QString fileName = QString("dummy");
+    emit sig_change_filename(fileName);
+
+    // Launch a single acquisition
+    emit sig_start_scan();
+}
+

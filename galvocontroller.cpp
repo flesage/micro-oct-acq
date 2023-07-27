@@ -751,9 +751,13 @@ void GalvoController::startScan()
     float line_rate = ui->lineEdit_linerate->text().toFloat();
     float exposure = ui->lineEdit_exposure->text().toFloat();
     int aline_repeat = ui->lineEdit_aline_repeat->text().toInt();
+
+    // FIXME: check if the factor is computed correctly for structural scans, it seems to repeat the scans
     // Insuring that the factor is always a multiple of n_repeat to facilitate angios
     int factor = n_repeat;
-    if (line_rate/n_repeat > 30) factor = ((int) ((line_rate/n_repeat/30)+1))*n_repeat;
+    if (line_rate/n_repeat > 30) {
+        factor = ((int) ((line_rate/n_repeat/30)+1))*n_repeat;
+    }
     int telescope = ui->comboBox_telescope->currentIndex();
     double radians_per_volt = 2*3.14159265359/(360*0.8)*(3.0/4.0)/0.95;
     double f1=50.0;
@@ -955,8 +959,8 @@ void GalvoController::startScan()
 
     if (ui->checkBox_saveImages->isChecked())
     {
-        connect(p_image_saver,SIGNAL(available(int)),ui->lcdNumber_saveqsize,SLOT(display(int)));
-        connect(p_image_saver,SIGNAL(filenumber(int)),this,SLOT(displayFileNumber(int)));
+        connect(p_image_saver, SIGNAL(available(int)), ui->lcdNumber_saveqsize, SLOT(display(int)));
+        connect(p_image_saver, SIGNAL(filenumber(int)), this, SLOT(displayFileNumber(int)));
 
     }
     else if (ui->checkBox_saveFringes->isChecked())
@@ -1586,6 +1590,7 @@ void GalvoController::slot_server(void){
     bool initial_save_state = ui->checkBox_saveFringes->isChecked();
     ui->checkBox_saveFringes->setChecked(false);
     ui->checkBox_saveImages->setChecked(true);
+    ui->checkBox_overwrite->setChecked(true);
 
     // Perform a single acquisition
     bool initial_finite_acq_state = ui->checkBox_finite_acq->isChecked();
@@ -1615,7 +1620,6 @@ void GalvoController::slot_server(void){
     int factor = n_repeat;
     if (line_rate/n_repeat > 30) factor = ((int) ((line_rate/n_repeat/30)+1))*n_repeat;
     p_server = new OCTServer(nullptr, nx, n_extra, ny, n_repeat, factor);
-    //p_server = new OCTServer(nx, n_extra, ny, factor);
     p_server_mode = true;
 
     // Configure Signals and Slots
@@ -1630,6 +1634,7 @@ void GalvoController::slot_server(void){
     std::cout<< "Stoping the server" << std::endl;
     p_server_mode = false;
     this->setDisabled(false);
+    ui->checkBox_overwrite->setChecked(false);
     ui->checkBox_saveFringes->setChecked(initial_save_state);
     ui->checkBox_finite_acq->setChecked(initial_finite_acq_state);
     ui->checkBox_view_image->setChecked(initial_view_image);
@@ -1638,6 +1643,7 @@ void GalvoController::slot_server(void){
     ui->checkBox_view_3d->setChecked(initial_view_3d);
     ui->pushButton_start->setEnabled(true);
     ui->pushButton_stop->setDisabled(true);
+    ui->checkBox_saveRemote->setChecked(false);
 }
 
 void GalvoController::slot_server_set_type(QString mode){
@@ -1646,11 +1652,16 @@ void GalvoController::slot_server_set_type(QString mode){
         p_mutex.lock();
         p_server_type = mode;
         p_mutex.unlock();
+        ui->checkBox_saveImages->setChecked(true);
+        ui->checkBox_saveRemote->setChecked(false);
     }
     else if (mode == QString("autofocus")) {
         std::cerr << "Setting the OCT Server in 'Autofocus mode'" << std::endl;
+        // TODO: set ny = 1, larger fov? and slow scan?
         p_mutex.lock();
         p_server_type = mode;
         p_mutex.unlock();
+        ui->checkBox_saveImages->setChecked(false);
+        ui->checkBox_saveRemote->setChecked(true);
     }
 }

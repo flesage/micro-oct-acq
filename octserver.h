@@ -27,6 +27,7 @@ public:
     ~OCTServer();
     void put(unsigned short* fringe);
     void setup_and_request_scan(int x, int y, int z);
+    void setup_and_request_scan();
 
 signals:
     void sig_set_request_type(QString);
@@ -60,6 +61,10 @@ private:
     int p_nvalues_per_image;
     int p_put_done;
     int p_factor;
+    unsigned int p_current_pos;
+    unsigned int p_buffer_size;
+    unsigned int p_frame_size;
+
 
 };
 
