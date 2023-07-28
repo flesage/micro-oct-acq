@@ -12,6 +12,7 @@
 #include "softwarecamera.h"
 #include "datasaver.h"
 #include "saver_image.h"
+#include "saver_remote.h"
 #include "fringeviewer.h"
 #include "imageviewer.h"
 #include "float64datasaver.h"
@@ -39,7 +40,7 @@ signals:
     void sig_updateAveragingFlag(bool);
     void sig_updateAveragingAlgo(int);
     void sig_serverEndScan();
-
+    void sig_serverEndScanAndSendImage(int, int, int, float*);
 
 private slots:
     void updateSpeedPiezo(void);
@@ -170,6 +171,7 @@ private:
     oct3dOrthogonalViewer* p_ortho_view;
     DataSaver* p_data_saver;
     SaverImage* p_image_saver;
+    Saver_Remote* p_remote_saver;
     QTimer* view_timer;
     QTimer* rotation_timer;
     AnalogInput* p_ai;

@@ -7,7 +7,6 @@
 #include "octserver.h"
 
 // TODO: Refactor to remove the fft reconstruction from the server, send the f_fft as input
-// TODO: Set the server in overwrite mode.
 // TODO: add method to reset scan parameters and fft
 // TODO: move the remote saver to a separate class
 
@@ -114,29 +113,34 @@ void OCTServer::slot_endConnection()
     out.setFloatingPointPrecision(QDataStream::SinglePrecision);
     switch (p_request_type) {
     case REQUEST_TILE:
-        // TODO: send the number of bytes
         n_bytes = 9 * sizeof(char) + 2 * sizeof(int); // QDataStream magic number + n_bytes + Message
         out << n_bytes;
         out << "OCT_done";
         break;
     case REQUEST_BSCAN_NOSAVE:
         f_fft.image_reconstruction(p_fringe_buffer, p_image_buffer, 1, 1024);
-
-        int n_x = p_nx + p_n_extra;
-        int n_y = p_factor;
-        int n_z = (LINE_ARRAY_SIZE / 2);
-        n_bytes = n_x * n_y * n_z * sizeof(float) + 4 * sizeof(int);
+        n_bytes = (p_nx + p_n_extra) * p_factor * (LINE_ARRAY_SIZE / 2) * sizeof(float) + 4 * sizeof(int);
 
         // Add the data to the byte array
         out << n_bytes;
-        out << n_x;
-        out << n_y;
-        out << n_z;
+        out << (int) p_nx + p_n_extra; // nx
+        out << (int) p_factor; // ny
+        out << (int) LINE_ARRAY_SIZE / 2;
 
-        for (int i=0; i< n_x * n_y * n_z; i++) {
+        for (int i=0; i< (p_nx + p_n_extra) * p_factor * (LINE_ARRAY_SIZE / 2); i++) {
            out << p_image_buffer[i];
         }
         p_current_pos = 0;
+        break;
+    case REQUEST_CONFIG:
+        n_bytes = 16 * sizeof(char) + 2 * sizeof(int);
+        out << n_bytes;
+        out << "config:received";
+        break;
+    case REQUEST_UNKNOWN:
+        n_bytes = 8 * sizeof(char) + 2 * sizeof(int);
+        out << n_bytes;
+        out << "unknown";
         break;
     }
     std::cerr << "(transmitting " << n_bytes << " bytes)... ";
@@ -145,6 +149,34 @@ void OCTServer::slot_endConnection()
     p_mutex.lock();
     p_put_done = 0;
     p_mutex.unlock();
+}
+
+void OCTServer::slot_endConnectionAndSendImage(int nx, int ny, int nz, float* image_buffer)
+{
+    std::cerr << "octserver::Closing the connection (sending image) ";
+    QByteArray response;
+    QDataStream out(&response, QIODevice::WriteOnly);
+    out.setVersion(QDataStream::Qt_6_4);
+    out.setFloatingPointPrecision(QDataStream::SinglePrecision);
+
+    std::cerr << nx << ',' << ny << ',' << nz << std::endl;
+
+    int n_bytes = nx * ny * nz * sizeof(float) + 4 * sizeof(int);
+
+    // Add the data to the byte array
+    out << n_bytes;
+    out << nx;
+    out << ny;
+    out << nz;
+
+    for (int i=0; i< nx * ny * nz; i++) {
+       out << image_buffer[i];
+       std::cerr << i << std::endl;
+    }
+
+    std::cerr << "(transmitting " << n_bytes << " bytes)... ";
+    clientConnection->write(response);
+    std::cerr << " done!" << std::endl;
 }
 
 QString OCTServer::getHostAddress()
@@ -185,6 +217,33 @@ void OCTServer::slot_parseRequest()
        emit sig_set_request_type(QString("autofocus"));
        setup_and_request_scan();
    }
+   else if ( data.startsWith("config")) {
+       p_request_type = REQUEST_CONFIG;
+
+       // Analyze the config
+       QString config = data.split(":")[1];
+       if (config == "nx"){
+          int nx = data.split(":")[2].toInt();
+          std::cerr << "OCTServer::slot_parseRequest|Setting nx=" << nx << std::endl;
+          emit sig_config_nx(QString::number(nx));
+       } else if (config == "ny") {
+           int ny = data.split(":")[2].toInt();
+           std::cerr << "OCTServer::slot_parseRequest|Setting ny=" << ny << std::endl;
+           emit sig_config_ny(QString::number(ny));
+       } else if (config == "fov_x") {
+           int fov_x = data.split(":")[2].toFloat();
+           std::cerr << "OCTServer::slot_parseRequest|Setting fov_x=" << fov_x << std::endl;
+           emit sig_config_fov_x(QString::number(fov_x));
+       } else if (config == "fov_y") {
+           int fov_y = data.split(":")[2].toFloat();
+           std::cerr << "OCTServer::slot_parseRequest|Setting fov_y=" << fov_y << std::endl;
+           emit sig_config_fov_y(QString::number(fov_y));
+       } else {
+           std::cerr << "OCTServer::slot_parseRequest|Unknown command:" << data.toStdString() << std::endl;
+           p_request_type = REQUEST_UNKNOWN;
+       }
+       slot_endConnection();
+   }
    else
    {
        std::cerr << "Case 2: Tile Request" << std::endl;
@@ -200,7 +259,6 @@ void OCTServer::slot_parseRequest()
         setup_and_request_scan(p_tile_x, p_tile_y, p_tile_z);
    }
 }
-
 
 void OCTServer::slot_startConnection()
 {

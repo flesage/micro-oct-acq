@@ -8,7 +8,9 @@ USER_FUNC  niimaquDisable32bitPhysMemLimitEnforcement(SESSION_ID boardid);
 #define errChk(fCall) if (p_error = (fCall), p_error < 0) {throw IMAQException(p_error);} else
 
 
-Camera::Camera(int n_lines, float exposure, unsigned int n_frames_per_volume)
+Camera::Camera(int n_lines,
+               float exposure,
+               unsigned int n_frames_per_volume)
 {
     p_n_lines = n_lines;
     p_exposure = exposure;
@@ -18,6 +20,7 @@ Camera::Camera(int n_lines, float exposure, unsigned int n_frames_per_volume)
     im3dv_ptr = 0;
     imsaver_ptr=0;
     dsaver_ptr=0;
+    rsaver_ptr=0;
     server_saver_ptr=0;
     p_n_frames_per_volume=n_frames_per_volume;
 
@@ -47,6 +50,11 @@ void Camera::setDataSaver(DataSaver* ptr)
 void Camera::setImageDataSaver(SaverImage* ptr)
 {
     imsaver_ptr = ptr;
+}
+
+void Camera::setRemoteSaver(Saver_Remote* ptr)
+{
+    rsaver_ptr = ptr;
 }
 
 void Camera::setServerDataSaver(OCTServer* ptr)
@@ -241,6 +249,9 @@ void Camera::run()
         }
         if(server_saver_ptr){
             server_saver_ptr->put((unsigned short*) p_current_copied_buffer);
+        }
+        if(rsaver_ptr){
+            rsaver_ptr->put((unsigned short*) p_current_copied_buffer);
         }
 
         // Needs to be fast

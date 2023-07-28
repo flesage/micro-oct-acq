@@ -18,6 +18,8 @@ class OCTServer : public QDialog
     {
         REQUEST_TILE = 0,
         REQUEST_BSCAN_NOSAVE = 1,
+        REQUEST_CONFIG = 2,
+        REQUEST_UNKNOWN = 3,
     };
 
     Q_OBJECT
@@ -33,10 +35,15 @@ signals:
     void sig_set_request_type(QString);
     void sig_start_scan();
     void sig_change_filename(QString);
+    void sig_config_nx(QString);
+    void sig_config_ny(QString);
+    void sig_config_fov_x(QString);
+    void sig_config_fov_y(QString);
 
 private slots:
     void slot_startConnection();
     void slot_endConnection();
+    void slot_endConnectionAndSendImage(int nx, int ny, int nz, float* image_buffer);
     void slot_parseRequest();
 
 private:

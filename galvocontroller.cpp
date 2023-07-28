@@ -49,6 +49,7 @@ GalvoController::GalvoController() :
     p_image_view = 0;
     p_data_saver = 0;
     p_image_saver = 0;
+    p_remote_saver = 0;
     p_start_line_x = 0;
     p_stop_line_x = 0;
     p_start_line_y = 0;
@@ -954,7 +955,12 @@ void GalvoController::startScan()
     // TODO: Configure the remote saver, making sure the server mode is on.
     if (p_server_mode && ui->checkBox_saveRemote->isChecked()) {
         std::cerr << "Configuring the remote data saver" << std::endl;
-        p_camera->setServerDataSaver(p_server);
+        p_remote_saver = new Saver_Remote(nx+n_extra, n_repeat, factor);
+        p_camera->setRemoteSaver(p_remote_saver);
+        //p_camera->setServerDataSaver(p_server);
+        p_remote_saver->startSaving();
+
+        connect(p_remote_saver, SIGNAL(sig_dimsAndImage(int, int, int, float*)), p_server, SLOT(slot_endConnectionAndSendImage(int, int, int, float*)));
     }
 
     if (ui->checkBox_saveImages->isChecked())
@@ -1108,11 +1114,14 @@ void GalvoController::stopFiniteScan()
     }
     else if (p_server_mode)
     {
-        if(!p_server_stop_asked)
+        if(!p_server_stop_asked && p_server_type == QString("tile"))
         {
             stopScan();
             p_server_stop_asked = true;
             emit sig_serverEndScan();
+        } else if (!p_server_stop_asked && p_server_type == QString("autofocus")) {
+            stopScan();
+            p_server_stop_asked = true;
         }
         return;
     }
@@ -1160,6 +1169,11 @@ void GalvoController::stopScan()
         p_image_saver->stopSaving();
     }
 
+    if(p_remote_saver)
+    {
+        p_remote_saver->stopSaving();
+    }
+
     // camera stop
     // Slight danger of locking if buffer was full and camera is still putting fast
     // Need to have a large acquire at end of thread maybe?
@@ -1184,6 +1198,11 @@ void GalvoController::stopScan()
     {
         delete p_image_saver;
         p_image_saver = 0;
+    }
+
+    if(p_remote_saver) {
+        delete p_remote_saver;
+        p_remote_saver = 0;
     }
 
     // Only stop the the view time if it is running
@@ -1625,8 +1644,16 @@ void GalvoController::slot_server(void){
     // Configure Signals and Slots
     connect(p_server, SIGNAL(sig_change_filename(QString)), this, SLOT(setFileName(QString)));
     connect(p_server, SIGNAL(sig_start_scan()), this, SLOT(startScan()));
-    connect(this, SIGNAL(sig_serverEndScan()), p_server, SLOT(slot_endConnection()));
+    if (p_server_type == QString("tile")) {
+        connect(this, SIGNAL(sig_serverEndScan()), p_server, SLOT(slot_endConnection()));
+    } else if (p_server_type == QString("autofocus")) {
+        connect(this, SIGNAL(sig_serverEndScanAndSendImage(int, int, int, float*)), p_server, SLOT(slot_endConnectionAndSendImage(int, int, int, float*)));
+    }
     connect(p_server, SIGNAL(sig_set_request_type(QString)), this, SLOT(slot_server_set_type(QString)));
+    connect(p_server, SIGNAL(sig_config_nx(QString)), ui->lineEdit_nx, SLOT(setText(QString)));
+    connect(p_server, SIGNAL(sig_config_ny(QString)), ui->lineEdit_ny, SLOT(setText(QString)));
+    connect(p_server, SIGNAL(sig_config_fov_x(QString)), ui->lineEdit_width, SLOT(setText(QString)));
+    connect(p_server, SIGNAL(sig_config_fov_y(QString)), ui->lineEdit_height, SLOT(setText(QString)));
 
     // Executing the server
     p_server->exec();
@@ -1657,7 +1684,6 @@ void GalvoController::slot_server_set_type(QString mode){
     }
     else if (mode == QString("autofocus")) {
         std::cerr << "Setting the OCT Server in 'Autofocus mode'" << std::endl;
-        // TODO: set ny = 1, larger fov? and slow scan?
         p_mutex.lock();
         p_server_type = mode;
         p_mutex.unlock();

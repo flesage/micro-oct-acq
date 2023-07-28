@@ -12,6 +12,7 @@
 #include "saver_image.h"
 #include "niimaq.h"
 #include "octserver.h"
+#include "saver_remote.h"
 
 
 class Camera : public QThread
@@ -33,6 +34,7 @@ public:
     void setDataSaver(DataSaver* ptr);
     void setServerDataSaver(OCTServer* ptr);
     void setImageDataSaver(SaverImage* ptr);
+    void setRemoteSaver(Saver_Remote* ptr);
 
 signals:
     void volume_done();
@@ -55,6 +57,7 @@ private:
     DataSaver* dsaver_ptr;
     SaverImage* imsaver_ptr;
     OCTServer* server_saver_ptr;
+    Saver_Remote* rsaver_ptr;
     unsigned int p_n_frames_per_volume;
 };
 
