@@ -7,10 +7,6 @@
 #include <QWidget>
 #include <QDir>
 #include <QMutex>
-#include "FringeFFT.h"
-
-
-
 
 class OCTServer : public QDialog
 {
@@ -25,9 +21,8 @@ class OCTServer : public QDialog
     Q_OBJECT
 
 public:
-    explicit OCTServer(QWidget *parent = nullptr, int nx=400, int n_extra=40, int n_alines=64, int n_repeat=1, int factor=1);
+    explicit OCTServer(QWidget *parent = nullptr);
     ~OCTServer();
-    void put(unsigned short* fringe);
     void setup_and_request_scan(int x, int y, int z);
     void setup_and_request_scan();
 
@@ -53,26 +48,12 @@ private:
     QLabel *statusLabel = nullptr;
     QTcpServer *tcpServer = nullptr;
     QTcpSocket *clientConnection = nullptr;
-    FringeFFT f_fft;
     int p_tile_x;
     int p_tile_y;
     int p_tile_z;
     int p_request_type;
-    unsigned short int* p_fringe_buffer;
-    float* p_image_buffer;
+    bool p_transfer_requested;
     QMutex p_mutex;
-    unsigned int p_n_alines;
-    int p_nx;
-    int p_n_extra;
-    int p_nvalues_per_fringe;
-    int p_nvalues_per_image;
-    int p_put_done;
-    int p_factor;
-    unsigned int p_current_pos;
-    unsigned int p_buffer_size;
-    unsigned int p_frame_size;
-
-
 };
 
 #endif // OCTSERVER_H

@@ -45,6 +45,7 @@ GalvoController::GalvoController() :
     p_block_size = 256;
     p_camera = 0;
     p_camera_stop_requested = false;
+    p_active_viewer = false;
     p_fringe_view = 0;
     p_image_view = 0;
     p_data_saver = 0;
@@ -63,8 +64,14 @@ GalvoController::GalvoController() :
     p_server_mode = false;
     p_server_type = QString("tile");
     p_server_stop_asked = false;
+    p_serverTransferDone = false;
 
     motors = new MotorClass();
+
+    // UI settings
+    ui->horizontalSlider_exposure->setMinimum((int) CAMERA_MIN_EXPOSURE + 1);
+    ui->horizontalSlider_exposure->setMaximum((int) CAMERA_MAX_EXPOSURE);
+    updateExposure(23); // Default exposure
 
     // Rotation
     thorlabs_rotation = new ThorlabsRotation();
@@ -93,12 +100,13 @@ GalvoController::GalvoController() :
     QIntValidator* validator5=new QIntValidator(10,2048,this);
     ui->lineEdit_displayPoints->setValidator(validator5);
 
-    connect(ui->lineEdit_linerate,SIGNAL(editingFinished()),this,SLOT(updateInfo()));
-    connect(ui->lineEdit_nx,SIGNAL(editingFinished()),this,SLOT(updateInfo()));
-    connect(ui->lineEdit_extrapoints,SIGNAL(editingFinished()),this,SLOT(updateInfo()));
-    connect(ui->lineEdit_exposure,SIGNAL(editingFinished()),this,SLOT(updateInfo()));
-    connect(ui->lineEdit_width,SIGNAL(editingFinished()),this,SLOT(updateInfo()));
-    connect(ui->lineEdit_aline_repeat,SIGNAL(editingFinished()),this,SLOT(updateInfo()));
+    connect(ui->lineEdit_linerate, SIGNAL(editingFinished()), this, SLOT(updateInfo()));
+    connect(ui->lineEdit_nx, SIGNAL(editingFinished()), this, SLOT(updateInfo()));
+    connect(ui->lineEdit_extrapoints, SIGNAL(editingFinished()), this, SLOT(updateInfo()));
+    connect(ui->spinBox_exposure, SIGNAL(valueChanged(int)), this, SLOT(updateExposure(int)));
+    connect(ui->horizontalSlider_exposure, SIGNAL(valueChanged(int)), this, SLOT(updateExposure(int)));
+    connect(ui->lineEdit_width, SIGNAL(editingFinished()), this, SLOT(updateInfo()));
+    connect(ui->lineEdit_aline_repeat, SIGNAL(editingFinished()), this, SLOT(updateInfo()));
 
     /* Piezo Signals*/
     connect(ui->pushButton_piezoOn,SIGNAL(clicked()),this,SLOT(turnPiezoOn()));
@@ -236,6 +244,23 @@ GalvoController::~GalvoController()
     delete [] p_disp_comp_vec_25x;
     delete motors;
     delete ui;
+}
+
+/* To update the camera exposure (in ms) within the allowed range */
+void GalvoController::updateExposure(int exposure) {
+    if (exposure < CAMERA_MIN_EXPOSURE) {
+        std::cerr << "Minimum camera exposure is: " << CAMERA_MIN_EXPOSURE << std::endl;
+        exposure = (int) CAMERA_MIN_EXPOSURE;
+    } else if (exposure > CAMERA_MAX_EXPOSURE) {
+        std::cerr << "Maximum camera exposure is: " << CAMERA_MAX_EXPOSURE << std::endl;
+        exposure = (int) CAMERA_MAX_EXPOSURE;
+    }
+
+    // Set the exposure values in the UI
+    ui->horizontalSlider_exposure->setValue(exposure);
+    ui->spinBox_exposure->setValue(exposure);
+
+    updateInfo();
 }
 
 void GalvoController::setLineScanPos(int start_x, int start_y, int stop_x, int stop_y)
@@ -516,7 +541,7 @@ void GalvoController::setDefaultScan(void)
     ui->lineEdit_extrapoints->setText(QString::number(n_extra));
     ui->lineEdit_fastaxisrepeat->setText(QString::number(n_repeat));
     ui->lineEdit_linerate->setText(QString::number(line_rate));
-    ui->lineEdit_exposure->setText(QString::number(exposure));
+    updateExposure((int) exposure);
     ui->lineEdit_aline_repeat->setText(QString::number(aline_repeat));
     ui->comboBox_scantype->setCurrentIndex(scantype);
     ui->lineEdit_nvol->setText(QString::number(n_volumes));
@@ -533,7 +558,7 @@ void GalvoController::addDefaultScan(void)
     int n_repeat = ui->lineEdit_fastaxisrepeat->text().toInt();
     int n_extra = ui->lineEdit_extrapoints->text().toInt();
     float line_rate = ui->lineEdit_linerate->text().toFloat();
-    float exposure = ui->lineEdit_exposure->text().toFloat();
+    float exposure = (float) ui->spinBox_exposure->value();
     int scantype = ui->comboBox_scantype->currentIndex();
     int aline_repeat = ui->lineEdit_aline_repeat->text().toInt();
     bool finite = ui->checkBox_finite_acq->isChecked();
@@ -579,7 +604,7 @@ void GalvoController::updateInfo(void)
     float width = ui->lineEdit_width->text().toFloat();
     int n_extra = ui->lineEdit_extrapoints->text().toInt();
     float line_rate = ui->lineEdit_linerate->text().toFloat();
-    float exposure = ui->lineEdit_exposure->text().toFloat();
+    float exposure = (float) ui->spinBox_exposure->value();
     float time_per_pix = 1.0/(line_rate*(nx+n_extra)*aline_repeat)*1e6;
     float speed_x=line_rate*width*(nx+n_extra)/(nx*1000.0);
     float lat_sampling=width/nx;
@@ -594,9 +619,6 @@ void GalvoController::updateInfo(void)
     text=text+QString("Inter B-scan time in x:\t%1 ms\n").arg(interFrameTime,5,'f',3);
 
     text=text+QString("Linelength:\t\t%1 um\n").arg(p_line_length,5,'f',3);
-
-
-
 
     if (time_per_pix < 0.9*exposure)
     {
@@ -737,7 +759,6 @@ void GalvoController::automaticCentering()
 
 void GalvoController::startScan()
 {
-    std::cout << "GalvoController::startScan" << std::endl;
     checkPath();
     automaticCentering();
     qApp->processEvents();
@@ -750,7 +771,7 @@ void GalvoController::startScan()
     int n_repeat = ui->lineEdit_fastaxisrepeat->text().toInt();
     int n_extra = ui->lineEdit_extrapoints->text().toInt();
     float line_rate = ui->lineEdit_linerate->text().toFloat();
-    float exposure = ui->lineEdit_exposure->text().toFloat();
+    float exposure = (float) ui->spinBox_exposure->value();
     int aline_repeat = ui->lineEdit_aline_repeat->text().toInt();
 
     // FIXME: check if the factor is computed correctly for structural scans, it seems to repeat the scans
@@ -869,7 +890,7 @@ void GalvoController::startScan()
     qApp->processEvents();
 
     /* Configure the data savers */
-
+    // TODO: create a different saver for the OCT info
     // Prepare the info file
     QString info = QString("nx: %1\n").arg(nx);
     info=info+QString("ny: %1\n").arg(ny);
@@ -909,7 +930,8 @@ void GalvoController::startScan()
         info=info+QString("line_length: %1\n").arg(p_line_length);
     }
 
-    // TODO: create a different saver for the OCT info
+    // Fringe Saver
+    // TODO: rename the data saver to fringe saver
     if (ui->checkBox_saveFringes->isChecked())
     {
         p_block_size = (int) ((512.0*256.0)/nx/factor);
@@ -917,12 +939,12 @@ void GalvoController::startScan()
         p_data_saver->setDatasetName(ui->lineEdit_filename->text());
         p_data_saver->setDatasetPath(p_save_dir.absolutePath());
         p_data_saver->addInfo(info);
-
         p_camera->setDataSaver(p_data_saver);
         p_data_saver->writeInfoFile();
         p_data_saver->startSaving();
     }
 
+    // Analog Input Saver
     if (ui->checkBox_saveAI->isChecked())
     {
         // AI
@@ -939,6 +961,7 @@ void GalvoController::startScan()
         p_ai->Start();
     }
 
+    // Image Saver
     if (ui->checkBox_saveImages->isChecked())
     {
         p_block_size = (int) ((512.0*256.0)/nx/factor);
@@ -946,21 +969,22 @@ void GalvoController::startScan()
         p_image_saver->setDatasetName(ui->lineEdit_filename->text());
         p_image_saver->setDatasetPath(p_save_dir.absolutePath());
         p_image_saver->addInfo(info);
-
         p_camera->setImageDataSaver(p_image_saver);
         p_image_saver->writeInfoFile();
         p_image_saver->startSaving();
     }
 
-    // TODO: Configure the remote saver, making sure the server mode is on.
+    // Remote Saver
+    if(p_remote_saver) { // Reinitialize the saver
+        delete p_remote_saver;
+        p_remote_saver = 0;
+    }
     if (p_server_mode && ui->checkBox_saveRemote->isChecked()) {
-        std::cerr << "Configuring the remote data saver" << std::endl;
-        p_remote_saver = new Saver_Remote(nx+n_extra, n_repeat, factor);
+        p_block_size = (int) ((512.0*256.0)/nx/factor);
+        p_remote_saver = new Saver_Remote(nx+n_extra, n_repeat, factor, p_block_size);
         p_camera->setRemoteSaver(p_remote_saver);
-        //p_camera->setServerDataSaver(p_server);
         p_remote_saver->startSaving();
-
-        connect(p_remote_saver, SIGNAL(sig_dimsAndImage(int, int, int, float*)), p_server, SLOT(slot_endConnectionAndSendImage(int, int, int, float*)));
+        connect(p_remote_saver, SIGNAL(sig_dimsAndImage(int,int,int,float*)), p_server, SLOT(slot_endConnectionAndSendImage(int,int,int,float*)));
     }
 
     if (ui->checkBox_saveImages->isChecked())
@@ -976,27 +1000,29 @@ void GalvoController::startScan()
         connect(p_data_saver,SIGNAL(filenumber(int)),this,SLOT(displayFileNumber(int)));
     }
 
-
+    // Reset connections when we receive the end of transfer signal
+    if (p_server_type == QString("tile")) {
+        connect(this, SIGNAL(sig_serverEndScan()), p_server, SLOT(slot_endConnection()));
+    }
 
     /* Configure the camera */
     p_camera->Open();
-    p_camera->SetCameraString("FPA Sensitivity",ui->comboBox_sensitivity->currentText().toUtf8().constData());
-    p_camera->SetCameraString("Operational Setting",ui->comboBox_opr->currentText().toUtf8().constData());
-    p_camera->SetCameraString("Exposure Modes","Exp at Max Rate");
-    if (exposure < 8.45f) exposure = 8.45f;
-    if (exposure > 100.0f) exposure = 100.0f;
-    p_camera->SetCameraNumeric("Exposure Time",exposure);
+    p_camera->SetCameraString("FPA Sensitivity", ui->comboBox_sensitivity->currentText().toUtf8().constData());
+    p_camera->SetCameraString("Operational Setting", ui->comboBox_opr->currentText().toUtf8().constData());
+    p_camera->SetCameraString("Exposure Modes", "Exp at Max Rate");
+    p_camera->SetCameraNumeric("Exposure Time", exposure);
     p_camera->ConfigureForSingleGrab();
 
     /* Configure the viewers */
     if (ui->checkBox_fringe->isChecked() || ui->checkBox_view_image->isChecked() || ui->checkBox_view_3d->isChecked())
     {
+        p_active_viewer = true;
         view_timer = new QTimer();
     }
 
     if(ui->checkBox_fringe->isChecked())
     {
-        p_fringe_view = new FringeViewer(0,nx+n_extra);
+        p_fringe_view = new FringeViewer(0, nx+n_extra);
         connect(view_timer, SIGNAL(timeout()), p_fringe_view, SLOT(updateView()));
         p_fringe_view->show();
         if(ui->checkBox_placeImage->isChecked())
@@ -1056,10 +1082,9 @@ void GalvoController::startScan()
     }
 
     /* Start the scan */
-    std::cerr << "galvocontroller::Start Camera" << std::endl;
     p_camera->Start();
 
-    if (ui->checkBox_fringe->isChecked() || ui->checkBox_view_image->isChecked() || ui->checkBox_view_3d->isChecked())
+    if (p_active_viewer)
     {
         view_timer->start(30);
     }
@@ -1114,14 +1139,13 @@ void GalvoController::stopFiniteScan()
     }
     else if (p_server_mode)
     {
-        if(!p_server_stop_asked && p_server_type == QString("tile"))
+        if(!p_server_stop_asked)
         {
             stopScan();
             p_server_stop_asked = true;
-            emit sig_serverEndScan();
-        } else if (!p_server_stop_asked && p_server_type == QString("autofocus")) {
-            stopScan();
-            p_server_stop_asked = true;
+            if (p_server_type == QString("tile")){
+                emit sig_serverEndScan();
+            }
         }
         return;
     }
@@ -1137,12 +1161,11 @@ void GalvoController::stopFiniteScan()
 
 void GalvoController::stopScan()
 {
+    // Do not stop if it was already requested.
     if (p_camera_stop_requested)
     {
         return;
     }
-
-    std::cerr << "GalvoController::stopScan" << std::endl;
 
     /* Stop all data savers */
     // Needs to be stopped first due to potential deadlock, will
@@ -1162,71 +1185,74 @@ void GalvoController::stopScan()
     }
     if(p_ai_data_saver) {
         p_ai_data_saver->stopSaving();
-
     }
     if(p_image_saver)
     {
         p_image_saver->stopSaving();
     }
-
     if(p_remote_saver)
     {
         p_remote_saver->stopSaving();
     }
 
-    // camera stop
-    // Slight danger of locking if buffer was full and camera is still putting fast
-    // Need to have a large acquire at end of thread maybe?
+    // Stop the camera, analog input, and galvo
+    // FIXME: Slight danger of locking if buffer was full and camera is still putting fast. Do we need to have a large acquire at end of thread?
     p_camera->Stop();
+    if(p_ai)
+    {
+        p_ai->Stop();
+        delete p_ai;
+        p_ai=0;
+    }
+    p_galvos.stopTask();
+    p_camera->Close();
 
-    // Deleting saver after camera stop because there will be some calls to put...
+    /* Delete and reinitialize the savers */
     if(p_data_saver)
     {
         delete p_data_saver;
         p_data_saver = 0;
     }
-
-    if (p_ai_data_saver) {
-        p_ai->Stop();
-        delete p_ai;
-        p_ai=0;
+    if(p_ai_data_saver)
+    {
         delete p_ai_data_saver;
-        p_ai_data_saver=0;
+        p_ai_data_saver = 0;
     }
-
     if(p_image_saver)
     {
         delete p_image_saver;
         p_image_saver = 0;
     }
+//    if(p_remote_saver)
+//    {
+//        delete p_remote_saver;
+//        p_remote_saver = 0;
+//    }
 
-    if(p_remote_saver) {
-        delete p_remote_saver;
-        p_remote_saver = 0;
-    }
-
-    // Only stop the the view time if it is running
-    if (ui->checkBox_fringe->isChecked() || ui->checkBox_view_image->isChecked() || ui->checkBox_view_3d->isChecked() ) {
+    /* Stop all active viewers */
+    // TODO: rename the ortho viewer to 3D viewer
+    if(p_active_viewer) {
         view_timer->stop();
+        delete view_timer;
     }
-
     if(p_fringe_view)
     {
         p_fringe_view->Close();
         delete p_fringe_view;
         p_fringe_view = 0;
     }
-
     if(p_image_view)
     {
         p_image_view->close();
         delete p_image_view;
         p_image_view = 0;
     }
+    if(p_ortho_view){
+        p_ortho_view->close();
+        delete p_ortho_view;
+        p_ortho_view = 0;
+    }
 
-    // Stop galvos, close camera
-    p_galvos.stopTask();
-    p_camera->Close();
     if(!p_stack_acquisition)
     {
         if (!p_server_mode) {
@@ -1515,6 +1541,7 @@ void GalvoController::slot_updateAngiogramAlgo(void)
 }
 
 /* Rotation Stage Slots */
+// TODO: move this to the rotation class ui.
 void GalvoController::activateRotationStage(bool flag){
     if(flag)
     {
@@ -1605,6 +1632,8 @@ void GalvoController::slot_server(void){
     // TODO: Check that the save directory was set
     p_server_type = QString("tile");
     p_finite_acquisition = true;
+    p_serverTransferDone = false;
+
     // Set the acquisition in "save" mode.
     bool initial_save_state = ui->checkBox_saveFringes->isChecked();
     ui->checkBox_saveFringes->setChecked(false);
@@ -1629,26 +1658,12 @@ void GalvoController::slot_server(void){
     this->setDisabled(true);
 
     // Creating the server
-    // Read values
-    int nx = ui->lineEdit_nx->text().toInt();
-    int ny = ui->lineEdit_ny->text().toInt();
-    int n_repeat = ui->lineEdit_fastaxisrepeat->text().toInt();
-    int n_extra = ui->lineEdit_extrapoints->text().toInt();
-    float line_rate = ui->lineEdit_linerate->text().toFloat();
-    // Insuring that the factor is always a multiple of n_repeat to facilitate angios
-    int factor = n_repeat;
-    if (line_rate/n_repeat > 30) factor = ((int) ((line_rate/n_repeat/30)+1))*n_repeat;
-    p_server = new OCTServer(nullptr, nx, n_extra, ny, n_repeat, factor);
+    p_server = new OCTServer();
     p_server_mode = true;
 
     // Configure Signals and Slots
     connect(p_server, SIGNAL(sig_change_filename(QString)), this, SLOT(setFileName(QString)));
     connect(p_server, SIGNAL(sig_start_scan()), this, SLOT(startScan()));
-    if (p_server_type == QString("tile")) {
-        connect(this, SIGNAL(sig_serverEndScan()), p_server, SLOT(slot_endConnection()));
-    } else if (p_server_type == QString("autofocus")) {
-        connect(this, SIGNAL(sig_serverEndScanAndSendImage(int, int, int, float*)), p_server, SLOT(slot_endConnectionAndSendImage(int, int, int, float*)));
-    }
     connect(p_server, SIGNAL(sig_set_request_type(QString)), this, SLOT(slot_server_set_type(QString)));
     connect(p_server, SIGNAL(sig_config_nx(QString)), ui->lineEdit_nx, SLOT(setText(QString)));
     connect(p_server, SIGNAL(sig_config_ny(QString)), ui->lineEdit_ny, SLOT(setText(QString)));
@@ -1680,7 +1695,7 @@ void GalvoController::slot_server_set_type(QString mode){
         p_server_type = mode;
         p_mutex.unlock();
         ui->checkBox_saveImages->setChecked(true);
-        ui->checkBox_saveRemote->setChecked(false);
+        ui->checkBox_saveRemote->setChecked(false);        
     }
     else if (mode == QString("autofocus")) {
         std::cerr << "Setting the OCT Server in 'Autofocus mode'" << std::endl;

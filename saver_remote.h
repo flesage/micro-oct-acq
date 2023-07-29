@@ -7,16 +7,14 @@
 #include <QVector>
 #include "fringefft.h"
 
-// TODO: use inheritance and an abstract saver class
-
-
 class Saver_Remote : public QThread
 {
     Q_OBJECT
 public:
     Saver_Remote(int n_alines = 100,
                  unsigned int n_repeat=1,
-                 int factor=1);
+                 int factor=1,
+                 int save_block_size=100);
     virtual ~Saver_Remote();
     void startSaving();
     void stopSaving();
@@ -30,6 +28,7 @@ private:
     int p_n_alines;
     int p_n_repeat;
     int p_factor;
+    int p_save_block_size;
     int p_frame_size;
     int p_buffer_size;
     int p_n_alines_in_one_volume;
@@ -42,6 +41,7 @@ private:
     QSemaphore p_free_spots;
     QSemaphore p_used_spots;
     bool p_started;
+    bool p_transfer_started;
 };
 #endif // SAVER_REMOTE_H
 

@@ -146,9 +146,6 @@ void SoftwareCamera::run()
         {
             imsaver_ptr->put((unsigned short*) p_current_copied_buffer);
         }
-        if(server_saver_ptr){
-            server_saver_ptr->put((unsigned short*) p_current_copied_buffer);
-        }
         if (rsaver_ptr) {
             rsaver_ptr->put((unsigned short*) p_current_copied_buffer);
         }

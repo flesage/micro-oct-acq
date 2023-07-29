@@ -7,6 +7,8 @@
 
 #define CAMERA_CLOCK "ctr0"
 #define CAMERA_CLOCK_PFI "PFI12"
+#define CAMERA_MIN_EXPOSURE 8.45  // microsecond
+#define CAMERA_MAX_EXPOSURE 100.0 // microsecond
 
 #define AICHANNELS "/OCT/ai0:1"
 #define AIAOSAMPRATE 10000

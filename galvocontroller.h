@@ -41,8 +41,10 @@ signals:
     void sig_updateAveragingAlgo(int);
     void sig_serverEndScan();
     void sig_serverEndScanAndSendImage(int, int, int, float*);
+    void sig_serverStartTransfer();
 
 private slots:
+    void updateExposure(int exposure_us);
     void updateSpeedPiezo(void);
     void turnPiezoOn(void);
     void turnPiezoOff(void);
@@ -172,6 +174,7 @@ private:
     DataSaver* p_data_saver;
     SaverImage* p_image_saver;
     Saver_Remote* p_remote_saver;
+    bool p_active_viewer;
     QTimer* view_timer;
     QTimer* rotation_timer;
     AnalogInput* p_ai;
@@ -183,6 +186,7 @@ private:
     float* p_disp_comp_vec_10x;
     float* p_disp_comp_vec_25x;
     QMutex p_mutex;
+    bool p_serverTransferDone;
 };
 
 

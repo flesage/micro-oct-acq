@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>821</width>
+    <width>910</width>
     <height>1042</height>
    </rect>
   </property>
@@ -916,43 +916,31 @@
               </widget>
              </item>
              <item>
-              <spacer name="horizontalSpacer_14">
+              <widget class="QSlider" name="horizontalSlider_exposure">
+               <property name="maximum">
+                <number>999</number>
+               </property>
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
                </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>40</width>
-                 <height>20</height>
-                </size>
+               <property name="tickPosition">
+                <enum>QSlider::NoTicks</enum>
                </property>
-              </spacer>
+               <property name="tickInterval">
+                <number>0</number>
+               </property>
+              </widget>
              </item>
              <item>
-              <widget class="QLineEdit" name="lineEdit_exposure">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
+              <widget class="QSpinBox" name="spinBox_exposure">
+               <property name="minimum">
+                <number>9</number>
                </property>
-               <property name="minimumSize">
-                <size>
-                 <width>50</width>
-                 <height>22</height>
-                </size>
+               <property name="maximum">
+                <number>100</number>
                </property>
-               <property name="maximumSize">
-                <size>
-                 <width>50</width>
-                 <height>22</height>
-                </size>
-               </property>
-               <property name="text">
-                <string>23</string>
-               </property>
-               <property name="alignment">
-                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               <property name="value">
+                <number>23</number>
                </property>
               </widget>
              </item>

@@ -6,38 +6,21 @@
 
 #include "octserver.h"
 
-// TODO: Refactor to remove the fft reconstruction from the server, send the f_fft as input
-// TODO: add method to reset scan parameters and fft
-// TODO: move the remote saver to a separate class
+// TODO: modify to send multiple volumes or to stream
 
-OCTServer::OCTServer(QWidget *parent, int nx, int n_extra, int n_alines, int n_repeat, int factor)
+
+OCTServer::OCTServer(QWidget *parent)
     : QDialog(parent)
     , statusLabel(new QLabel)
-    , tcpServer(new QTcpServer),
-      f_fft(n_repeat, factor) // TODO: use n_repeat and factor for the f_fft constructor
+    , tcpServer(new QTcpServer)
 {
     statusLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
     p_request_type = REQUEST_TILE;
-    p_nx = nx;
-    p_n_extra = n_extra;
-    p_n_alines = n_alines;
-    p_put_done = 0;
-    p_factor = factor;
-    p_current_pos = 0;
-    p_frame_size = (p_nx + p_n_extra)*LINE_ARRAY_SIZE * p_factor;
-    p_buffer_size = p_frame_size * 2;
-
+    p_transfer_requested = false;
 
     initServer();
     auto quitButton = new QPushButton(tr("Quit"));
     quitButton->setAutoDefault(false);
-
-    // Prepare the data reconstruction
-    float dimz = 3.5; // FIXME: dummy axial resolution
-    float dimx = 3.0; // FIXME: dummy lateral resolution
-    f_fft.init(LINE_ARRAY_SIZE, factor*(p_nx + p_n_extra), dimz, dimx);
-    p_fringe_buffer = new unsigned short[p_buffer_size];
-    p_image_buffer = new float[p_frame_size/2];
 
     // Connections
     connect(quitButton, &QAbstractButton::clicked, this, &QWidget::close);
@@ -97,15 +80,20 @@ void OCTServer::initServer()
 
 }
 
-void OCTServer::put(unsigned short* fringe)
-{
-    memcpy(&p_fringe_buffer[(p_current_pos % p_buffer_size)*p_frame_size], fringe, p_frame_size*sizeof(unsigned short));
-    p_current_pos++;
-}
-
 void OCTServer::slot_endConnection()
 {
-    std::cerr << "octserver::Closing the connection ";
+    if (p_request_type == REQUEST_BSCAN_NOSAVE){ // This is done in another method
+        return;
+    }
+    p_mutex.lock();
+    if(p_transfer_requested){
+        p_mutex.unlock();
+        return;
+    } else{
+        p_transfer_requested=true;
+        p_mutex.unlock();
+    }
+    std::cerr << "OCTServer::slot_endConnection ";
     QByteArray response;
     QDataStream out(&response, QIODevice::WriteOnly);
     int n_bytes;
@@ -116,21 +104,6 @@ void OCTServer::slot_endConnection()
         n_bytes = 9 * sizeof(char) + 2 * sizeof(int); // QDataStream magic number + n_bytes + Message
         out << n_bytes;
         out << "OCT_done";
-        break;
-    case REQUEST_BSCAN_NOSAVE:
-        f_fft.image_reconstruction(p_fringe_buffer, p_image_buffer, 1, 1024);
-        n_bytes = (p_nx + p_n_extra) * p_factor * (LINE_ARRAY_SIZE / 2) * sizeof(float) + 4 * sizeof(int);
-
-        // Add the data to the byte array
-        out << n_bytes;
-        out << (int) p_nx + p_n_extra; // nx
-        out << (int) p_factor; // ny
-        out << (int) LINE_ARRAY_SIZE / 2;
-
-        for (int i=0; i< (p_nx + p_n_extra) * p_factor * (LINE_ARRAY_SIZE / 2); i++) {
-           out << p_image_buffer[i];
-        }
-        p_current_pos = 0;
         break;
     case REQUEST_CONFIG:
         n_bytes = 16 * sizeof(char) + 2 * sizeof(int);
@@ -146,22 +119,28 @@ void OCTServer::slot_endConnection()
     std::cerr << "(transmitting " << n_bytes << " bytes)... ";
     clientConnection->write(response);
     std::cerr << " done!" << std::endl;
-    p_mutex.lock();
-    p_put_done = 0;
-    p_mutex.unlock();
 }
 
-void OCTServer::slot_endConnectionAndSendImage(int nx, int ny, int nz, float* image_buffer)
+void OCTServer::slot_endConnectionAndSendImage(int nx, int ny, int nz, float* data)
 {
-    std::cerr << "octserver::Closing the connection (sending image) ";
+    p_mutex.lock();
+    if (p_transfer_requested)
+    {
+        p_mutex.unlock();
+        return;
+    } else {
+        p_mutex.unlock();
+        p_transfer_requested = true;
+    }
+    std::cerr << "OCTServer::slot_endConnectionAndSendImage ";
+
     QByteArray response;
     QDataStream out(&response, QIODevice::WriteOnly);
     out.setVersion(QDataStream::Qt_6_4);
     out.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
-    std::cerr << nx << ',' << ny << ',' << nz << std::endl;
-
     int n_bytes = nx * ny * nz * sizeof(float) + 4 * sizeof(int);
+    std::cerr << "(transmitting " << n_bytes << " bytes)... ";
 
     // Add the data to the byte array
     out << n_bytes;
@@ -170,11 +149,9 @@ void OCTServer::slot_endConnectionAndSendImage(int nx, int ny, int nz, float* im
     out << nz;
 
     for (int i=0; i< nx * ny * nz; i++) {
-       out << image_buffer[i];
-       std::cerr << i << std::endl;
+       out << data[i];
     }
 
-    std::cerr << "(transmitting " << n_bytes << " bytes)... ";
     clientConnection->write(response);
     std::cerr << " done!" << std::endl;
 }
@@ -198,8 +175,12 @@ QString OCTServer::getHostAddress()
     return ipAddress;
 }
 
+// TODO: change the request names
 void OCTServer::slot_parseRequest()
 {
+    p_mutex.lock();
+    p_transfer_requested = false;
+    p_mutex.unlock();
     QByteArray total_data, buffer;
     while(1) {
         buffer = clientConnection->read(1024);
@@ -262,10 +243,8 @@ void OCTServer::slot_parseRequest()
 
 void OCTServer::slot_startConnection()
 {
-    std::cerr << "octserver::Fetching the next pending connection...";
+    std::cerr << "OCTServer::slot_startConnection" << std::endl;
     clientConnection = tcpServer->nextPendingConnection();
-    std::cerr << "got it!" << std::endl;
-
     connect(clientConnection, &QIODevice::readyRead, this, &OCTServer::slot_parseRequest);
 }
 
