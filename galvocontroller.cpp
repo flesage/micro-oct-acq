@@ -1001,7 +1001,7 @@ void GalvoController::startScan()
     }
 
     // Reset connections when we receive the end of transfer signal
-    if (p_server_type == QString("tile")) {
+    if (p_server_mode && p_server_type == QString("tile")) {
         connect(this, SIGNAL(sig_serverEndScan()), p_server, SLOT(slot_endConnection()));
     }
 
