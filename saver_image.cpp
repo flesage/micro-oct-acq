@@ -1,10 +1,10 @@
-#include "imagedatasaver.h"
+#include "saver_image.h"
 #include <stdio.h>
 #include <QDir>
 #include <iostream>
 #include "config.h"
 
-ImageDataSaver::ImageDataSaver(int n_alines, int save_block_size, int top_z, int bottom_z, unsigned int n_repeat, int factor) : p_n_alines(n_alines), p_save_block_size(save_block_size),
+SaverImage::SaverImage(int n_alines, int save_block_size, int top_z, int bottom_z, unsigned int n_repeat, int factor) : p_n_alines(n_alines), p_save_block_size(save_block_size),
     p_free_spots(2*p_save_block_size), p_used_spots(0), p_current_pos(0), f_fft(n_repeat,factor)
 
 {
@@ -18,38 +18,37 @@ ImageDataSaver::ImageDataSaver(int n_alines, int save_block_size, int top_z, int
     p_path_name = QDir::homePath();
     p_info_txt="Scan info\n";
     //TODO Move dimz dimx to doppler call
-    f_fft.init(LINE_ARRAY_SIZE,p_n_alines,3.5, 3.5);
+    f_fft.init(LINE_ARRAY_SIZE, p_n_alines, 3.5, 3.5);
     p_truncated_image = new float[(p_bottom_z-p_top_z+1)*p_n_alines];
-    //p_truncated_image = new float[2048*p_n_alines];
 }
 
-ImageDataSaver::~ImageDataSaver()
+SaverImage::~SaverImage()
 {
     delete [] p_data_buffer;
     delete [] p_truncated_image;
 }
 
-void ImageDataSaver::addInfo(QString new_info)
+void SaverImage::addInfo(QString new_info)
 {
     p_info_txt += new_info;
 }
 
-void ImageDataSaver::setDatasetName(QString name)
+void SaverImage::setDatasetName(QString name)
 {
     p_dataset_name = name;
 }
-void ImageDataSaver::setDatasetPath(QString path)
+void SaverImage::setDatasetPath(QString path)
 {
     p_path_name = path;
 }
 
-void ImageDataSaver::startSaving()
+void SaverImage::startSaving()
 {
     p_started = true;
     start();
 }
 
-void ImageDataSaver::stopSaving()
+void SaverImage::stopSaving()
 {
     p_mutex.lock();
     p_started = false;
@@ -57,7 +56,7 @@ void ImageDataSaver::stopSaving()
     wait();
 }
 
-void ImageDataSaver::put(unsigned short* frame)
+void SaverImage::put(unsigned short* frame)
 {
     p_free_spots.acquire();
     memcpy(&p_data_buffer[(p_current_pos % p_buffer_size)*p_frame_size],frame,p_frame_size*sizeof(unsigned short));
@@ -67,7 +66,7 @@ void ImageDataSaver::put(unsigned short* frame)
     emit available(p_free_spots.available());
 }
 
-void ImageDataSaver::writeInfoFile()
+void SaverImage::writeInfoFile()
 {
     QDir parent_dir = QDir::cleanPath(p_path_name);
     parent_dir.mkdir(p_dataset_name);
@@ -80,7 +79,7 @@ void ImageDataSaver::writeInfoFile()
     fclose(fp);
 }
 
-void ImageDataSaver::run()
+void SaverImage::run()
 {
     QDir parent_dir = QDir::cleanPath(p_path_name);
     parent_dir.mkdir(p_dataset_name);
@@ -104,7 +103,7 @@ void ImageDataSaver::run()
         }
         // Acquire a block of data
         p_used_spots.acquire();
-        f_fft.image_reconstruction(&p_data_buffer[(index % p_buffer_size)*p_frame_size], p_truncated_image,p_top_z, p_bottom_z, 100);
+        f_fft.image_reconstruction(&p_data_buffer[(index % p_buffer_size)*p_frame_size], p_truncated_image, p_top_z, p_bottom_z);
         fwrite(p_truncated_image, sizeof(float), (p_bottom_z-p_top_z+1)*p_n_alines, fp);
         fflush(fp);
         p_free_spots.release();

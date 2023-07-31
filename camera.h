@@ -9,8 +9,10 @@
 #include "imageviewer.h"
 #include "oct3dorthogonalviewer.h"
 #include "datasaver.h"
-#include "imagedatasaver.h"
+#include "saver_image.h"
 #include "niimaq.h"
+#include "octserver.h"
+#include "saver_remote.h"
 
 
 class Camera : public QThread
@@ -30,7 +32,9 @@ public:
     void setImageViewer(ImageViewer* ptr);
     void set3dViewer(oct3dOrthogonalViewer* ptr);
     void setDataSaver(DataSaver* ptr);
-    void setImageDataSaver(ImageDataSaver* ptr);
+    void setServerDataSaver(OCTServer* ptr);
+    void setImageDataSaver(SaverImage* ptr);
+    void setRemoteSaver(Saver_Remote* ptr);
 
 signals:
     void volume_done();
@@ -51,7 +55,9 @@ private:
     ImageViewer* imv_ptr;
     oct3dOrthogonalViewer* im3dv_ptr;
     DataSaver* dsaver_ptr;
-    ImageDataSaver* imsaver_ptr;
+    SaverImage* imsaver_ptr;
+    OCTServer* server_saver_ptr;
+    Saver_Remote* rsaver_ptr;
     unsigned int p_n_frames_per_volume;
 };
 

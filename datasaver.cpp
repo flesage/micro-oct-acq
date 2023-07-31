@@ -3,8 +3,12 @@
 #include <QDir>
 #include <iostream>
 
-DataSaver::DataSaver(int n_alines, int save_block_size) : p_n_alines(n_alines), p_save_block_size(save_block_size),
-    p_free_spots(2*p_save_block_size), p_used_spots(0), p_current_pos(0)
+DataSaver::DataSaver(int n_alines, int save_block_size) :
+    p_n_alines(n_alines),
+    p_save_block_size(save_block_size),
+    p_free_spots(2*p_save_block_size),
+    p_used_spots(0),
+    p_current_pos(0)
 
 {
     p_frame_size = n_alines*2048;
@@ -97,7 +101,10 @@ void DataSaver::run()
         }
         // Acquire a block of data
         p_used_spots.acquire();
-        fwrite(&p_data_buffer[(index % p_buffer_size)*p_frame_size], sizeof(unsigned short), p_frame_size, fp);
+        fwrite(&p_data_buffer[(index % p_buffer_size)*p_frame_size],
+               sizeof(unsigned short),
+               p_frame_size,
+               fp);
         fflush(fp);
         p_free_spots.release();
         index++;

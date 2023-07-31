@@ -18,7 +18,7 @@ public:
     void init( int nz, int nx, float dimz, float dimx);
     void set_disp_comp_vect(float* disp_comp_vector);
     void interp_and_do_fft(unsigned short* in_fringe,unsigned char* out_data, float p_image_threshold, float p_hanning_threshold);
-    void image_reconstruction(unsigned short* in_fringe, float* out_data, int p_top_z, int p_bottom_z, float p_hanning_threshold );
+    void image_reconstruction(unsigned short* in_fringe, float* out_image, int z_top, int z_bottom);
     void get_angio(unsigned short* in_fringe,af::array* out_data, float p_image_threshold, float p_hanning_threshold);
     void compute_hilbert(unsigned short* in_fringe,unsigned char* out_data, float p_hanning_threshold);
     void init_doppler(float msec_fwhm, float line_period, float spatial_fwhm_um);

@@ -3,7 +3,9 @@
 
 #include "softwarecamera.h"
 
-SoftwareCamera::SoftwareCamera(int n_lines, float exposure, unsigned int n_frames_per_volume)
+SoftwareCamera::SoftwareCamera(int n_lines,
+                               float exposure,
+                               unsigned int n_frames_per_volume)
 {
     p_n_lines = n_lines;
     p_exposure = exposure;
@@ -11,7 +13,10 @@ SoftwareCamera::SoftwareCamera(int n_lines, float exposure, unsigned int n_frame
     fv_ptr = 0;
     imv_ptr = 0;
     im3dv_ptr = 0;
+    imsaver_ptr=0;
     dsaver_ptr=0;
+    rsaver_ptr=0;
+    server_saver_ptr=0;
     p_current_copied_buffer = 0;
     p_n_frames_per_volume=n_frames_per_volume;
 
@@ -41,6 +46,23 @@ void SoftwareCamera::setDataSaver(DataSaver* ptr)
 {
    dsaver_ptr = ptr;
 }
+
+
+void SoftwareCamera::setImageDataSaver(SaverImage* ptr)
+{
+    imsaver_ptr = ptr;
+}
+
+void SoftwareCamera::setRemoteSaver(Saver_Remote* ptr)
+{
+    rsaver_ptr = ptr;
+}
+
+void SoftwareCamera::setServerDataSaver(OCTServer* ptr)
+{
+    server_saver_ptr = ptr;
+}
+
 
 void SoftwareCamera::SetCameraString(const char* attribute, const char *value)
 {
@@ -120,6 +142,14 @@ void SoftwareCamera::run()
         {
             dsaver_ptr->put((unsigned short*) p_current_copied_buffer);
         }
+        if(imsaver_ptr)
+        {
+            imsaver_ptr->put((unsigned short*) p_current_copied_buffer);
+        }
+        if (rsaver_ptr) {
+            rsaver_ptr->put((unsigned short*) p_current_copied_buffer);
+        }
+
         // Needs to be fast
         n_frames_read++;
         if(n_frames_read % p_n_frames_per_volume==0)

@@ -6,11 +6,13 @@
 #include <QSettings>
 #include <QStringList>
 #include <QTimer>
+#include <QMutex>
 #include "galvos.h"
 #include "camera.h"
 #include "softwarecamera.h"
 #include "datasaver.h"
-#include "imagedatasaver.h"
+#include "saver_image.h"
+#include "saver_remote.h"
 #include "fringeviewer.h"
 #include "imageviewer.h"
 #include "float64datasaver.h"
@@ -38,8 +40,11 @@ signals:
     void sig_updateAveragingFlag(bool);
     void sig_updateAveragingAlgo(int);
     void sig_serverEndScan();
+    void sig_serverEndScanAndSendImage(int, int, int, float*);
+    void sig_serverStartTransfer();
 
 private slots:
+    void updateExposure(int exposure_us);
     void updateSpeedPiezo(void);
     void turnPiezoOn(void);
     void turnPiezoOff(void);
@@ -108,7 +113,10 @@ private slots:
     void slot_rotation_stop(void);
     void slot_rotation_stop_immediately(void);
     void slot_rotation_update_position(void);
+
+    // Server
     void slot_server(void);
+    void slot_server_set_type(QString);
 
 private:
     Ui::OCTGalvosForm *ui;
@@ -147,7 +155,9 @@ private:
     int p_acq_index;
     int p_n_volumes;
     QString p_datasetname;
+    OCTServer* p_server;
     bool p_server_mode;
+    QString p_server_type;
     bool p_server_stop_asked;
 #ifndef SIMULATION
     Camera* p_camera;
@@ -162,7 +172,9 @@ private:
     ImageViewer* p_image_view;
     oct3dOrthogonalViewer* p_ortho_view;
     DataSaver* p_data_saver;
-    ImageDataSaver* p_image_saver;
+    SaverImage* p_image_saver;
+    Saver_Remote* p_remote_saver;
+    bool p_active_viewer;
     QTimer* view_timer;
     QTimer* rotation_timer;
     AnalogInput* p_ai;
@@ -173,6 +185,8 @@ private:
     bool flagMotor;
     float* p_disp_comp_vec_10x;
     float* p_disp_comp_vec_25x;
+    QMutex p_mutex;
+    bool p_serverTransferDone;
 };
 
 

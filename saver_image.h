@@ -1,5 +1,5 @@
-#ifndef ImageDataSaver_H
-#define ImageDataSaver_H
+#ifndef SaverImage_H
+#define SaverImage_H
 
 #include <QThread>
 #include <QMutex>
@@ -7,12 +7,12 @@
 #include <QVector>
 #include "fringefft.h"
 
-class ImageDataSaver : public QThread
+class SaverImage : public QThread
 {
     Q_OBJECT
 public:
-    ImageDataSaver(int n_alines = 100, int save_block_size=512, int p_top_z=0, int p_bottom_z=512, unsigned int n_repeat=1, int factor=1);
-    virtual ~ImageDataSaver();
+    SaverImage(int n_alines = 100, int save_block_size=512, int p_top_z=0, int p_bottom_z=512, unsigned int n_repeat=1, int factor=1);
+    virtual ~SaverImage();
     void setDatasetName(QString name);
     void setDatasetPath(QString path);
     void addInfo(QString new_info);
@@ -45,4 +45,4 @@ private:
     bool p_started;
 };
 
-#endif // ImageDataSaver_H
+#endif // SaverImage_H
