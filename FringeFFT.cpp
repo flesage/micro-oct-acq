@@ -42,7 +42,8 @@ void FringeFFT::init(int nz, int nx, float dimz, float dimx)
     p_angio_algo=0;
     p_background = af::array(p_nz, 1, f32);
 
-//    // Read the background
+
+    // Read the background
 //    double* tmp_bg = new double[p_nz];
 //    FILE* fp_bg = fopen("C:\\Users\\Public\\Documents\\background_fringe.dat", "rb");
 //    if(fp_bg == 0)
