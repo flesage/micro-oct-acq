@@ -90,6 +90,7 @@ private slots:
     void slot_updateImageThreshold();
     void slot_updateHanningThreshold();
     void slot_openMotorPort(bool flag);
+    void slot_setStagePosition(float x, float y, float z);
     void slot_doMosaic();
     void slot_doStack();
     void updateCenterLineEdit(void);

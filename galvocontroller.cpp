@@ -21,6 +21,10 @@ GalvoController::GalvoController() :
     ui(new Ui::OCTGalvosForm), p_galvos(GALVOS_DEV,GALVOS_AOX,GALVOS_AOY), p_settings("Polytechnique/LIOM","OCT"),
     p_ai(0), p_ai_data_saver(0)
 {
+    #ifdef SIMULATION
+        std::cerr << "USING THE SIMULATION MODE!" << std::endl;
+    #endif
+
     ui->setupUi(this);
     p_finite_acquisition = false;
     p_stack_acquisition = false;
@@ -436,6 +440,13 @@ void GalvoController::slot_openMotorPort(bool flag)
         motors->ClosePort();
     }
 
+}
+
+void GalvoController::slot_setStagePosition(float x, float y, float z)
+{
+    ui->lineEdit_stageXPos->setText(QString::number(x, 'g', 6));
+    ui->lineEdit_stageYPos->setText(QString::number(y, 'g', 6));
+    ui->lineEdit_stageZPos->setText(QString::number(z, 'g', 6));
 }
 
 void GalvoController::slot_doMosaic()
@@ -928,6 +939,12 @@ void GalvoController::startScan()
         info=info+QString("start_line_y: %1\n").arg(p_start_line_y);
         info=info+QString("stop_line_y: %1\n").arg(p_stop_line_y);
         info=info+QString("line_length: %1\n").arg(p_line_length);
+    }
+    if (p_server_mode) // Save the stage position.
+    {
+        info = info + QString("stage_x_pos_mm: %1\n").arg(ui->lineEdit_stageXPos->text());
+        info = info + QString("stage_y_pos_mm: %1\n").arg(ui->lineEdit_stageYPos->text());
+        info = info + QString("stage_z_pos_mm: %1\n").arg(ui->lineEdit_stageZPos->text());
     }
 
     // Fringe Saver
@@ -1669,6 +1686,7 @@ void GalvoController::slot_server(void){
     connect(p_server, SIGNAL(sig_config_ny(QString)), ui->lineEdit_ny, SLOT(setText(QString)));
     connect(p_server, SIGNAL(sig_config_fov_x(QString)), ui->lineEdit_width, SLOT(setText(QString)));
     connect(p_server, SIGNAL(sig_config_fov_y(QString)), ui->lineEdit_height, SLOT(setText(QString)));
+    connect(p_server, SIGNAL(sig_config_pos(float, float, float)), this, SLOT(slot_setStagePosition(float,float,float)));
 
     // Executing the server
     p_server->exec();

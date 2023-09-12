@@ -34,6 +34,7 @@ signals:
     void sig_config_ny(QString);
     void sig_config_fov_x(QString);
     void sig_config_fov_y(QString);
+    void sig_config_pos(float x , float y, float z);
 
 private slots:
     void slot_startConnection();

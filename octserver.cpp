@@ -219,7 +219,14 @@ void OCTServer::slot_parseRequest()
            int fov_y = data.split(":")[2].toFloat();
            std::cerr << "OCTServer::slot_parseRequest|Setting fov_y=" << fov_y << std::endl;
            emit sig_config_fov_y(QString::number(fov_y));
-       } else {
+       } else if (config == "x_mm") {
+           float x_mm = data.split(":")[2].toFloat();
+           float y_mm = data.split(":")[4].toFloat();
+           float z_mm = data.split(":")[6].toFloat();
+           std::cerr << "OCTServer::slot_parseRequest|Setting x_mm=" << x_mm << ", y_mm=" << y_mm << ", z_mm=" << z_mm << std::endl;
+           emit sig_config_pos(x_mm, y_mm, z_mm);
+       }
+       else {
            std::cerr << "OCTServer::slot_parseRequest|Unknown command:" << data.toStdString() << std::endl;
            p_request_type = REQUEST_UNKNOWN;
        }
