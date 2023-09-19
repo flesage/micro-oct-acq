@@ -351,6 +351,10 @@ void ImageViewer::updateView()
         painter.setPen(p_line_pen);
         painter.drawLine(p_start_line-1, 0,  p_start_line-1, p_n_alines);
         painter.drawLine(p_stop_line-1, 0,  p_stop_line-1, p_n_alines);
+
+        // Add a focus line
+        painter.setPen(QPen(QColor(0, 255, 0, 128), 3));
+        painter.drawLine(p_focus_line-1, 0, p_focus_line, p_n_alines);
     }
 
     // Set as pixmap
@@ -370,17 +374,19 @@ void ImageViewer::put(unsigned short* data)
     }
 }
 
-void ImageViewer::checkLine(bool lineStatus, int startLine, int stopLine)
+void ImageViewer::checkLine(bool lineStatus, int startLine, int stopLine, int focusLine)
 {
     p_line_status=lineStatus;
     p_start_line=startLine;
     p_stop_line=stopLine;
+    p_focus_line=focusLine;
 }
 
-void ImageViewer::updateViewLinePositions(bool lineStatus, int startLine, int stopLine)
+void ImageViewer::updateViewLinePositions(bool lineStatus, int startLine, int stopLine, int focusLine)
 {
     p_line_status=lineStatus;
     p_start_line=startLine;
     p_stop_line=stopLine;
+    p_focus_line=focusLine;
 }
 

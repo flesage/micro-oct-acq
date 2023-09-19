@@ -36,7 +36,7 @@ public:
 signals:
     void sig_updateImageThreshold(float);
     void sig_updateHanningThreshold(float);
-    void sig_updateViewLinePositions(bool,int,int);
+    void sig_updateViewLinePositions(bool,int,int,int);
     void sig_updateAveragingFlag(bool);
     void sig_updateAveragingAlgo(int);
     void sig_serverEndScan();
@@ -149,6 +149,7 @@ private:
     float p_line_length;
     int p_start_viewline;
     int p_stop_viewline;
+    int p_focus_viewline;
     QString p_line_number_str;
     Galvos p_galvos;
     bool p_finite_acquisition;

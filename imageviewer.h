@@ -45,9 +45,9 @@ public slots:
     void updateHanningThreshold(float);
     void updateAngioAlgo(int);
     void setCurrentViewModeStruct();
-    void checkLine(bool,int,int);
+    void checkLine(bool,int,int,int);
     void updateLineScanPos(int start_x, int start_y, int stop_x, int stop_y);
-    void updateViewLinePositions(bool, int, int);
+    void updateViewLinePositions(bool, int, int, int);
     void updateAngioAverageFlag(bool);
 
 protected:
@@ -80,6 +80,7 @@ private:
     bool p_line_status;
     int p_start_line;
     int p_stop_line;
+    int p_focus_line;
     QPen p_line_pen;
     unsigned int p_frame_number;
     int p_ny;

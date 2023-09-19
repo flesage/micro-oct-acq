@@ -63,6 +63,7 @@ GalvoController::GalvoController() :
 
     p_start_viewline = ui->lineEdit_startLine->text().toInt();
     p_stop_viewline = ui->lineEdit_stopLine->text().toInt();
+    p_focus_viewline = ui->lineEdit_focus->text().toInt();
 
     p_server = 0;
     p_server_mode = false;
@@ -136,6 +137,7 @@ GalvoController::GalvoController() :
 
     connect(ui->lineEdit_startLine,SIGNAL(editingFinished()),this,SLOT(slot_updateViewLinePositions()));
     connect(ui->lineEdit_stopLine,SIGNAL(editingFinished()),this,SLOT(slot_updateViewLinePositions()));
+    connect(ui->lineEdit_focus,SIGNAL(editingFinished()),this,SLOT(slot_updateViewLinePositions()));
     connect(ui->checkBox_view_line,SIGNAL(clicked(bool)),this,SLOT(slot_updateViewLinePositions()));
 
     connect(ui->comboBox_scantype, SIGNAL(currentTextChanged(const QString&)), this, SLOT(scanTypeChosen(const QString&)));
@@ -927,8 +929,11 @@ void GalvoController::startScan()
     {
         p_start_viewline = ui->lineEdit_startLine->text().toInt();
         p_stop_viewline = ui->lineEdit_stopLine->text().toInt();
+        p_focus_viewline = ui->lineEdit_focus->text().toInt();
         info=info+QString("top_z: %1\n").arg(p_start_viewline);
         info=info+QString("bottom_z: %1\n").arg(p_stop_viewline);
+        info=info+QString("focus_z: %1\n").arg(p_focus_viewline);
+
     }
     QString currentObjective = ui->comboBox_objective->currentText();
     info=info+QString("objective: %1\n").arg(currentObjective.toUtf8().constData());
@@ -1058,7 +1063,7 @@ void GalvoController::startScan()
         p_image_view->updateHanningThreshold(ui->lineEdit_hanningeps->text().toFloat());
         p_image_view->updateImageThreshold(ui->lineEdit_logeps->text().toFloat());
         p_image_view->updateAngioAlgo(ui->comboBox_angio->currentIndex());
-        p_image_view->checkLine(show_line_flag,p_start_viewline,p_stop_viewline);
+        p_image_view->checkLine(show_line_flag,p_start_viewline,p_stop_viewline,p_focus_viewline);
         int dispersion = ui->comboBox_dispersion->currentIndex();
         if(dispersion == 2 && p_disp_comp_vec_10x != 0) p_image_view->set_disp_comp_vect(p_disp_comp_vec_10x);
         if(dispersion == 4 && p_disp_comp_vec_25x != 0) p_image_view->set_disp_comp_vect(p_disp_comp_vec_25x);
@@ -1071,7 +1076,7 @@ void GalvoController::startScan()
         connect(this,SIGNAL(sig_updateAveragingAlgo(int)),p_image_view,SLOT(updateAngioAlgo(int)));
         connect(this,SIGNAL(sig_updateHanningThreshold(float)),p_image_view,SLOT(updateHanningThreshold(float)));
         connect(this,SIGNAL(sig_updateImageThreshold(float)),p_image_view,SLOT(updateImageThreshold(float)));
-        connect(this,SIGNAL(sig_updateViewLinePositions(bool,int,int)),p_image_view,SLOT(updateViewLinePositions(bool,int,int)));
+        connect(this,SIGNAL(sig_updateViewLinePositions(bool,int,int,int)),p_image_view,SLOT(updateViewLinePositions(bool,int,int,int)));
         connect(p_image_view,SIGNAL(sig_updateLineScanPos(int,int,int,int)),this,SLOT(setLineScanPos(int,int,int,int)));
 
         if(ui->checkBox_placeImage->isChecked())
@@ -1541,8 +1546,9 @@ void GalvoController::slot_updateViewLinePositions(void)
 {
     p_start_viewline = ui->lineEdit_startLine->text().toInt();
     p_stop_viewline = ui->lineEdit_stopLine->text().toInt();
+    p_focus_viewline = ui->lineEdit_focus->text().toInt();
     bool show_line_flag=ui->checkBox_view_line->isChecked();
-    emit sig_updateViewLinePositions(show_line_flag,p_start_viewline,p_stop_viewline);
+    emit sig_updateViewLinePositions(show_line_flag,p_start_viewline,p_stop_viewline,p_focus_viewline);
 }
 
 void GalvoController::slot_updateAverageAngiogram(void)
