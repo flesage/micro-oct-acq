@@ -172,6 +172,7 @@ QString OCTServer::getHostAddress()
     if (ipAddress.isEmpty())
         ipAddress = QHostAddress(QHostAddress::LocalHost).toString();
 
+
     return ipAddress;
 }
 
@@ -225,7 +226,15 @@ void OCTServer::slot_parseRequest()
            float z_mm = data.split(":")[6].toFloat();
            std::cerr << "OCTServer::slot_parseRequest|Setting x_mm=" << x_mm << ", y_mm=" << y_mm << ", z_mm=" << z_mm << std::endl;
            emit sig_config_pos(x_mm, y_mm, z_mm);
-       }
+       } else if ( config == "z_min") {
+           int z_min = data.split(":")[2].toInt();
+           std::cerr << "OCTServer::slot_parseRequest|Setting z_min=" << z_min << std::endl;
+           emit sig_config_zmin(QString::number(z_min));
+;       } else if ( config == "z_max") {
+           int z_max = data.split(":")[2].toInt();
+           std::cerr << "OCTServer::slot_parseRequest|Setting z_max=" << z_max << std::endl;
+           emit sig_config_zmax(QString::number(z_max));
+;       }
        else {
            std::cerr << "OCTServer::slot_parseRequest|Unknown command:" << data.toStdString() << std::endl;
            p_request_type = REQUEST_UNKNOWN;

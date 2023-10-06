@@ -1693,6 +1693,9 @@ void GalvoController::slot_server(void){
     connect(p_server, SIGNAL(sig_config_fov_x(QString)), ui->lineEdit_width, SLOT(setText(QString)));
     connect(p_server, SIGNAL(sig_config_fov_y(QString)), ui->lineEdit_height, SLOT(setText(QString)));
     connect(p_server, SIGNAL(sig_config_pos(float, float, float)), this, SLOT(slot_setStagePosition(float,float,float)));
+    connect(p_server, SIGNAL(sig_config_zmin(QString)), ui->lineEdit_startLine, SLOT(setText(QString)));
+    connect(p_server, SIGNAL(sig_config_zmax(QString)), ui->lineEdit_stopLine, SLOT(setText(QString)));
+
 
     // Executing the server
     p_server->exec();
