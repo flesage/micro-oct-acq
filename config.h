@@ -3,7 +3,7 @@
 
 #define OCT_LOCATION "POLYMTL" // you can also use "POLYMTL"
 
-#define GALVOS_DEV "/OCT"
+#define GALVOS_DEV "/Dev1"
 #define GALVOS_AOX "ao0"
 #define GALVOS_AOY "ao1"
 
@@ -12,7 +12,7 @@
 #define CAMERA_MIN_EXPOSURE 8.45  // microsecond
 #define CAMERA_MAX_EXPOSURE 100.0 // microsecond
 
-#define AICHANNELS "/OCT/ai0:1"
+#define AICHANNELS "/Dev1/ai0:1"
 #define AIAOSAMPRATE 10000
 #define N_AI_CHANNELS 2
 
