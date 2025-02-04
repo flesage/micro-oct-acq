@@ -297,7 +297,8 @@ void ImageViewer::updateView()
     case STRUCT:
     {
         p_mutex.lock();
-        f_fft.interp_and_do_fft(p_data_buffer, p_image.bits(),p_image_threshold, p_hanning_threshold);
+        //f_fft.interp_and_do_fft(p_data_buffer, p_image.bits(),p_image_threshold, p_hanning_threshold);
+        f_fft.image_reconstruction_bouma(p_data_buffer, p_image.bits());
         p_mutex.unlock();
         rect.setRect(0,0,p_view_depth,p_n_alines);
         tmp = p_image.copy(rect);

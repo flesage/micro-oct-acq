@@ -83,8 +83,8 @@ GalvoController::GalvoController() :
     rotation_timer = new QTimer();
 
     double radians_per_volt = 2*3.14159265359/(360*0.8);
-    double f1=50.0;
-    double f2=100.0;
+    double f1=100.0;
+    double f2=150.0;
     double fobj=18.0;
     double scale_um_per_volt=(2*fobj*f1/f2*radians_per_volt)*1000.0;
     Converter unit_converter;
@@ -839,6 +839,10 @@ void GalvoController::startScan()
     case 5:
         f1=10.0;
         f2=10.0;
+        break;
+    case 6:
+        f1=100.0;
+        f2=150.0;
         break;
     }
 

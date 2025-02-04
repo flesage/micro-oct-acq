@@ -28,6 +28,7 @@ public:
     void pre_compute_positions(int n_ang_pts, int n_radial_pts);
     void get_radial_img(unsigned short* in_fringe, float* out_image);
     void setAngioAlgo(int angio_algo);
+    void image_reconstruction_bouma(unsigned short* in_fringe, unsigned char* out_image);
 private:
     af::array unwrap(const af::array& angle);
     af::array laplacian(const af::array& arr, bool inverse);
@@ -56,11 +57,16 @@ private:
     af::array p_struct;
     af::array p_norm_signal;
     af::array p_background;
+    af::array p_preTom;
     int p_hpf_npts;
     float p_line_period;
     int p_n_radial_pts;
     float p_spatial_fwhm_um;
     af::array p_coord;
+    int KSPACE_KMIN = 852;
+    int KSPACE_KMAX = 1620;
+    int KSPACE_N_SAMPLES = 6144;
+    int KSPACE_N_OUTPUT = 1024;
 };
 
 #endif /* FRINGEFFT_H_ */

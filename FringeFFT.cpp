@@ -5,6 +5,7 @@
  *      Author: flesage
  */
 
+#include "config.h"
 #include "FringeFFT.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,9 +15,10 @@
 #define PI ((float)3.1415926)
 
 FringeFFT::FringeFFT(unsigned int n_repeat, int factor) : p_nz(0),
-    p_nx (0), p_n_repeat(n_repeat), p_factor(factor), p_fringe(0,0,f32), p_interpfringe(0,0,f32), p_signal(0,0,f32),p_filt_signal(0,0,c32),
+    p_nx (0), p_n_repeat(n_repeat), p_factor(factor), p_fringe(0,0,f32), p_interpfringe(0,0,c32), p_signal(0,0,f32),p_filt_signal(0,0,c32),
     p_phase(0,0,f32),  p_hann_dispcomp(0,0,f32), p_mean_fringe(0,0,f32),
-    p_hp_filter(0,0,f32), p_sparse_interp(0,0,f32), p_pos0(0,0,f32), p_pos1(0,0,f32), p_angio_stack(0,0,0,f32), p_angio(0,0,f32),p_struct(0,0,f32), p_norm_signal(0,0,f32)
+    p_hp_filter(0,0,f32), p_sparse_interp(0,0,f32), p_pos0(0,0,f32), p_pos1(0,0,f32), p_angio_stack(0,0,0,f32), p_angio(0,0,f32),p_struct(0,0,f32), p_norm_signal(0,0,f32),
+    p_preTom(0,0,c64)
 {
     p_hpf_npts=0;
 }
@@ -26,6 +28,8 @@ FringeFFT::~FringeFFT() {
 
 void FringeFFT::init(int nz, int nx, float dimz, float dimx)
 {
+    int n_samples = KSPACE_N_SAMPLES;
+    int n_values = KSPACE_KMAX - KSPACE_KMIN;
     p_nz = nz;
     p_nx = nx;
     p_dimz=dimz;
@@ -42,55 +46,38 @@ void FringeFFT::init(int nz, int nx, float dimz, float dimx)
     p_angio_algo=0;
     p_background = af::array(p_nz, 1, f32);
 
-
-    // Read the background
-//    double* tmp_bg = new double[p_nz];
-//    FILE* fp_bg = fopen("C:\\Users\\Public\\Documents\\background_fringe.dat", "rb");
-//    if(fp_bg == 0)
-//    {
-//        std::cerr << "Check if background_fringe.dat file exists" << std::endl;
-//        exit(-1);
-//    }
-//    fread(tmp_bg, sizeof(double), p_nz, fp_bg);
-//    fclose(fp_bg);
-//    float* background = new float[p_nz];
-//    for(int i=0; i<p_nz; i++) background[i]=(float) (tmp_bg[i]);
-//    p_background = af::array(p_nz, 1, background, afHost);
-
     // Read the apodization function and convert to float
-    double* tmp=new double[p_nz];
-    FILE* fp=fopen("C:\\Users\\Public\\Documents\\filter.dat","rb");
+    double* tmp=new double[n_values/2];
+    // FILE* fp=fopen("C:\\Users\\Public\\Documents\\filter_vanilla.dat","rb");
+    FILE* fp=fopen(CALIB_APODIZATION_FILE, "rb");
     if(fp == 0)
     {
         std::cerr << "Check if filter file exists" << std::endl;
         exit(-1);
     }
-    fread(tmp, sizeof(double), p_nz, fp);
+    fread(tmp, sizeof(double), n_values/2, fp);
     fclose(fp);
-    float* filter = new float[p_nz];
-    for(int i=0;i<p_nz;i++) filter[i]=(float) (tmp[i]*0.00001); //FIXME: why is this multiplied by 1e-5?
+    float* filter = new float[n_values/2];
+    for(int i=0;i<n_values/2;i++) filter[i]=(float) (tmp[i]);
 
-    // Read the phase and convert to float
-    double* phase=new double[p_nz];
-    FILE* fp2=fopen("C:\\Users\\Public\\Documents\\phase.dat","rb");
+    // Read the dispersion and convert to float
+    double* phase=new double[n_values/2];
+    // FILE* fp2=fopen("C:\\Users\\Public\\Documents\\phase_vanilla.dat","rb");
+    FILE* fp2=fopen(CALIB_DISPERSION_FILE,"rb");
     if(fp2 == 0)
     {
         std::cerr << "Check if phase file exists" << std::endl;
         exit(-1);
     }
-    fread(phase, sizeof(double), p_nz, fp2);
+    fread(phase, sizeof(double), n_values/2, fp2);
     fclose(fp2);
-    float* f_phase = new float[p_nz];
-    for(int i=0;i<p_nz;i++) f_phase[i]=(float) phase[i];
+    float* f_phase = new float[n_values/2];
+    for(int i=0;i<n_values/2;i++) f_phase[i]=(float) phase[i];
 
     // Compute a complex window for simultaneous apodization and dispersion compensation
-    af::cfloat h_unit = {0, 1};  // Host side
-    //af::cfloat h_unit = {0, -1};  // Host side
-    af::array unit_j = af::constant(h_unit, 1, c32);
-    af::array h_phase = af::complex(af::array(p_nz,1,f_phase,afHost));
-
-    p_hann_dispcomp = af::complex(af::array(p_nz,1,filter,afHost));
-    p_hann_dispcomp *= af::exp(tile(unit_j(0), h_phase.dims())*h_phase);
+    af::array h_phase = af::complex(0, af::array(n_values/2, 1, f_phase, afHost));
+    p_hann_dispcomp = af::complex(-1.0 * af::array(n_values/2, 1, filter, afHost), 0);
+    p_hann_dispcomp *= af::exp(h_phase);
 
     delete [] f_phase;
     delete [] phase;
@@ -125,7 +112,6 @@ void FringeFFT::interp_and_do_fft(unsigned short* in_fringe, unsigned char* out_
 
     // Multiply by dispersion compensation vector and hann window, store back in p_interpfringe
     gfor (af::seq i, p_nx)
-            //p_interpfringe(af::span,i)=((p_interpfringe(af::span,i)-p_mean_fringe(af::span)/(p_mean_fringe(af::span)+p_hanning_threshold)))*p_hann_dispcomp;
             p_interpfringe(af::span,i)= (p_interpfringe(af::span,i)-p_mean_fringe(af::span))*p_hann_dispcomp;
 
     // Do fft
@@ -166,6 +152,91 @@ void FringeFFT::image_reconstruction(unsigned short* in_fringe, float* out_image
 
     // Set as output
     p_signal.as(f32).host(out_image);
+}
+
+
+void FringeFFT::image_reconstruction_bouma(unsigned short* in_fringe, unsigned char* out_image)
+{
+    /* Uses complex fringes to perform the reconstruction.
+     * This is necessary to use the Bouma k-space linearization and dispersion compensation method
+     */
+
+    // Parameters
+    int n_samples = KSPACE_N_SAMPLES;
+    int n_values = KSPACE_KMAX - KSPACE_KMIN;
+
+    // 1. Input fringes of shape Nz x N_Alines
+    af::array fringe(p_nz, p_nx, in_fringe, afHost);
+    af::array fringe_wo_bg(n_values, p_nx, afHost);
+    af::array foo(n_values/2, p_nx, c32);
+
+    // 2. Crop the wavelengths to remove empty spectral regions
+    fringe = fringe.rows(KSPACE_KMIN, KSPACE_KMAX-1);
+    // std::cout << fringe.dims()[0] << "," << fringe.dims()[1] << std::endl;
+
+    // 3. Compute the background from the cropped fringe
+    af::array background = mean(fringe.as(f32), 1);
+
+    // 4. Remove background
+    gfor (af::seq i, p_nx) {
+         fringe_wo_bg(af::span,i) = fringe(af::span,i).as(f32) - background(af::span);
+    }
+
+    // 5. Perform preliminary reconstruction
+    p_preTom = af::fft(fringe_wo_bg.as(c32));
+
+    // 6. Mask the complex conjugate
+    p_preTom(af::seq(0, n_values/2), af::span) = 0;
+
+    // 7. TODO: Remove the DC component
+
+    // 8. Zero-padding to oversample the k-space for the interpolation
+    int padding_size = n_samples - n_values;
+    // std::cerr << padding_size << std::endl;
+    af::array p_preTomPadded = af::constant(0, n_samples, p_nx, c32);
+    gfor (af::seq i, p_nx) {
+        p_preTomPadded(af::seq(padding_size, n_samples-1), i) = p_preTom(af::span, i);
+    }
+    //std::cerr << p_preTomPadded.dims()[0] << "," << p_preTomPadded.dims()[1] << std::endl;
+
+    // 9/10. Go back to k-space, and linearization via sparse matrix interpolation
+    af::array new_fringe =  af::ifft(p_preTomPadded);
+    af::array p_interpfringe = matmul(p_sparse_interp.as(c32), new_fringe.as(c32));
+    //std::cerr << p_interpfringe.dims()[0] << "," << p_interpfringe.dims()[1] << std::endl;
+
+    // 11. Compensate dispersion and apodization
+    // Multiply by dispersion compensation vector and hann window, store back in p_interpfringe
+    gfor (af::seq i, p_nx)
+        foo(af::span,i) = p_interpfringe(af::span,i) * p_hann_dispcomp;
+    //p_interpfringe *= p_hann_dispcomp;
+
+    // 12. Zero padding to output size
+    af::array p_interpfringe_out = af::constant(0, KSPACE_N_OUTPUT, p_nx, c32);
+    gfor (af::seq i, p_nx) {
+        p_interpfringe_out(af::seq(af::seq(n_values/2)), i) = foo(af::span, i);
+    }
+    //std::cout << p_interpfringe_out.dims()[0] << "," << p_interpfringe_out.dims()[1] << std::endl;
+    //p_interpfringe_out(af::seq(n_values/2),af::span) = foo;
+
+    // 13. Circular shift
+    int shift = p_sparse_interp.dims()[0] / 2;
+    p_interpfringe_out = af::shift(p_interpfringe_out, -shift);
+    //std::cout << "Shift: " << shift << std::endl;
+
+    // 14. Reconstruction
+    p_signal = af::fft(p_interpfringe_out);
+    //std::cerr << p_signal.dims()[0] << "," << p_signal.dims()[1] << std::endl;
+
+    // Here we have the complex signal available, compute its magnitude, take log on GPU to go faster
+    // Transfer half as much data back to CPU
+    //p_norm_signal = af::log(af::abs(p_interpfringe)+1e-4);
+    p_norm_signal = af::abs(p_interpfringe);
+
+    // Min-Max Normalization
+    float l_max = af::max<float>(p_norm_signal);
+    float l_min = af::min<float>(p_norm_signal);
+    p_norm_signal=255.0*(p_norm_signal-l_min)/(l_max - l_min);
+    p_norm_signal.as(u8).host(out_image);
 }
 
 void FringeFFT::setAngioAlgo(int angio_algo)
@@ -359,21 +430,26 @@ void FringeFFT::PutDopplerHPFilterOnGPU(float sigma, float lineperiod)
 
 void FringeFFT::read_interp_matrix()
 {
-    // Read matrix and cast to float as a dense A matrix
-    double* p_interpolation_matrix = new double[p_nz*p_nz];
-    float* A=new float[p_nz*p_nz];
-    FILE* fp=fopen("C:\\Users\\Public\\Documents\\interpolation_matrix.dat","rb");
+    // Read matrix and cast to float as a dense matrix
+    int n_values = (KSPACE_KMAX - KSPACE_KMIN) / 2;
+    int n_samples = KSPACE_N_SAMPLES;
+    double* p_interpolation_matrix = new double[n_values*n_samples];
+    float* A=new float[n_values*n_samples];
+    FILE* fp=fopen(CALIB_KSPACE_INTERP_MATRIX_FILE, "rb");
 
     if(fp == 0)
     {
         std::cerr << "Check if interpolation file exists" << std::endl;
         exit(-1);
     }
-    fread(p_interpolation_matrix,sizeof(double),p_nz*p_nz,fp);
+    fread(p_interpolation_matrix,sizeof(double),n_values*n_samples,fp);
     fclose(fp);
-    for (int i=0;i<p_nz*p_nz;i++) A[i]=(float) p_interpolation_matrix[i];
+    for (int i=0; i<n_values*n_samples; i++) {
+        int j =  i % n_samples + i / n_samples * n_values;
+        A[i]=(float) p_interpolation_matrix[j];
+    }
     delete[] p_interpolation_matrix;
-    af::array tmp(p_nz, p_nz, A, afHost);
+    af::array tmp(n_values, n_samples, A, afHost);
     p_sparse_interp = sparse(tmp);
 }
 

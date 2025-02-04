@@ -46,14 +46,14 @@ void Galvos::config()
 {
     try
     {
-        QString tmp=p_device+"/"+p_camera_clock;
+        QString tmp=p_device+"/"+p_camera_clock; // Source for the clock
         DAQmxErrChk(DAQmxCreateTask("ClockTask",&p_clock_task_handle));
         DAQmxErrChk (DAQmxCreateCOPulseChanFreq(p_clock_task_handle,tmp.toUtf8().constData(),"",DAQmx_Val_Hz,DAQmx_Val_Low,0.0,p_daq_freq,0.50));
         DAQmxErrChk (DAQmxCfgImplicitTiming(p_clock_task_handle,DAQmx_Val_ContSamps,1000));
 
         // Counter generated clock will trigger everyone (camera and galvos). Trig galvos to pfi clock but delay a little bit for camera sync.
         DAQmxErrChk(DAQmxCreateTask("GalvosTask",&p_task_handle));
-        tmp =  p_device+"/"+p_ao_x+","+p_device+"/"+p_ao_y;
+        tmp =  p_device+"/"+p_ao_x+","+p_device+"/"+p_ao_y; // Source for the galvos
         DAQmxErrChk(DAQmxCreateAOVoltageChan(p_task_handle, tmp.toUtf8().constData(),"Galvos",-10.0,10.0,DAQmx_Val_Volts,NULL));
         tmp=p_device+"/"+p_camera_clock_pfi;
         DAQmxErrChk(DAQmxCfgSampClkTiming(p_task_handle,tmp.toUtf8().constData(),p_daq_freq,DAQmx_Val_Rising,DAQmx_Val_ContSamps,int(p_n_pts_frame)));
