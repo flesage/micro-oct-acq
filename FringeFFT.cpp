@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
-
+#include <cassert>
 
 #define PI ((float)3.1415926)
 
@@ -18,7 +18,7 @@ FringeFFT::FringeFFT(unsigned int n_repeat, int factor) : p_nz(0),
     p_nx (0), p_n_repeat(n_repeat), p_factor(factor), p_fringe(0,0,f32), p_interpfringe(0,0,c32), p_signal(0,0,f32),p_filt_signal(0,0,c32),
     p_phase(0,0,f32),  p_hann_dispcomp(0,0,f32), p_mean_fringe(0,0,f32),
     p_hp_filter(0,0,f32), p_sparse_interp(0,0,f32), p_pos0(0,0,f32), p_pos1(0,0,f32), p_angio_stack(0,0,0,f32), p_angio(0,0,f32),p_struct(0,0,f32), p_norm_signal(0,0,f32),
-    p_preTom(0,0,c64)
+    p_preTom(0,0,c32)
 {
     p_hpf_npts=0;
 }
@@ -170,9 +170,10 @@ void FringeFFT::image_reconstruction_bouma(unsigned short* in_fringe, unsigned c
     af::array fringe_wo_bg(n_values, p_nx, afHost);
     af::array foo(n_values/2, p_nx, c32);
 
+
     // 2. Crop the wavelengths to remove empty spectral regions
     fringe = fringe.rows(KSPACE_KMIN, KSPACE_KMAX-1);
-    // std::cout << fringe.dims()[0] << "," << fringe.dims()[1] << std::endl;
+    //display_array_shape(fringe, "fringe_crop");
 
     // 3. Compute the background from the cropped fringe
     af::array background = mean(fringe.as(f32), 1);
@@ -184,26 +185,31 @@ void FringeFFT::image_reconstruction_bouma(unsigned short* in_fringe, unsigned c
 
     // 5. Perform preliminary reconstruction
     p_preTom = af::fft(fringe_wo_bg.as(c32));
+    display_array_shape(p_preTom, "p_preTom");
 
     // 6. Mask the complex conjugate
-    p_preTom(af::seq(0, n_values/2), af::span) = 0;
+    //af::array preTom_masked = af::constant(0, n_values, p_nx, c32);
+    //display_array_shape(preTom_masked, "preTom_masked");
+    //gfor (af::seq i, n_values/2, n_values-1) {
+    //    preTom_masked(i, af::span) = p_preTom(i, af::span);
+    //}
+    p_preTom(af::seq(0, n_values/2), af::span) = 0.0;
 
     // 7. TODO: Remove the DC component
 
     // 8. Zero-padding to oversample the k-space for the interpolation
     int padding_size = n_samples - n_values;
-    // std::cerr << padding_size << std::endl;
     af::array p_preTomPadded = af::constant(0, n_samples, p_nx, c32);
     gfor (af::seq i, p_nx) {
         p_preTomPadded(af::seq(padding_size, n_samples-1), i) = p_preTom(af::span, i);
     }
-    //std::cerr << p_preTomPadded.dims()[0] << "," << p_preTomPadded.dims()[1] << std::endl;
+    //display_array_shape(p_preTomPadded, "p_preTomPadded");
 
     // 9/10. Go back to k-space, and linearization via sparse matrix interpolation
     af::array new_fringe =  af::ifft(p_preTomPadded);
     af::array p_interpfringe = matmul(p_sparse_interp.as(c32), new_fringe.as(c32));
-    //std::cerr << p_interpfringe.dims()[0] << "," << p_interpfringe.dims()[1] << std::endl;
 
+    // display_array_shape(p_interpfringe, "p_interpfringe");
     // 11. Compensate dispersion and apodization
     // Multiply by dispersion compensation vector and hann window, store back in p_interpfringe
     gfor (af::seq i, p_nx)
@@ -215,28 +221,48 @@ void FringeFFT::image_reconstruction_bouma(unsigned short* in_fringe, unsigned c
     gfor (af::seq i, p_nx) {
         p_interpfringe_out(af::seq(af::seq(n_values/2)), i) = foo(af::span, i);
     }
-    //std::cout << p_interpfringe_out.dims()[0] << "," << p_interpfringe_out.dims()[1] << std::endl;
+    // display_array_shape(p_interpfringe_out, "p_interpfringe_out");
     //p_interpfringe_out(af::seq(n_values/2),af::span) = foo;
 
     // 13. Circular shift
     int shift = p_sparse_interp.dims()[0] / 2;
     p_interpfringe_out = af::shift(p_interpfringe_out, -shift);
-    //std::cout << "Shift: " << shift << std::endl;
 
     // 14. Reconstruction
     p_signal = af::fft(p_interpfringe_out);
-    //std::cerr << p_signal.dims()[0] << "," << p_signal.dims()[1] << std::endl;
+    // display_array_shape(p_signal, "p_signal");
 
     // Here we have the complex signal available, compute its magnitude, take log on GPU to go faster
     // Transfer half as much data back to CPU
+    p_norm_signal = af::log(af::abs(p_signal));
+
+    //p_norm_signal = fringe_wo_bg;
+
+    //p_norm_signal = af::abs(p_interpfringe);
     //p_norm_signal = af::log(af::abs(p_interpfringe)+1e-4);
-    p_norm_signal = af::abs(p_interpfringe);
 
     // Min-Max Normalization
     float l_max = af::max<float>(p_norm_signal);
     float l_min = af::min<float>(p_norm_signal);
+    display_array_shape(p_norm_signal, "p_norm_signal");
     p_norm_signal=255.0*(p_norm_signal-l_min)/(l_max - l_min);
-    p_norm_signal.as(u8).host(out_image);
+
+    // DEBUG : Output Zero padding to output size (1024)
+    int n_z = p_norm_signal.dims()[0];
+    int new_padding_size = KSPACE_N_OUTPUT - n_z;
+    std::cerr << new_padding_size << ", " << n_z << std::endl;
+    af::array p_out = af::constant(0, KSPACE_N_OUTPUT, p_nx, f32);
+    if (new_padding_size > 0) {
+            gfor (af::seq i, p_nx) {
+                p_out(af::seq(n_z), i) = p_norm_signal(af::span, i);
+            }
+        }
+    else {
+        p_out = p_norm_signal;
+    }
+
+    // DEBUG : interpolate to the n_output_size
+    p_out.as(u8).host(out_image);
 }
 
 void FringeFFT::setAngioAlgo(int angio_algo)
@@ -428,29 +454,51 @@ void FringeFFT::PutDopplerHPFilterOnGPU(float sigma, float lineperiod)
     delete [] filter;
 }
 
+void FringeFFT::display_array_shape(af::array input, std::string name) {
+    // Get the array data type
+    std::cerr << name;
+    std::cerr << ": (";
+    int n = (int)input.numdims();
+    for (int i = 0; i < n; i++) {
+        std::cerr << input.dims()[i] << ",";
+    }
+    std::cerr << ")" << std::endl;
+
+    //af::print(name.c_str(), input);
+}
+
 void FringeFFT::read_interp_matrix()
 {
-    // Read matrix and cast to float as a dense matrix
-    int n_values = (KSPACE_KMAX - KSPACE_KMIN) / 2;
-    int n_samples = KSPACE_N_SAMPLES;
-    double* p_interpolation_matrix = new double[n_values*n_samples];
-    float* A=new float[n_values*n_samples];
-    FILE* fp=fopen(CALIB_KSPACE_INTERP_MATRIX_FILE, "rb");
+    int n_rows = (KSPACE_KMAX - KSPACE_KMIN) / 2;
+    int n_cols = KSPACE_N_SAMPLES;
+    double* data_c_order = new double[n_rows*n_cols];
+    float* data_f_order = new float[n_rows*n_cols];
 
-    if(fp == 0)
-    {
-        std::cerr << "Check if interpolation file exists" << std::endl;
-        exit(-1);
-    }
-    fread(p_interpolation_matrix,sizeof(double),n_values*n_samples,fp);
+    FILE* fp = fopen(CALIB_KSPACE_INTERP_MATRIX_FILE, "rb");
+    std::cerr << fp << std::endl;
+    assert(fp!=0 && "Unable to load the k-space interpolation file.");
+    fread(data_c_order, sizeof(double), n_rows*n_cols, fp);
     fclose(fp);
-    for (int i=0; i<n_values*n_samples; i++) {
-        int j =  i % n_samples + i / n_samples * n_values;
-        A[i]=(float) p_interpolation_matrix[j];
+
+    // Convert C-order (row-major order) to F-order (column-major order)
+    // for (int r=0; r < n_rows; r++) {
+    //     for (int c=0; c < n_cols; c++) {
+    //         int idx_in = r + n_rows * c;
+    //         int idx_out = c + n_cols * r;
+    //         data_f_order[idx_out] = (float) data_c_order[idx_in];
+    //     }
+    // }
+    for (int r=0; r < n_rows; r++) {
+        for (int c=0; c < n_cols; c++) {
+            int idx_out = r + n_rows * c;
+            int idx_in = c + n_cols * r;
+            data_f_order[idx_out] = (float) data_c_order[idx_in];
+        }
     }
-    delete[] p_interpolation_matrix;
-    af::array tmp(n_values, n_samples, A, afHost);
-    p_sparse_interp = sparse(tmp);
+    p_sparse_interp = sparse(af::array(n_rows, n_cols, data_f_order, afHost));
+
+    delete[] data_c_order;
+    delete[] data_f_order;
 }
 
 

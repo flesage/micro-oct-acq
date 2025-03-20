@@ -8,7 +8,6 @@
 #ifndef FRINGEFFT_H_
 #define FRINGEFFT_H_
 
-
 #include "arrayfire.h"
 
 class FringeFFT {
@@ -29,6 +28,8 @@ public:
     void get_radial_img(unsigned short* in_fringe, float* out_image);
     void setAngioAlgo(int angio_algo);
     void image_reconstruction_bouma(unsigned short* in_fringe, unsigned char* out_image);
+    void display_array_shape(af::array, std::string);
+
 private:
     af::array unwrap(const af::array& angle);
     af::array laplacian(const af::array& arr, bool inverse);

@@ -31,18 +31,13 @@
 #define ROTATION_REFRESH_RATE 200 // ms
 
 // Calibration files
-//#define CALIB_KSPACE_INTERP_MATRIX_FILE "C:\\Users\\Public\\Documents\\interpolation_matrix_vanilla.dat"
 #define CALIB_KSPACE_INTERP_MATRIX_FILE "C:\\Users\\Public\\Documents\\kspace_interp_matrix_2024-11-29-air-10x.dat"
-//int KSPACE_KMIN = 852;
-//int KSPACE_KMAX = 1620;
-//int KSPACE_N_SAMPLES = 6144;
-//int KSPACE_N_OUTPUT = 1024;
-
-//#define CALIB_APODIZATION_FILE "C:\\Users\\Public\\Documents\\filter_vanilla.dat"
+//#define CALIB_KSPACE_INTERP_MATRIX_FILE "C:\\Users\\Public\\Documents\\interpolation_matrix_vanilla.dat"
 #define CALIB_APODIZATION_FILE "C:\\Users\\Public\\Documents\\filter_2024-11-29-air-10x.dat"
-
-//#define CALIB_DISPERSION_FILE "C:\\Users\\Public\\Documents\\phase_vanilla.dat"
+//#define CALIB_APODIZATION_FILE "C:\\Users\\Public\\Documents\\filter_vanilla.dat"
 #define CALIB_DISPERSION_FILE "C:\\Users\\Public\\Documents\\phase_2024-11-29-air-10x.dat"
+//#define CALIB_DISPERSION_FILE "C:\\Users\\Public\\Documents\\phase_vanilla.dat"
+
 
 //#define SIMULATION
 
